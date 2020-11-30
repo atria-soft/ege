@@ -1,0 +1,23 @@
+package org.atriasoft.gameengine.components;
+
+import org.atriasoft.etk.math.Vector3f;
+import org.atriasoft.gameengine.Component;
+import org.atriasoft.gameengine.Light;
+
+public class ComponentGravityStatic extends ComponentGravity {
+	private Vector3f gravity;
+	public ComponentGravityStatic(Vector3f gravity) {
+		super();
+		this.gravity = gravity;
+	}
+	@Override
+	public Vector3f getGravityAtPosition(Vector3f position) {
+		return gravity;
+	}
+	public Vector3f getGravity() {
+		return gravity;
+	}
+	public void setGravity(Vector3f gravity) {
+		this.gravity = gravity;
+	}
+}

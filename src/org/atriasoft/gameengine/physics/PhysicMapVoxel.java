@@ -17,6 +17,7 @@ public class PhysicMapVoxel extends PhysicShape {
 		if (this.chunk == null) {
 			return;
 		}
+		this.colisionPoints.clear();
 		aabb.update(new Vector3f(this.chunk.getPosition().x,this.chunk.getPosition().y,this.chunk.getPosition().z));
 		aabb.update(new Vector3f(
 				this.chunk.getPosition().x + VoxelChunk.VOXEL_CHUNK_SIZE,

@@ -117,12 +117,12 @@ public class ComponentPhysics extends Component {
 			return;
 		}
 		for (ComponentPhysics elem : narrowIntersection) {
-			for (PhysicShape shapeCurrent : shapes) {
+			for (PhysicShape shapeCurrent : this.shapes) {
 				//TODO Do a better method we do this many times ...
 				if (elem.checkCollide(shapeCurrent) == false) {
 					continue;
 				}
-				elem.getCollidePoints(shapeCurrent);
+				elem.getCollidePoints(shapeCurrent, this.staticObject);
 			}
 		}
 	}
@@ -173,13 +173,13 @@ public class ComponentPhysics extends Component {
 		}
 		return false;
 	}
-	private void getCollidePoints(PhysicShape shapeCurrent) {
+	private void getCollidePoints(PhysicShape shapeCurrent, boolean isStatic) {
 		if (shapeCurrent instanceof PhysicBox) {
 			PhysicBox shape111 = (PhysicBox)shapeCurrent;
-			for (PhysicShape shape : shapes) {
+			for (PhysicShape shape : this.shapes) {
 				if (shape instanceof PhysicBox) {
 					PhysicBox shape222 = (PhysicBox)shape;
-					ToolCollisionOBBWithOBB.getCollidePoints(shape111, shape222);
+					ToolCollisionOBBWithOBB.getCollidePoints(shape111, isStatic, shape222, this.staticObject);
 				} else if (shape instanceof PhysicSphere) {
 					
 				} else if (shape instanceof PhysicMapVoxel) {
@@ -189,7 +189,7 @@ public class ComponentPhysics extends Component {
 				}
 			}
 		} else if (shapeCurrent instanceof PhysicSphere) {
-			for (PhysicShape shape : shapes) {
+			for (PhysicShape shape : this.shapes) {
 				if (shape instanceof PhysicBox) {
 					
 				} else if (shape instanceof PhysicSphere) {
@@ -201,7 +201,7 @@ public class ComponentPhysics extends Component {
 				}
 			}
 		} else if (shapeCurrent instanceof PhysicMapVoxel) {
-			for (PhysicShape shape : shapes) {
+			for (PhysicShape shape : this.shapes) {
 				if (shape instanceof PhysicBox) {
 					
 				} else if (shape instanceof PhysicSphere) {
@@ -294,6 +294,12 @@ public class ComponentPhysics extends Component {
 		this.aabbIntersection.clear();
 	}
 	public void addIntersection(ComponentPhysics component) {
+		// do not add multiple times
+		for (ComponentPhysics elem : this.aabbIntersection) {
+			if (elem == component) {
+				return;
+			}
+		}
 		this.aabbIntersection.add(component);
 	}
 	public List<ComponentPhysics> getAabbIntersection() {

@@ -44,42 +44,42 @@ public class ToolCollisionOBBWithOBB {
 				|| getSeparatingPlane(rPos, box1.axisZ.cross(box2.axisZ), box1, box2);
 		return !ret;
 	}
-
-	// a quick test to see the code working
-	public static void main(String[] args) {
-		// create two obbs
-		OBB aaa = new OBB();
-		OBB bbb = new OBB();
-
-		// set the first obb's properties
-		aaa.position = new Vector3f(0.0f, 0.0f, 0.0f); // set its center position
-
-		// set the half size
-		aaa.halfSize = new Vector3f(10.0f, 1.0f, 1.0f);
-
-		// set the axes orientation
-		aaa.axisX = new Vector3f(1.0f, 0.0f, 0.0f);
-		aaa.axisY = new Vector3f(0.0f, 1.0f, 0.0f);
-		aaa.axisZ = new Vector3f(0.0f, 0.0f, 1.0f);
-
-		// set the second obb's properties
-		bbb.position = new Vector3f(20.0f, 0.0f, 0.0f); // set its center position
-
-		// set the half size
-		bbb.halfSize = new Vector3f(10.0f, 1.0f, 1.0f);
-
-		// set the axes orientation
-		bbb.axisX = new Vector3f(1.0f, 0.0f, 0.0f);
-		bbb.axisY = new Vector3f(0.0f, 1.0f, 0.0f);
-		bbb.axisZ = new Vector3f(0.0f, 0.0f, 1.0f);
-
-		// run the code and get the result as a message
-		if (getCollision(aaa, bbb)) {
-			Log.info("Collision!!!");
-		} else {
-			Log.info("NO Collision!!!");
-		}
-	}
+//
+//	// a quick test to see the code working
+//	public static void main(String[] args) {
+//		// create two obbs
+//		OBB aaa = new OBB();
+//		OBB bbb = new OBB();
+//
+//		// set the first obb's properties
+//		aaa.position = new Vector3f(0.0f, 0.0f, 0.0f); // set its center position
+//
+//		// set the half size
+//		aaa.halfSize = new Vector3f(10.0f, 1.0f, 1.0f);
+//
+//		// set the axes orientation
+//		aaa.axisX = new Vector3f(1.0f, 0.0f, 0.0f);
+//		aaa.axisY = new Vector3f(0.0f, 1.0f, 0.0f);
+//		aaa.axisZ = new Vector3f(0.0f, 0.0f, 1.0f);
+//
+//		// set the second obb's properties
+//		bbb.position = new Vector3f(20.0f, 0.0f, 0.0f); // set its center position
+//
+//		// set the half size
+//		bbb.halfSize = new Vector3f(10.0f, 1.0f, 1.0f);
+//
+//		// set the axes orientation
+//		bbb.axisX = new Vector3f(1.0f, 0.0f, 0.0f);
+//		bbb.axisY = new Vector3f(0.0f, 1.0f, 0.0f);
+//		bbb.axisZ = new Vector3f(0.0f, 0.0f, 1.0f);
+//
+//		// run the code and get the result as a message
+//		if (getCollision(aaa, bbb)) {
+//			Log.info("Collision!!!");
+//		} else {
+//			Log.info("NO Collision!!!");
+//		}
+//	}
 
 	// check if there's a separating plane in between the selected axes
 	private static boolean getSeparatingPlane222(Vector3f rPos, Vector3f plane, PhysicBox box1, PhysicBox box2) {
@@ -107,7 +107,7 @@ public class ToolCollisionOBBWithOBB {
 		return !ret;
 	}
 
-	public static void getCollidePoints(PhysicBox box1, PhysicBox box2) {
+	public static void getCollidePoints(PhysicBox box1, boolean isStatic1, PhysicBox box2, boolean isStatic2) {
 		// Log.info("Try to calculare reverse force ........");
 		Vector3f rPos1 = box1.narrowPhaseGlobalPos.lessNew(box2.narrowPhaseGlobalPos);
 		Vector3f rPos2 = box2.narrowPhaseGlobalPos.lessNew(box1.narrowPhaseGlobalPos);
@@ -143,11 +143,11 @@ public class ToolCollisionOBBWithOBB {
 		// fonctionne quand le block est trourner de 90% petit pb de positionnement en hauteur....
 		// getCollidePointsAABBCenteredWithOBB(box2.narrowPhaseHalfSize, box1.narrowPhaseHalfSize, quatTransfer2, quat2.multiply(rPos2));
 		ColisionPoints[] collide1 = getCollidePointsAABBCenteredWithOBB(box2.narrowPhaseHalfSize, box1.narrowPhaseHalfSize, quatTransfer2, quat2.inverseNew().getMatrix4().multiply(rPos1));
-		box1.colisionPointTest = collide1;
 		// transfer detection point collision in global environement:
 		if (collide1 != null) {
 			for (int iii = 0; iii < collide1.length; iii++) {
 				collide1[iii].position = quat1.multiply(collide1[iii].position).add(box1.narrowPhaseGlobalPos);
+				collide1[iii].force = quat2.multiply(collide1[iii].force);//.add(box1.narrowPhaseGlobalPos);
 			}
 		}
 		/* res = trensfert in generic plan the new res ... */
@@ -157,11 +157,20 @@ public class ToolCollisionOBBWithOBB {
 		LoxelApplication.box1HalfSize = box1.narrowPhaseHalfSize;
 		LoxelApplication.box2HalfSize = box2.narrowPhaseHalfSize;
 		ColisionPoints[] collide2 = getCollidePointsAABBCenteredWithOBB(box1.narrowPhaseHalfSize, box2.narrowPhaseHalfSize, quatTransfer1, quat1.inverseNew().getMatrix4().multiply(rPos2));
-		box2.colisionPointTest = collide2;
 		if (collide2 != null) {
 			for (int iii = 0; iii < collide2.length; iii++) {
 				collide2[iii].position = quat2.multiply(collide2[iii].position).add(box2.narrowPhaseGlobalPos);
+				collide2[iii].force = quat1.multiply(collide2[iii].force);//.add(box2.narrowPhaseGlobalPos);
 			}
+		}
+		// add only if NOT static, when static no colision is performed
+		if (true) { //!isStatic1) {
+			Collision colision = new Collision(collide1, box2, collide2, isStatic2);
+			box1.addColision(colision);
+		}
+		if (true) { //!isStatic1) {
+			Collision colision = new Collision(collide2, box1, collide1, isStatic1);
+			box2.addColision(colision);
 		}
 
 	}
@@ -273,13 +282,15 @@ public class ToolCollisionOBBWithOBB {
 		}
 		if (count != 0) {
 			// Find a point inside the BOX ...
+			/*
 			Log.info("Detect point inside ... " + insideTopBackRight + "  " + insideTopBackLeft + "  " + insideTopFrontRight + "  " + insideTopFrontLeft + "  " + insideBottomBackRight + "  "
 					+ insideBottomBackLeft + "  " + insideBottomFrontRight + "  " + insideBottomFrontLeft);
-
+			*/
 			return out;
 		}
 		// line in AABB
-		Log.info("Need to detect line inside ...");
+		// TODO: 
+		// Log.info("Need to detect line inside ..."); // pas tot a fait... si ca colisione déja avec un point de l'autre ...
 		return null;
 	}
 
@@ -294,46 +305,61 @@ public class ToolCollisionOBBWithOBB {
 		Vector3f out = new Vector3f();
 		if (point.x < 0) {
 			if (point.x > -halfSize.x) {
-				out.x = -halfSize.x + point.x;
+				
+				out.x = -(halfSize.x + point.x);
+				
+				//out.x = -halfSize.x - point.x;
+				//out.x = -halfSize.x + point.x;
+				//out.x = + point.x;
 			} else {
 				return null;
 			}
 		} else {
 			if (point.x < halfSize.x) {
+				//out.x = halfSize.x + point.x;
 				out.x = halfSize.x - point.x;
+				//out.x = - point.x;
 			} else {
 				return null;
 			}
 		}
 		if (point.y < 0) {
 			if (point.y > -halfSize.y) {
-				out.y = -halfSize.y + point.y;
+				out.y = -halfSize.y - point.y;
+				//out.y = -halfSize.y + point.y;
+				//out.y = point.y;
 			} else {
 				return null;
 			}
 		} else {
 			if (point.y < halfSize.y) {
+				//out.y = halfSize.y + point.y;
 				out.y = halfSize.y - point.y;
+				//out.y = - point.y;
 			} else {
 				return null;
 			}
 		}
 		if (point.z < 0) {
 			if (point.z > -halfSize.z) {
-				out.z = -halfSize.z + point.z;
+				out.z = -halfSize.z - point.z;
+				//out.z = -halfSize.z + point.z;
+				//out.z = + point.z;
 			} else {
 				return null;
 			}
 		} else {
 			if (point.z < halfSize.z) {
+				//out.z = halfSize.z + point.z;
 				out.z = halfSize.z - point.z;
+				//out.z = - point.z;
 			} else {
 				return null;
 			}
 		}
-		if (out.x < out.y) {
+		if (Math.abs(out.x) < Math.abs(out.y)) {
 			out.y = 0;
-			if (out.x < out.z) {
+			if (Math.abs(out.x) < Math.abs(out.z)) {
 				out.z = 0;
 				return out;
 			}
@@ -341,7 +367,7 @@ public class ToolCollisionOBBWithOBB {
 			return out;
 		}
 		out.x = 0;
-		if (out.y < out.z) {
+		if (Math.abs(out.y) < Math.abs(out.z)) {
 			out.z = 0;
 			return out;
 		}

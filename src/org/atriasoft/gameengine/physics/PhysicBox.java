@@ -1,10 +1,14 @@
 package org.atriasoft.gameengine.physics;
 
+import java.util.ArrayList;
+import java.util.List;
+
 import org.atriasoft.etk.Color;
 import org.atriasoft.etk.math.Matrix4f;
 import org.atriasoft.etk.math.Transform3D;
 import org.atriasoft.etk.math.Vector3f;
 import org.atriasoft.gale.resource.ResourceColored3DObject;
+import org.atriasoft.gameengine.internal.Log;
 
 public class PhysicBox extends PhysicShape {
 	// Box size property in X, Y and Z
@@ -26,6 +30,7 @@ public class PhysicBox extends PhysicShape {
 	public void updateAABB(Transform3D transformGlobal, PhysicCollisionAABB aabb) {
 		// store it, many time usefull...
 		this.transformGlobal = transformGlobal;
+		this.colisionPoints.clear();
 		// TODO Auto-generated method stub
 		aabb.update(transformGlobal.multiply(this.transform.multiply(new Vector3f(this.size.x * 0.5f, this.size.y * 0.5f, this.size.z * 0.5f))));
 		aabb.update(transformGlobal.multiply(this.transform.multiply(new Vector3f(-this.size.x * 0.5f, this.size.y * 0.5f, this.size.z * 0.5f))));
@@ -56,7 +61,7 @@ public class PhysicBox extends PhysicShape {
 	private void renderPoint(Vector3f subPosition, Transform3D transformGlobal, ResourceColored3DObject debugDrawProperty) {
 		Matrix4f transformation = transformGlobal.getOpenGLMatrix().multiplyNew(this.transform.getOpenGLMatrix()).multiply(Matrix4f.createMatrixTranslate(subPosition));
 
-		debugDrawProperty.drawSquare(new Vector3f(0.1f, 0.1f, 0.1f), transformation, new Color(0, 0, 1, 1));
+		debugDrawProperty.drawSquare(new Vector3f(0.08f, 0.08f, 0.08f), transformation, new Color(0, 0, 1, 1));
 	}
 
 	private void renderPoint2(Vector3f subPosition, Transform3D transformGlobal, ResourceColored3DObject debugDrawProperty) {
@@ -71,9 +76,12 @@ public class PhysicBox extends PhysicShape {
 
 	}
 
-	private void renderPoint4(Vector3f subPosition, ResourceColored3DObject debugDrawProperty) {
+	private void renderPoint4(Vector3f subPosition, Vector3f force, ResourceColored3DObject debugDrawProperty) {
 		debugDrawProperty.drawSquare(new Vector3f(0.1f, 0.1f, 0.1f), Matrix4f.identity().multiply(Matrix4f.createMatrixTranslate(subPosition)), new Color(1, 0, 0, 1));
-
+		List<Vector3f> tmp = new ArrayList<>();
+		tmp.add(new Vector3f(0,0,0));
+		tmp.add(force); 
+		debugDrawProperty.drawLine(tmp, new Color(1, 0, 0, 1), Matrix4f.identity().multiply(Matrix4f.createMatrixTranslate(subPosition)), true, false);
 	}
 
 	@Override
@@ -88,10 +96,17 @@ public class PhysicBox extends PhysicShape {
 		renderPoint(new Vector3f(-dimention.x, +dimention.y, -dimention.z), transformGlobal, debugDrawProperty);
 		renderPoint(new Vector3f(+dimention.x, -dimention.y, -dimention.z), transformGlobal, debugDrawProperty);
 		renderPoint3(new Vector3f(-dimention.x, -dimention.y, -dimention.z), transformGlobal, debugDrawProperty);
-		if (this.colisionPointTest != null) {
-			for (int iii = 0; iii < this.colisionPointTest.length; iii++) {
-				renderPoint4(this.colisionPointTest[iii].position, debugDrawProperty);
+		for (Collision elem: this.colisionPoints) {
+			if (elem != null) {
+				if (elem.colisionPointLocal == null) {
+					Log.error("colision point must be set !!!");
+					continue;
+				}
+				for (int iii = 0; iii < elem.colisionPointLocal.length; iii++) {
+					renderPoint4(elem.colisionPointLocal[iii].position, elem.colisionPointLocal[iii].force, debugDrawProperty);
+				}
 			}
 		}
 	}
+
 }

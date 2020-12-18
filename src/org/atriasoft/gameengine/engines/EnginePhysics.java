@@ -63,11 +63,19 @@ public class EnginePhysics extends Engine {
 			it.applyForces(TIME_STEP, gravity);
 		}
 	}
+	/**
+	 * Collision detection STEP 1: Upadte the AABB positioning of each elements
+	 * @param timeStep Delta time since the last check
+	 */
 	private void updateAABB(float timeStep) {
 		for (ComponentPhysics it: components) {
 			it.updateAABB();
 		}
 	}
+	/**
+	 * Collision Detection STEP 2: update the list of each element that collide together in the AABB Boxs (update is done between each boxes)
+	 * @param timeStep Delta time since the last check
+	 */
 	private void updateCollisionsAABB(float timeStep) {
 		// clear all object intersection
 		for (ComponentPhysics it: components) {
@@ -86,6 +94,10 @@ public class EnginePhysics extends Engine {
 			}
 		}
 	}
+	/**
+	 * Collision Detection STEP 3: Narrow phase: process the collision between every OBB boxes (or other..)  
+	 * @param timeStep Delta time since the last check
+	 */
 	private void updateCollisionsNarrowPhase(float timeStep) {
 		// clear all object intersection
 		for (ComponentPhysics it: components) {
@@ -103,6 +115,10 @@ public class EnginePhysics extends Engine {
 			current.narrowCollisionCreateContactAndForce();
 		}
 	}
+	/**
+	 * Collision Detection STEP 4: apply all calculated forces (with containts) 
+	 * @param timeStep 
+	 */
 	private void generateResultCollisionsForces(float timeStep) {
 		
 	}

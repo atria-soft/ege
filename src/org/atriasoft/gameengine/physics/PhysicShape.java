@@ -1,12 +1,21 @@
 package org.atriasoft.gameengine.physics;
 
+import java.util.ArrayList;
+import java.util.List;
+
 import org.atriasoft.etk.math.Quaternion;
 import org.atriasoft.etk.math.Transform3D;
 import org.atriasoft.etk.math.Vector3f;
 import org.atriasoft.gale.resource.ResourceColored3DObject;
 
+
+
+
 public abstract class PhysicShape {
-	public ColisionPoints[] colisionPointTest;
+
+	
+	
+	protected List<Collision> colisionPoints = new ArrayList<>();
 	// protected Quaternion quaternion;
 	// protected Vector3f origin;
 	protected Transform3D transform;
@@ -78,6 +87,11 @@ public abstract class PhysicShape {
 		return type;
 	}
 
+	public void addColision(Collision colision) {
+		colisionPoints.add(colision);
+	}
+	
+	
 	public abstract void updateAABB(Transform3D transform, PhysicCollisionAABB aabb);
 
 	public abstract void updateForNarrowCollision(Transform3D transform);

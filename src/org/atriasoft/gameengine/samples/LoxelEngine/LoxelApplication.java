@@ -184,6 +184,26 @@ public class LoxelApplication extends Application {
 			Entity localBox = new Entity(this.env);
 			Quaternion transform = new Quaternion(0.5f,0.2f,0.4f,1);
 			transform.normalize();
+			localBox.addComponent(new ComponentPosition(new Transform3D(new Vector3f(15,15,14), transform)));
+			localBox.addComponent(new ComponentStaticMesh(new Uri("RES", "cube-one.obj")));
+			localBox.addComponent(new ComponentTexture(new Uri("DATA", "blocks/clay.png")));
+			localBox.addComponent(new ComponentRenderTexturedStaticMesh(
+					new Uri("DATA", "basic.vert"),
+					new Uri("DATA", "basic.frag")));
+			ComponentPhysics physics2 = new ComponentPhysics(true);
+			PhysicBox box2 = new PhysicBox();
+			box2.setSize(new Vector3f(8,8,8));
+			box2.setOrigin(new Vector3f(0,0,0));
+			box2.setMass(1);
+			physics2.addShape(box2);
+			localBox.addComponent(physics2);
+			env.addEntity(localBox);
+		}
+		{
+			// add a cube to test collision ...
+			Entity localBox = new Entity(this.env);
+			Quaternion transform = new Quaternion(0.3f,0.3f,0.4f,1);
+			transform.normalize();
 			localBox.addComponent(new ComponentPosition(new Transform3D(new Vector3f(2,-2,14.2f),transform)));
 			localBox.addComponent(new ComponentStaticMesh(new Uri("RES", "cube-one.obj")));
 			localBox.addComponent(new ComponentTexture(new Uri("DATA", "blocks/clay.png")));

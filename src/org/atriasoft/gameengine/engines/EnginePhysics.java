@@ -2,150 +2,192 @@ package org.atriasoft.gameengine.engines;
 
 import java.util.Vector;
 
+import org.atriasoft.etk.math.Vector3f;
 import org.atriasoft.gale.resource.ResourceColored3DObject;
-import org.atriasoft.gameengine.internal.Log;
 import org.atriasoft.gameengine.Component;
 import org.atriasoft.gameengine.Engine;
 import org.atriasoft.gameengine.Environement;
 import org.atriasoft.gameengine.camera.Camera;
 import org.atriasoft.gameengine.components.ComponentPhysics;
-import org.atriasoft.gameengine.physics.PhysicCollisionAABB;
+import org.atriasoft.gameengine.internal.Log;
 
-public class EnginePhysics extends Engine {
+import net.jreactphysics3d.constraint.ContactPointInfo;
+import net.jreactphysics3d.engine.DynamicsWorld;
+import net.jreactphysics3d.engine.EventListener;
+
+public class EnginePhysics extends Engine implements EventListener {
 	public static final String ENGINE_NAME = "physics";
+	// Constant physics time step
+	private static final float TIME_STEP = 1.0f / 60.0f;
+	boolean propertyDebugAABB = false;
+	boolean propertyDebugShape = false;
+	// Start engine with no gravity
+	private final Vector3f gravity = new Vector3f(0.0f, 0.0f, 0.0f);
 	private float accumulator = 0;
-	private static final float TIME_STEP = 0.005f;
-	private EngineGravity gravity;
-	private Vector<ComponentPhysics> components = new Vector<ComponentPhysics>();
-	private ResourceColored3DObject debugDrawProperty = ResourceColored3DObject.create();
+	//private final EngineGravity gravity;
+	private final DynamicsWorld dynamicsWorld;
 	
-	public EnginePhysics(Environement env) {
+	private final Vector<ComponentPhysics> components = new Vector<ComponentPhysics>();
+	
+	private final ResourceColored3DObject debugDrawProperty = ResourceColored3DObject.create();
+	
+	public EnginePhysics(final Environement env) {
 		super(env);
-		this.gravity = (EngineGravity)env.getEngine("gravity");
+		/*
+		this.gravity = (EngineGravity) env.getEngine("gravity");
 		if (this.gravity == null) {
 			Log.critical("Must initialyse Gravity before physics...");
 		}
+		*/
+		final Vector3f gravity = new Vector3f(0.0f, 0.0f, 0.0f);
+		this.dynamicsWorld = new DynamicsWorld(gravity);
+		// Set the number of iterations of the constraint solver
+		this.dynamicsWorld.setNbIterationsVelocitySolver(15);
+		this.dynamicsWorld.setEventListener(this);
 	}
-
-	@Override
-	public void componentRemove(Component ref) {
-		components.remove(ref);
+	
+	private void applyForces(final float timeStep) {
+		for (final ComponentPhysics it : this.components) {
+			//it.applyForces(TIME_STEP, gravity);
+		}
 	}
-
+	
 	@Override
-	public void componentAdd(Component ref) {
+	public void beginContact(final ContactPointInfo contact) {
+		ComponentPhysics component1 = null;
+		ComponentPhysics component2 = null;
+		// Called when a new contact point is found between two bodies that were separated before.
+		Log.warning("collision detection [BEGIN] " + contact.localPoint1 + " depth=" + contact.penetrationDepth);
+		if (contact.shape1 != null && contact.shape1.getUserData() != null) {
+			component1 = (ComponentPhysics) contact.shape1.getUserData();
+		}
+		if (contact.shape2 != null && contact.shape2.getUserData() != null) {
+			component2 = (ComponentPhysics) contact.shape2.getUserData();
+		}
+		if (component1 != null) {
+			component1.beginContact(component2, contact.normal, contact.localPoint1, contact.localPoint2, contact.penetrationDepth);
+		}
+		if (component2 != null) {
+			component2.beginContact(component1, contact.normal.multiplyNew(-1), contact.localPoint2, contact.localPoint1, contact.penetrationDepth);
+		}
+	}
+	
+	@Override
+	public void beginInternalTick() {
+		// TODO Auto-generated method stub
+		
+	}
+	
+	@Override
+	public void componentAdd(final Component ref) {
 		if (ref instanceof ComponentPhysics == false) {
 			return;
 		}
-		components.add((ComponentPhysics)ref);
+		final ComponentPhysics elem = (ComponentPhysics) ref;
+		this.components.add(elem);
+		elem.generate();
 	}
-
+	
 	@Override
-	public void update(long deltaMili) {
-		// Add the time difference in the accumulator
-		accumulator += (float)deltaMili*0.0001f;
-		// While there is enough accumulated time to take one or several physics steps
-		while (accumulator >= TIME_STEP) {
-			Log.info("update physic ... " + accumulator);
-			//applyForces(TIME_STEP);
-			updateAABB(TIME_STEP);
-			updateCollisionsAABB(TIME_STEP);
-			updateCollisionsNarrowPhase(TIME_STEP);
-			generateResultCollisionsForces(TIME_STEP);
-			// Decrease the accumulated time
-			accumulator -= TIME_STEP;
-		}
-		
+	public void componentRemove(final Component ref) {
+		this.components.remove(ref);
 	}
-
-	private void applyForces(float timeStep) {
-		for (ComponentPhysics it: components) {
-			it.applyForces(TIME_STEP, gravity);
-		}
-	}
-	/**
-	 * Collision detection STEP 1: Upadte the AABB positioning of each elements
-	 * @param timeStep Delta time since the last check
-	 */
-	private void updateAABB(float timeStep) {
-		for (ComponentPhysics it: components) {
-			it.updateAABB();
-		}
-	}
-	/**
-	 * Collision Detection STEP 2: update the list of each element that collide together in the AABB Boxs (update is done between each boxes)
-	 * @param timeStep Delta time since the last check
-	 */
-	private void updateCollisionsAABB(float timeStep) {
-		// clear all object intersection
-		for (ComponentPhysics it: components) {
-			it.clearAABBIntersection();
-		}
-		// update the current object intersection...
-		for (int iii=0; iii< components.size(); iii++) {
-			ComponentPhysics current = components.get(iii);
-			PhysicCollisionAABB currentAABB = current.getAABB();
-			for (int jjj=iii+1; jjj< components.size(); jjj++) {
-				ComponentPhysics remote = components.get(jjj);
-				if (currentAABB.intersect(components.get(jjj).getAABB()) == true) {
-					current.addIntersection(remote); 
-					remote.addIntersection(current);
-				}
-			}
-		}
-	}
-	/**
-	 * Collision Detection STEP 3: Narrow phase: process the collision between every OBB boxes (or other..)  
-	 * @param timeStep Delta time since the last check
-	 */
-	private void updateCollisionsNarrowPhase(float timeStep) {
-		// clear all object intersection
-		for (ComponentPhysics it: components) {
-			it.updateForNarrowCollision();
-		}
-		// check for every component if the narrow collision is available.
-		for (int iii=0; iii< components.size(); iii++) {
-			ComponentPhysics current = components.get(iii);
-			boolean collide = current.checkNarrowCollision();
-			
-		}
-		// update the force of collision available.
-		for (int iii=0; iii< components.size(); iii++) {
-			ComponentPhysics current = components.get(iii);
-			current.narrowCollisionCreateContactAndForce();
-		}
-	}
-	/**
-	 * Collision Detection STEP 4: apply all calculated forces (with containts) 
-	 * @param timeStep 
-	 */
-	private void generateResultCollisionsForces(float timeStep) {
-		
-	}
-
+	
 	@Override
-	public void render(long deltaMili, Camera camera) {
+	public void endInternalTick() {
 		// TODO Auto-generated method stub
-		for (ComponentPhysics it: this.components) {
+		
+	}
+	
+	public DynamicsWorld getDynamicsWorld() {
+		return this.dynamicsWorld;
+	}
+	
+	@Override
+	public String getType() {
+		// TODO Auto-generated method stub
+		return ENGINE_NAME;
+	}
+	
+	@Override
+	public void newContact(final ContactPointInfo contact) {
+		
+		ComponentPhysics component1 = null;
+		ComponentPhysics component2 = null;
+		//Called when a new contact point is found between two bodies.
+		Log.warning("collision detection [ NEW ] " + contact.localPoint1 + " depth=" + contact.penetrationDepth);
+		if (contact.shape1 != null && contact.shape1.getUserData() != null) {
+			component1 = (ComponentPhysics) contact.shape1.getUserData();
+		}
+		if (contact.shape2 != null && contact.shape2.getUserData() != null) {
+			component2 = (ComponentPhysics) contact.shape2.getUserData();
+		}
+		if (component1 != null) {
+			component1.newContact(component2, contact.normal, contact.localPoint1, contact.localPoint2, contact.penetrationDepth);
+		}
+		if (component2 != null) {
+			component2.newContact(component1, contact.normal.multiplyNew(-1), contact.localPoint2, contact.localPoint1, contact.penetrationDepth);
+		}
+	}
+	
+	@Override
+	public void render(final long deltaMili, final Camera camera) {
+		// TODO Auto-generated method stub
+		for (final ComponentPhysics it : this.components) {
 			//Log.info("Render " + it);
-			it.renderDebug(debugDrawProperty);
+			it.renderDebug(this.debugDrawProperty, camera);
 		}
 		//debugDrawProperty.drawCone(2, 5, 9, 12, Matrix4f.identity(), new Color(1,1,0,1));
 		//debugDrawProperty.drawSquare(new Vector3f(1,1,1), Matrix4f.identity(), new Color(1,1,0,1));
 		//debugDrawProperty.drawCubeLine(new Vector3f(1,1,1), new Vector3f(5,5,5), new Color(1,0,1,1), Matrix4f.identity(), true, true);
 		//debugDrawProperty.drawCubeLine(new Vector3f(0,0,0), new Vector3f(32,32,32), new Color(1,0,1,1), Matrix4f.identity(), true, true);
 	}
-
+	
 	@Override
-	public void renderDebug(long deltaMili, Camera camera) {
-		// TODO Auto-generated method stub
-		
+	public void renderDebug(final long deltaMili, final Camera camera) {
+		if (this.propertyDebugShape == true) {
+			for (final ComponentPhysics it : this.components) {
+				it.drawShape(this.debugDrawProperty, camera);
+			}
+		}
+		if (this.propertyDebugAABB == true) {
+			for (final ComponentPhysics it : this.components) {
+				it.renderDebug(this.debugDrawProperty, camera);
+			}
+		}
 	}
-
+	
+	void setGravity(final Vector3f _axePower) {
+		if (this.dynamicsWorld != null) {
+			final Vector3f gravity = _axePower.clone();
+			this.dynamicsWorld.setGravity(gravity);
+		}
+	}
+	
 	@Override
-	public String getType() {
-		// TODO Auto-generated method stub
-		return ENGINE_NAME;
+	public void update(final long deltaMili) {
+		final float deltaTime = deltaMili * 0.0001f;
+		// Add the time difference in the accumulator
+		this.accumulator += deltaTime;
+		// While there is enough accumulated time to take one or several physics steps
+		while (this.accumulator >= TIME_STEP) {
+			if (this.dynamicsWorld != null) {
+				// call every object to usdate their constant forces applyed
+				for (final ComponentPhysics it : this.components) {
+					if (it != null) {
+						it.update(TIME_STEP);
+					}
+				}
+				// Update the Dynamics world with a constant time step
+				Log.debug("Update the Physic engine ... " + TIME_STEP);
+				this.dynamicsWorld.update(TIME_STEP);
+			}
+			// Decrease the accumulated time
+			this.accumulator -= TIME_STEP;
+		}
+		for (final ComponentPhysics elem : this.components) {
+			elem.emitAll();
+		}
 	}
-
+	
 }

@@ -25,8 +25,6 @@ import org.atriasoft.gameengine.components.ComponentTexture;
 import org.atriasoft.gameengine.components.ComponentTextures;
 import org.atriasoft.gameengine.engines.EngineLight;
 import org.atriasoft.gameengine.engines.EngineMap;
-import org.atriasoft.gameengine.physics.PhysicBox;
-import org.atriasoft.gameengine.physics.PhysicMapVoxel;
 
 public class MapVoxel extends EngineMap {
 	//List<VoxelChunk> listOfChunks = new ArrayList<VoxelChunk>();
@@ -75,9 +73,9 @@ public class MapVoxel extends EngineMap {
 				new Uri("DATA", "basicMaterial.frag"),
 				(EngineLight)env.getEngine(EngineLight.ENGINE_NAME)));
 		ComponentPhysics physics = new ComponentPhysics(false);
-		PhysicMapVoxel box = new PhysicMapVoxel(tmpVoxelChunk);
-		physics.addShape(box);
-		physics.setStaticObject(true);
+		//PhysicMapVoxel box = new PhysicMapVoxel(tmpVoxelChunk);
+		//physics.addShape(box);
+		//physics.setStaticObject(true);
 		tmpEntity.addComponent(physics);
 		this.env.addEntity(tmpEntity);
 			

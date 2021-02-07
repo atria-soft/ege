@@ -1,4 +1,4 @@
-package org.atriasoft.gameengine.samples.LoxelEngine;
+package org.atriasoft.gameengine.samples.collisiontest;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -48,7 +48,7 @@ import org.atriasoft.gameengine.map.MapVoxel;
 import org.atriasoft.gameengine.physics.shape.Box;
 import org.atriasoft.gameengine.tools.MeshGenerator;
 
-public class LoxelApplication extends Application {
+public class CollisionTestApplication extends Application {
 	//	public static ComponentPosition relativeTestPos;
 	//	public static Box boxTest;
 	public static List<Vector3f> testPoints = new ArrayList<Vector3f>();
@@ -70,7 +70,7 @@ public class LoxelApplication extends Application {
 	private ComponentPlayer objectPlayer;
 	private ResourceColored3DObject debugDrawProperty;
 	
-	public LoxelApplication() {
+	public CollisionTestApplication() {
 		this.creationDone = false;
 	}
 	
@@ -110,111 +110,6 @@ public class LoxelApplication extends Application {
 		//				new Uri("DATA", "basic.frag")));
 		//		env.addEntity(localLight);
 		{
-			// add a cube to test collision ...
-			final Entity localBox = new Entity(this.env);
-			localBox.addComponent(new ComponentStaticMesh(new Uri("RES", "cube-one.obj")));
-			localBox.addComponent(new ComponentTexture(new Uri("DATA", "blocks/clay.png")));
-			localBox.addComponent(new ComponentLight(new Light(new Vector3f(0, 1, 0), new Vector3f(0, 0, 0), new Vector3f(0.8f, 0.03f, 0.002f))));
-			localBox.addComponent(new ComponentRenderTexturedStaticMesh(new Uri("DATA", "basic.vert"), new Uri("DATA", "basic.frag")));
-			final ComponentPhysics physics2 = new ComponentPhysics(this.env);
-			physics2.setTransform(new Transform3D(new Vector3f(0, 0, 5)));
-			final Box box2 = new Box();
-			box2.setSize(new Vector3f(0.5f, 0.5f, 0.5f));
-			box2.setOrigin(new Vector3f(0, 0, 0));
-			box2.setMass(1);
-			physics2.addShape(box2);
-			localBox.addComponent(physics2);
-			this.env.addEntity(localBox);
-		}
-		/*
-		{
-			// add a cube to test collision ...
-			final Entity localBox = new Entity(this.env);
-			localBox.addComponent(new ComponentStaticMesh(new Uri("RES", "cube-one.obj")));
-			localBox.addComponent(new ComponentTexture(new Uri("DATA", "blocks/clay.png")));
-			localBox.addComponent(new ComponentLight(new Light(new Vector3f(0, 1, 0), new Vector3f(0, 0, 0), new Vector3f(0.8f, 0.03f, 0.002f))));
-			localBox.addComponent(new ComponentRenderTexturedStaticMesh(new Uri("DATA", "basic.vert"), new Uri("DATA", "basic.frag")));
-			final ComponentPhysics physics2 = new ComponentPhysics(this.env);
-			physics2.setTransform(new Transform3D(new Vector3f(0, 4, 12.5f)));
-			final Box box2 = new Box();
-			box2.setSize(new Vector3f(0.5f, 0.5f, 0.5f));
-			box2.setOrigin(new Vector3f(0, 0, 0));
-			box2.setMass(1);
-			physics2.addShape(box2);
-			localBox.addComponent(physics2);
-			this.env.addEntity(localBox);
-		}
-		{
-			// add a cube to test collision ...
-			final Entity localBox = new Entity(this.env);
-			localBox.addComponent(new ComponentStaticMesh(new Uri("RES", "cube-one.obj")));
-			localBox.addComponent(new ComponentTexture(new Uri("DATA", "blocks/clay.png")));
-			localBox.addComponent(new ComponentRenderTexturedStaticMesh(new Uri("DATA", "basic.vert"), new Uri("DATA", "basic.frag")));
-			final ComponentPhysics physics2 = new ComponentPhysics(this.env);
-			physics2.setTransform(new Transform3D(new Vector3f(-2, 2, 14.5f)));
-			final Box box2 = new Box();
-			box2.setSize(new Vector3f(0.5f, 0.5f, 0.5f));
-			box2.setOrigin(new Vector3f(0, 0, 0));
-			box2.setMass(1);
-			physics2.addShape(box2);
-			localBox.addComponent(physics2);
-			this.env.addEntity(localBox);
-		}
-		
-		{
-			// add a cube to test collision ...
-			final Entity localBox = new Entity(this.env);
-			localBox.addComponent(new ComponentStaticMesh(new Uri("RES", "cube-one.obj")));
-			localBox.addComponent(new ComponentTexture(new Uri("DATA", "blocks/clay.png")));
-			localBox.addComponent(new ComponentRenderTexturedStaticMesh(new Uri("DATA", "basic.vert"), new Uri("DATA", "basic.frag")));
-			final ComponentPhysics physics2 = new ComponentPhysics(this.env);
-			physics2.setTransform(new Transform3D(new Vector3f(-5, -5, 14)));
-			final Box box2 = new Box();
-			box2.setSize(new Vector3f(2, 2, 2));
-			box2.setOrigin(new Vector3f(0, 0, 0));
-			box2.setMass(1);
-			physics2.addShape(box2);
-			localBox.addComponent(physics2);
-			this.env.addEntity(localBox);
-		}
-		{
-			// add a cube to test collision ...
-			final Entity localBox = new Entity(this.env);
-			final Quaternion orientation = new Quaternion(0.5f, 0.2f, 0.4f, 1);
-			orientation.normalize();
-			localBox.addComponent(new ComponentStaticMesh(new Uri("RES", "cube-one.obj")));
-			localBox.addComponent(new ComponentTexture(new Uri("DATA", "blocks/clay.png")));
-			localBox.addComponent(new ComponentRenderTexturedStaticMesh(new Uri("DATA", "basic.vert"), new Uri("DATA", "basic.frag")));
-			final ComponentPhysics physics2 = new ComponentPhysics(this.env);
-			physics2.setTransform(new Transform3D(new Vector3f(15, 15, 14), orientation));
-			final Box box2 = new Box();
-			box2.setSize(new Vector3f(4, 4, 4));
-			box2.setOrigin(new Vector3f(0, 0, 0));
-			box2.setMass(1);
-			physics2.addShape(box2);
-			localBox.addComponent(physics2);
-			this.env.addEntity(localBox);
-		}
-		{
-			// add a cube to test collision ...
-			final Entity localBox = new Entity(this.env);
-			final Quaternion orientation = new Quaternion(0.3f, 0.3f, 0.4f, 1);
-			orientation.normalize();
-			localBox.addComponent(new ComponentStaticMesh(new Uri("RES", "cube-one.obj")));
-			localBox.addComponent(new ComponentTexture(new Uri("DATA", "blocks/clay.png")));
-			localBox.addComponent(new ComponentRenderTexturedStaticMesh(new Uri("DATA", "basic.vert"), new Uri("DATA", "basic.frag")));
-			final ComponentPhysics physics2 = new ComponentPhysics(this.env);
-			physics2.setTransform(new Transform3D(new Vector3f(2, -2, 14.2f), orientation));
-			final Box box2 = new Box();
-			box2.setSize(new Vector3f(0.5f, 0.5f, 0.5f));
-			box2.setOrigin(new Vector3f(0, 0, 0));
-			box2.setMass(1);
-			physics2.addShape(box2);
-			localBox.addComponent(physics2);
-			this.env.addEntity(localBox);
-		}
-		*/
-		{
 			// this is the floor
 			final Entity localBox = new Entity(this.env);
 			final Quaternion orientation = new Quaternion(0, 0, 0, 1);
@@ -226,43 +121,30 @@ public class LoxelApplication extends Application {
 			physics2.setBodyType(PhysicBodyType.BODY_STATIC);
 			physics2.setTransform(new Transform3D(new Vector3f(0, 0, 0.0f), orientation));
 			final Box box2 = new Box();
-			box2.setSize(new Vector3f(20.0f, 20.0f, 0.5f));
+			box2.setSize(new Vector3f(5.0f, 5.0f, 0.5f));
 			box2.setOrigin(new Vector3f(0, 0, 0));
 			box2.setMass(0);
 			physics2.addShape(box2);
 			localBox.addComponent(physics2);
 			this.env.addEntity(localBox);
 		}
-		//		{
-		//			// add a cube to test collision ...
-		//			Entity localBox = new Entity(this.env);
-		//			relativeTestPos = new ComponentPosition(new Transform3D(new Vector3f(0,0,14),new Quaternion(0.5f,0.2f,0.4f,1)));
-		//			localBox.addComponent(relativeTestPos);
-		////			localBox.addComponent(new ComponentStaticMesh(new Uri("RES", "cube-one.obj")));
-		////			localBox.addComponent(new ComponentTexture(new Uri("DATA", "blocks/clay.png")));
-		////			localBox.addComponent(new ComponentLight(new Light(new Vector3f(0,1,0), new Vector3f(0,0,0), new Vector3f(0.8f,0.03f,0.002f))));
-		////			localBox.addComponent(new ComponentRenderTexturedStaticMesh(
-		////					new Uri("DATA", "basic.vert"),
-		////					new Uri("DATA", "basic.frag")));
-		//			ComponentPhysics physics2 = new ComponentPhysics(true);
-		//			boxTest = new Box();
-		//			boxTest.setSize(new Vector3f(1,1,1));
-		//			boxTest.setOrigin(new Vector3f(0,0,0));
-		//			boxTest.setMass(1);
-		//			physics2.addShape(boxTest);
-		//			localBox.addComponent(physics2);
-		//			env.addEntity(localBox);
-		//		}
-		//		{
-		//			Entity localBox = new Entity(this.env);
-		//			localBox.addComponent(new ComponentPosition(new Transform3D(new Vector3f(0,0,14))));
-		//			localBox.addComponent(new ComponentStaticMesh(new Uri("RES", "cube-one.obj")));
-		//			localBox.addComponent(new ComponentTexture(new Uri("DATA", "blocks/clay.png")));
-		//			localBox.addComponent(new ComponentRenderTexturedStaticMesh(
-		//					new Uri("DATA", "basic.vert"),
-		//					new Uri("DATA", "basic.frag")));
-		//			env.addEntity(localBox);
-		//		}
+		{
+			// add a cube to test collision ...
+			final Entity localBox = new Entity(this.env);
+			localBox.addComponent(new ComponentStaticMesh(new Uri("RES", "cube-one.obj")));
+			localBox.addComponent(new ComponentTexture(new Uri("DATA", "blocks/clay.png")));
+			localBox.addComponent(new ComponentLight(new Light(new Vector3f(0, 1, 0), new Vector3f(0, 0, 0), new Vector3f(0.8f, 0.03f, 0.002f))));
+			localBox.addComponent(new ComponentRenderTexturedStaticMesh(new Uri("DATA", "basic.vert"), new Uri("DATA", "basic.frag")));
+			final ComponentPhysics physics2 = new ComponentPhysics(this.env);
+			physics2.setTransform(new Transform3D(new Vector3f(0, 0, 0.90f)));
+			final Box box2 = new Box();
+			box2.setSize(new Vector3f(0.5f, 0.5f, 0.5f));
+			box2.setOrigin(new Vector3f(0, 0, 0));
+			box2.setMass(100);
+			physics2.addShape(box2);
+			localBox.addComponent(physics2);
+			this.env.addEntity(localBox);
+		}
 		
 		final Entity gird = new Entity(this.env);
 		gird.addComponent(new ComponentPosition(new Transform3D(new Vector3f(0, 0, 0))));
@@ -288,7 +170,7 @@ public class LoxelApplication extends Application {
 			final Box box = new Box();
 			box.setSize(new Vector3f(0.3f, 0.3f, 0.9f));
 			box.setOrigin(new Vector3f(0, 0, 0.9f));
-			box.setMass(1);
+			box.setMass(100);
 			physics.addShape(box);
 			player.addComponent(physics);
 			this.env.addEntity(player);
@@ -366,9 +248,9 @@ public class LoxelApplication extends Application {
 			this.debugDrawProperty = ResourceColored3DObject.create();
 		}
 		// now render the point test collision ...
-		for (int iii = 0; iii < LoxelApplication.testPoints.size(); iii++) {
-			final Vector3f elem = LoxelApplication.testPoints.get(iii);
-			final boolean collide = LoxelApplication.testPointsCollide.get(iii);
+		for (int iii = 0; iii < CollisionTestApplication.testPoints.size(); iii++) {
+			final Vector3f elem = CollisionTestApplication.testPoints.get(iii);
+			final boolean collide = CollisionTestApplication.testPointsCollide.get(iii);
 			if (collide) {
 				this.debugDrawProperty.drawSquare(new Vector3f(0.1f, 0.1f, 0.1f), Matrix4f.identity().multiplyNew(Matrix4f.createMatrixTranslate(new Vector3f(elem.x, elem.y, elem.z + 14))),
 						new Color(1, 0, 0, 1));
@@ -383,8 +265,8 @@ public class LoxelApplication extends Application {
 						new Color(1, 1, 1, 1));
 			}
 		}
-		for (int iii = 0; iii < LoxelApplication.testPointsBox.size(); iii++) {
-			final Vector3f elem = LoxelApplication.testPointsBox.get(iii);
+		for (int iii = 0; iii < CollisionTestApplication.testPointsBox.size(); iii++) {
+			final Vector3f elem = CollisionTestApplication.testPointsBox.get(iii);
 			if (iii == 0) {
 				this.debugDrawProperty.drawSquare(new Vector3f(0.05f, 0.05f, 0.05f), Matrix4f.identity().multiplyNew(Matrix4f.createMatrixTranslate(new Vector3f(elem.x, elem.y, elem.z + 14))),
 						new Color(0, 1, 0, 1));

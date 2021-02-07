@@ -8,12 +8,56 @@ package org.atriasoft.gameengine.physics.shape;
 import org.atriasoft.etk.math.Quaternion;
 import org.atriasoft.etk.math.Vector3f;
 
-
 public class Shape {
-	private Quaternion orientation = new Quaternion();
+	private Quaternion orientation = Quaternion.identity();
 	private float mass = 1; //!< element mass in "g" then 1000 for 1kg
-	private Vector3f origin = new Vector3f(0,0,0);
-	public boolean parse(String _line) {
+	private Vector3f origin = new Vector3f(0, 0, 0);
+	
+	public void display() {
+		
+	}
+	
+	public float getMass() {
+		return this.mass;
+	}
+	
+	public Quaternion getOrientation() {
+		return this.orientation.clone();
+	}
+	
+	public Vector3f getOrigin() {
+		return this.origin;
+	}
+	
+	public boolean isBox() {
+		return this instanceof Box;
+	};
+	
+	public boolean isCapsule() {
+		return this instanceof Capsule;
+	}
+	
+	public boolean isConcave() {
+		return this instanceof Concave;
+	}
+	
+	public boolean isCone() {
+		return this instanceof Cone;
+	}
+	
+	public boolean isConvexHull() {
+		return this instanceof ConvexHull;
+	};
+	
+	public boolean isCylinder() {
+		return this instanceof Cylinder;
+	};
+	
+	public boolean isSphere() {
+		return this instanceof Sphere;
+	};
+	
+	public boolean parse(final String _line) {
 		/*
 		if(strncmp(_line, "origin:", 7) == 0) {
 			sscanf(&_line[7], "%f %f %f", &m_origin.m_floats[0], &m_origin.m_floats[1], &m_origin.m_floats[2] );
@@ -32,48 +76,18 @@ public class Shape {
 		}
 		*/
 		return false;
-	}
-	public void display() {
-		
-	}
-	public Quaternion getOrientation() {
-		return this.orientation.clone();
-	}
-	public void setOrientation(Quaternion orientation) {
-		this.orientation = orientation;
-	}
-	public Vector3f getOrigin() {
-		return this.origin;
 	};
-	public void setOrigin(Vector3f origin) {
-		this.origin = origin;
-	}
-	public float getMass() {
-		return this.mass;
-	}
-	public void setMass(float mass) {
+	
+	public void setMass(final float mass) {
 		this.mass = mass;
-	}
-	public boolean isBox() {
-		return this instanceof Box;
 	};
-	public boolean isCylinder() {
-		return this instanceof Cylinder;
+	
+	public void setOrientation(final Quaternion orientation) {
+		this.orientation = orientation;
 	};
-	public boolean isCapsule() {
-		return this instanceof Capsule;
-	};
-	public boolean isCone() {
-		return this instanceof Cone;
-	};
-	public boolean isConvexHull() {
-		return this instanceof ConvexHull;
-	};
-	public boolean isSphere() {
-		return this instanceof Sphere;
-	};
-	public boolean isConcave() {
-		return this instanceof Concave;
+	
+	public void setOrigin(final Vector3f origin) {
+		this.origin = origin;
 	};
 }
 /*

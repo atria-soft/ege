@@ -10,42 +10,54 @@ public class ComponentRenderTexturedStaticMesh extends ComponentRender {
 	ComponentStaticMesh mesh = null;
 	ComponentTexture texture = null;
 	ComponentPosition position = null;
+	private ComponentPhysics playerPhysics = null;
 	ResourceProgram program = null;
 	private int GLMatrixTransformation;
 	private int GLMatrixProjection;
 	private int GLMatrixView;
 	
-	public ComponentRenderTexturedStaticMesh(Uri vertexShader, Uri fragmentShader) {
+	public ComponentRenderTexturedStaticMesh(final Uri vertexShader, final Uri fragmentShader) {
 		this.program = ResourceProgram.create(vertexShader, fragmentShader);
 		if (this.program != null) {
 			this.GLMatrixTransformation = this.program.getUniform("in_matrixTransformation");
-			this.GLMatrixProjection     = this.program.getUniform("in_matrixProjection");
-			this.GLMatrixView           = this.program.getUniform("in_matrixView");
+			this.GLMatrixProjection = this.program.getUniform("in_matrixProjection");
+			this.GLMatrixView = this.program.getUniform("in_matrixView");
 		}
 		
 	}
+	
 	@Override
-	public void addFriendComponent(Component component) {
+	public void addFriendComponent(final Component component) {
 		if (component.getType().contentEquals("static-mesh")) {
-			mesh = (ComponentStaticMesh)component;
+			this.mesh = (ComponentStaticMesh) component;
 		}
 		if (component.getType().contentEquals("texture")) {
-			texture = (ComponentTexture)component;
+			this.texture = (ComponentTexture) component;
 		}
 		if (component.getType().contentEquals("position")) {
-			position = (ComponentPosition)component;
+			this.position = (ComponentPosition) component;
+		}
+		if (component.getType().contentEquals("physics")) {
+			this.playerPhysics = (ComponentPhysics) component;
 		}
 	}
+	
 	@Override
-	public void removeFriendComponent(Component component) {
+	public void removeFriendComponent(final Component component) {
 		// nothing to do.
 	}
+	
 	@Override
 	public void render() {
 		this.program.use();
-		Matrix4f projectionMatrix = OpenGL.getMatrix();
-		Matrix4f viewMatrix = OpenGL.getCameraMatrix();
-		Matrix4f transformationMatrix = position.getTransform().getOpenGLMatrix();
+		final Matrix4f projectionMatrix = OpenGL.getMatrix();
+		final Matrix4f viewMatrix = OpenGL.getCameraMatrix();
+		Matrix4f transformationMatrix = null;
+		if (this.position != null) {
+			transformationMatrix = this.position.getTransform().getOpenGLMatrix();
+		} else if (this.playerPhysics != null) {
+			transformationMatrix = this.playerPhysics.getTransform().getOpenGLMatrix();
+		}
 		this.mesh.bindForRendering();
 		this.texture.bindForRendering();
 		this.program.uniformMatrix(this.GLMatrixView, viewMatrix);
@@ -61,4 +73,3 @@ public class ComponentRenderTexturedStaticMesh extends ComponentRender {
 		this.program.unUse();
 	}
 }
-

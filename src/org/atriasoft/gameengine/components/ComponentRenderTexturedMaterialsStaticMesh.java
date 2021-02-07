@@ -9,12 +9,14 @@ import org.atriasoft.gameengine.Component;
 import org.atriasoft.gameengine.Light;
 import org.atriasoft.gameengine.Material;
 import org.atriasoft.gameengine.engines.EngineLight;
+
 public class ComponentRenderTexturedMaterialsStaticMesh extends ComponentRender {
 	private static final int numberOfLight = 8;
 	ComponentStaticMesh mesh = null;
 	ComponentTexture texture = null;
 	ComponentMaterial material = null;
 	ComponentPosition position = null;
+	private ComponentPhysics playerPhysics = null;
 	ResourceProgram program = null;
 	EngineLight lightEngine;
 	private int GLMatrixTransformation;
@@ -26,70 +28,83 @@ public class ComponentRenderTexturedMaterialsStaticMesh extends ComponentRender 
 	private int GLshininess;
 	private GlLightIndex[] GLlights;
 	
-	public ComponentRenderTexturedMaterialsStaticMesh(Uri vertexShader, Uri fragmentShader, EngineLight lightEngine) {
+	public ComponentRenderTexturedMaterialsStaticMesh(final Uri vertexShader, final Uri fragmentShader, final EngineLight lightEngine) {
 		this.lightEngine = lightEngine;
 		this.program = ResourceProgram.create(vertexShader, fragmentShader);
 		if (this.program != null) {
 			this.GLMatrixTransformation = this.program.getUniform("in_matrixTransformation");
-			this.GLMatrixProjection     = this.program.getUniform("in_matrixProjection");
-			this.GLMatrixView           = this.program.getUniform("in_matrixView");
-			this.GLambientFactor        = this.program.getUniform("in_material.ambientFactor");
-			this.GLdiffuseFactor        = this.program.getUniform("in_material.diffuseFactor");
-			this.GLspecularFactor       = this.program.getUniform("in_material.specularFactor");
-			this.GLshininess            = this.program.getUniform("in_material.shininess");
+			this.GLMatrixProjection = this.program.getUniform("in_matrixProjection");
+			this.GLMatrixView = this.program.getUniform("in_matrixView");
+			this.GLambientFactor = this.program.getUniform("in_material.ambientFactor");
+			this.GLdiffuseFactor = this.program.getUniform("in_material.diffuseFactor");
+			this.GLspecularFactor = this.program.getUniform("in_material.specularFactor");
+			this.GLshininess = this.program.getUniform("in_material.shininess");
 			this.GLlights = new GlLightIndex[numberOfLight];
-			for (int iii=0; iii<numberOfLight; iii++) {
-				int color       = this.program.getUniform("in_lights[" + iii + "].color");
-				int position    = this.program.getUniform("in_lights[" + iii + "].position");
-				int attenuation = this.program.getUniform("in_lights[" + iii + "].attenuation");
+			for (int iii = 0; iii < numberOfLight; iii++) {
+				final int color = this.program.getUniform("in_lights[" + iii + "].color");
+				final int position = this.program.getUniform("in_lights[" + iii + "].position");
+				final int attenuation = this.program.getUniform("in_lights[" + iii + "].attenuation");
 				this.GLlights[iii] = new GlLightIndex(color, position, attenuation);
 			}
 		}
 		
 	}
+	
 	@Override
-	public void addFriendComponent(Component component) {
+	public void addFriendComponent(final Component component) {
 		if (component.getType().contentEquals("static-mesh")) {
-			mesh = (ComponentStaticMesh)component;
+			this.mesh = (ComponentStaticMesh) component;
 		}
 		if (component.getType().contentEquals("texture")) {
-			texture = (ComponentTexture)component;
+			this.texture = (ComponentTexture) component;
 		}
 		if (component.getType().contentEquals("material")) {
-			material = (ComponentMaterial)component;
+			this.material = (ComponentMaterial) component;
 		}
 		if (component.getType().contentEquals("position")) {
-			position = (ComponentPosition)component;
+			this.position = (ComponentPosition) component;
+		}
+		if (component.getType().contentEquals("physics")) {
+			this.playerPhysics = (ComponentPhysics) component;
 		}
 	}
+	
 	@Override
-	public void removeFriendComponent(Component component) {
+	public void removeFriendComponent(final Component component) {
 		// nothing to do.
 	}
+	
 	@Override
 	public void render() {
 		this.program.use();
-		Light[] lights = this.lightEngine.getNearest(position.getTransform().getPosition());
-		Matrix4f projectionMatrix = OpenGL.getMatrix();
-		Matrix4f viewMatrix = OpenGL.getCameraMatrix();
-		Matrix4f transformationMatrix = position.getTransform().getOpenGLMatrix();
+		Light[] lights = null;
+		Matrix4f transformationMatrix = null;
+		if (this.position != null) {
+			lights = this.lightEngine.getNearest(this.position.getTransform().getPosition());
+			transformationMatrix = this.position.getTransform().getOpenGLMatrix();
+		} else if (this.playerPhysics != null) {
+			lights = this.lightEngine.getNearest(this.playerPhysics.getTransform().getPosition());
+			transformationMatrix = this.playerPhysics.getTransform().getOpenGLMatrix();
+		}
+		final Matrix4f projectionMatrix = OpenGL.getMatrix();
+		final Matrix4f viewMatrix = OpenGL.getCameraMatrix();
 		this.mesh.bindForRendering();
 		this.texture.bindForRendering();
-
-		Material mat = this.material.getMaterial();
-		this.program.uniformVector(GLambientFactor, mat.getAmbientFactor());
-		this.program.uniformVector(GLdiffuseFactor, mat.getDiffuseFactor());
-		this.program.uniformVector(GLspecularFactor, mat.getSpecularFactor());
-		this.program.uniformFloat(GLshininess, mat.getShininess());
-		for (int iii=0; iii<numberOfLight; iii++) {
+		
+		final Material mat = this.material.getMaterial();
+		this.program.uniformVector(this.GLambientFactor, mat.getAmbientFactor());
+		this.program.uniformVector(this.GLdiffuseFactor, mat.getDiffuseFactor());
+		this.program.uniformVector(this.GLspecularFactor, mat.getSpecularFactor());
+		this.program.uniformFloat(this.GLshininess, mat.getShininess());
+		for (int iii = 0; iii < numberOfLight; iii++) {
 			if (lights[iii] != null) {
 				this.program.uniformVector(this.GLlights[iii].oGLposition, lights[iii].getPositionDelta());
 				this.program.uniformVector(this.GLlights[iii].oGLcolor, lights[iii].getColor());
 				this.program.uniformVector(this.GLlights[iii].oGLattenuation, lights[iii].getAttenuation());
 			} else {
-				this.program.uniformVector(this.GLlights[iii].oGLposition, new Vector3f(0,0,0));
-				this.program.uniformVector(this.GLlights[iii].oGLcolor, new Vector3f(0,0,0));
-				this.program.uniformVector(this.GLlights[iii].oGLattenuation, new Vector3f(1,0,0));
+				this.program.uniformVector(this.GLlights[iii].oGLposition, new Vector3f(0, 0, 0));
+				this.program.uniformVector(this.GLlights[iii].oGLcolor, new Vector3f(0, 0, 0));
+				this.program.uniformVector(this.GLlights[iii].oGLattenuation, new Vector3f(1, 0, 0));
 			}
 		}
 		this.program.uniformMatrix(this.GLMatrixView, viewMatrix);
@@ -105,4 +120,3 @@ public class ComponentRenderTexturedMaterialsStaticMesh extends ComponentRender 
 		this.program.unUse();
 	}
 }
-

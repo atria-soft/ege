@@ -14,5 +14,5 @@ open module org.atriasoft.gameengine {
 	
 	requires transitive org.atriasoft.gale;
 	requires transitive org.atriasoft.etk;
-	requires transitive net.jreactphysics3d;
+	requires transitive org.atriasoft.ephysics;
 }

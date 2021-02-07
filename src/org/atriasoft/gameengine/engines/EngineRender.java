@@ -2,66 +2,49 @@ package org.atriasoft.gameengine.engines;
 
 import java.util.Vector;
 
-import org.atriasoft.gameengine.internal.Log;
 import org.atriasoft.gameengine.Component;
 import org.atriasoft.gameengine.Engine;
 import org.atriasoft.gameengine.Environement;
 import org.atriasoft.gameengine.camera.Camera;
-import org.atriasoft.gameengine.components.ComponentAI;
 import org.atriasoft.gameengine.components.ComponentRender;
-
-class ResultNearestElement {
-	public ComponentRender element;
-	public float dist;
-};
 
 public class EngineRender extends Engine {
 	public static final String ENGINE_NAME = "render";
-	private float accumulator = 0;
 	private static float TIME_STEP = 5.0f;
-	private Vector<ComponentRender> components = new Vector<ComponentRender>();
-	private Vector<ResultNearestElement> displayElementOrdered = new Vector<ResultNearestElement>();
+	private float accumulator = 0;
+	private final Vector<ComponentRender> components = new Vector<ComponentRender>();
+	private final Vector<ResultNearestElement> displayElementOrdered = new Vector<ResultNearestElement>();
+	
 	//private ResourceColored3DObject debugDrawProperty;
-	public EngineRender(Environement env) {
+	public EngineRender(final Environement env) {
 		super(env);
 		// TODO Auto-generated constructor stub
 	}
-
+	
 	@Override
-	public void componentRemove(Component ref) {
-		components.remove(ref);
-	}
-
-	@Override
-	public void componentAdd(Component ref) {
+	public void componentAdd(final Component ref) {
 		if (ref instanceof ComponentRender == false) {
 			return;
 		}
-		components.add((ComponentRender)ref);
+		this.components.add((ComponentRender) ref);
 	}
-
+	
 	@Override
-	public void update(long deltaMili) {
-		// Add the time difference in the accumulator
-		accumulator += (float)deltaMili*0.0001f;
-		// While there is enough accumulated time to take one or several physics steps
-		while (accumulator >= TIME_STEP) {
-			// Log.warning("RENDER: Generate for " + accumulator + " / " + TIME_STEP + "  for:" + components.size());
-			// call every object to usdate their constant forces applyed
-			for (ComponentRender it: components) {
-				it.update(TIME_STEP);
-			}
-			// Decrease the accumulated time
-			accumulator -= TIME_STEP;
-		}
-		
+	public void componentRemove(final Component ref) {
+		this.components.remove(ref);
 	}
-
+	
 	@Override
-	public void render(long deltaMili, Camera camera) {
-		Log.info("Render ...");
+	public String getType() {
+		// TODO Auto-generated method stub
+		return ENGINE_NAME;
+	}
+	
+	@Override
+	public void render(final long deltaMili, final Camera camera) {
+		//Log.info("Render ...");
 		//Matrix4f tmpMatrix;
-		for (ComponentRender it: this.components) {
+		for (final ComponentRender it : this.components) {
 			//Log.info("Render " + it);
 			it.render();
 		}
@@ -83,58 +66,69 @@ public class EngineRender extends Engine {
 		*/
 		
 	}
-
-//	@Override
-//	public void renderDebug(long deltaMili, Camera camera) {
-//		//Log.debug("Draw (start)");
-//		Matrix4f tmpMatrix;
-//		getOrderedElementForDisplay(this.displayElementOrdered, camera->getEye(), camera->getViewVector());
-//		Log.verbose("DRAW : " + this.displayElementOrdered.size() + "/" + this.component.size() + " elements");
-////		if (propertyDebugPhysic.get() == true) {
-////			// Draw debug ... (Object)
-////			for (int32t iii=this.displayElementOrdered.size()-1; iii >= 0; iii--) {
-////				this.displayElementOrdered[iii].element->drawDebug(this.debugDrawProperty, camera);
-////			}
-////			// Draw debug ... (Camera)
-////			/*
-////			etk::Map<etk::String, ege::Camera>> listCamera = this.env->getCameraList();
-////			for (auto &itCam : listCamera) {
-////				if (itCam.second != null) {
-////					itCam.second->drawDebug(this.debugDrawProperty, camera);
-////				}
-////			}
-////			*/
-////		}
-//		if (propertyDebugNormal.get() == true) {
-//			// Draw debug ... (Object)
-//			for (int32t iii=this.displayElementOrdered.size()-1; iii >= 0; iii--) {
-//				this.displayElementOrdered[iii].element.drawNormalDebug(this.debugDrawProperty);
-//			}
-//		}
-////		if (propertyDebugApplication.get() == true) {
-////			// Draw debug ... (User)
-////			signalDisplayDebug.emit(this.debugDrawProperty);
-////		}
-////		/* TODO set it back ...
-////		if (camera != null) {
-////			this.env->getParticuleEngine().draw(*camera);
-////		}
-////		*/
-//		
-//	}
-
+	
+	//	@Override
+	//	public void renderDebug(long deltaMili, Camera camera) {
+	//		//Log.debug("Draw (start)");
+	//		Matrix4f tmpMatrix;
+	//		getOrderedElementForDisplay(this.displayElementOrdered, camera->getEye(), camera->getViewVector());
+	//		Log.verbose("DRAW : " + this.displayElementOrdered.size() + "/" + this.component.size() + " elements");
+	////		if (propertyDebugPhysic.get() == true) {
+	////			// Draw debug ... (Object)
+	////			for (int32t iii=this.displayElementOrdered.size()-1; iii >= 0; iii--) {
+	////				this.displayElementOrdered[iii].element->drawDebug(this.debugDrawProperty, camera);
+	////			}
+	////			// Draw debug ... (Camera)
+	////			/*
+	////			etk::Map<etk::String, ege::Camera>> listCamera = this.env->getCameraList();
+	////			for (auto &itCam : listCamera) {
+	////				if (itCam.second != null) {
+	////					itCam.second->drawDebug(this.debugDrawProperty, camera);
+	////				}
+	////			}
+	////			*/
+	////		}
+	//		if (propertyDebugNormal.get() == true) {
+	//			// Draw debug ... (Object)
+	//			for (int32t iii=this.displayElementOrdered.size()-1; iii >= 0; iii--) {
+	//				this.displayElementOrdered[iii].element.drawNormalDebug(this.debugDrawProperty);
+	//			}
+	//		}
+	////		if (propertyDebugApplication.get() == true) {
+	////			// Draw debug ... (User)
+	////			signalDisplayDebug.emit(this.debugDrawProperty);
+	////		}
+	////		/* TODO set it back ...
+	////		if (camera != null) {
+	////			this.env->getParticuleEngine().draw(*camera);
+	////		}
+	////		*/
+	//		
+	//	}
+	
 	@Override
-	public String getType() {
-		// TODO Auto-generated method stub
-		return ENGINE_NAME;
-	}
-
-	@Override
-	public void renderDebug(long deltaMili, Camera camera) {
+	public void renderDebug(final long deltaMili, final Camera camera) {
 		// TODO Auto-generated method stub
 		
 	}
-
+	
+	@Override
+	public void update(final long deltaMili) {
+		// Add the time difference in the accumulator
+		this.accumulator += deltaMili * 0.0001f;
+		// While there is enough accumulated time to take one or several physics steps
+		while (this.accumulator >= TIME_STEP) {
+			// Log.warning("RENDER: Generate for " + accumulator + " / " + TIME_STEP + "  for:" + components.size());
+			// call every object to usdate their constant forces applyed
+			for (final ComponentRender it : this.components) {
+				it.update(TIME_STEP);
+			}
+			// Decrease the accumulated time
+			this.accumulator -= TIME_STEP;
+		}
+		
+	}
+	
 }
 //	//ResourceColored3DObject debugDrawProperty;
 //	void getOrderedElementForDisplay(etk::Vector<ege::render::Engine::ResultNearestElement>& resultList,
@@ -187,4 +181,9 @@ public class EngineRender extends Engine {
 //				resultList.pushBack(result);
 //			}
 //		}
-//	}
+//	};
+
+class ResultNearestElement {
+	public ComponentRender element;
+	public float dist;
+}

@@ -1,7 +1,18 @@
 package org.atriasoft.gameengine.engines;
 
+import java.util.List;
 import java.util.Vector;
 
+import org.atriasoft.ephysics.body.RigidBody;
+import org.atriasoft.ephysics.collision.ContactManifold;
+import org.atriasoft.ephysics.collision.shapes.AABB;
+import org.atriasoft.ephysics.constraint.ContactPoint;
+import org.atriasoft.ephysics.constraint.ContactPointInfo;
+import org.atriasoft.ephysics.engine.DynamicsWorld;
+import org.atriasoft.ephysics.engine.EventListener;
+import org.atriasoft.ephysics.engine.Island;
+import org.atriasoft.etk.Color;
+import org.atriasoft.etk.math.Matrix4f;
 import org.atriasoft.etk.math.Vector3f;
 import org.atriasoft.gale.resource.ResourceColored3DObject;
 import org.atriasoft.gameengine.Component;
@@ -10,10 +21,6 @@ import org.atriasoft.gameengine.Environement;
 import org.atriasoft.gameengine.camera.Camera;
 import org.atriasoft.gameengine.components.ComponentPhysics;
 import org.atriasoft.gameengine.internal.Log;
-
-import net.jreactphysics3d.constraint.ContactPointInfo;
-import net.jreactphysics3d.engine.DynamicsWorld;
-import net.jreactphysics3d.engine.EventListener;
 
 public class EnginePhysics extends Engine implements EventListener {
 	public static final String ENGINE_NAME = "physics";
@@ -155,9 +162,34 @@ public class EnginePhysics extends Engine implements EventListener {
 				it.renderDebug(this.debugDrawProperty, camera);
 			}
 		}
+		final Matrix4f transformationMatrix = Matrix4f.identity();
+		final Color tmpColor = new Color(0.0f, 0.0f, 1.0f, 0.8f);
+		final List<Island> islands = this.dynamicsWorld.getIslands();
+		for (final Island it : islands) {
+			// TODO compute island AABB to display it ...
+			final AABB islandElements = new AABB();
+			for (final RigidBody elem : it.getBodies()) {
+				final AABB tmp = elem.getAABB();
+				islandElements.mergeWithAABB(tmp);
+			}
+			this.debugDrawProperty.drawCubeLine(islandElements.getMin(), islandElements.getMax(), tmpColor, transformationMatrix, true, true);
+		}
+		
+		final List<ContactManifold> listContact = this.dynamicsWorld.getContactsList();
+		Log.info("nb contact: " + listContact.size());
+		for (final ContactManifold it : listContact) {
+			for (int iii = 0; iii < it.getNbContactPoints(); iii++) {
+				final ContactPoint contact = it.getContactPoint(iii);
+				this.debugDrawProperty.drawSquare(new Vector3f(0.05f, 0.05f, 0.05f), Matrix4f.identity().multiplyNew(Matrix4f.createMatrixTranslate(contact.getWorldPointOnBody1())),
+						new Color(0, 1, 0, 1));
+				this.debugDrawProperty.drawSquare(new Vector3f(0.05f, 0.05f, 0.05f), Matrix4f.identity().multiplyNew(Matrix4f.createMatrixTranslate(contact.getWorldPointOnBody2())),
+						new Color(0, 1, 0, 1));
+			}
+		}
+		
 	}
 	
-	void setGravity(final Vector3f _axePower) {
+	public void setGravity(final Vector3f _axePower) {
 		if (this.dynamicsWorld != null) {
 			final Vector3f gravity = _axePower.clone();
 			this.dynamicsWorld.setGravity(gravity);
@@ -165,14 +197,19 @@ public class EnginePhysics extends Engine implements EventListener {
 	}
 	
 	@Override
-	public void update(final long deltaMili) {
+	public void update(long deltaMili) {
+		Log.error("=================================================================" + deltaMili);
+		if (deltaMili > 1000) {
+			deltaMili = (long) (TIME_STEP * 1000.0f);
+		}
 		final float deltaTime = deltaMili * 0.0001f;
 		// Add the time difference in the accumulator
 		this.accumulator += deltaTime;
 		// While there is enough accumulated time to take one or several physics steps
 		while (this.accumulator >= TIME_STEP) {
+			Log.error("---------------------------------------------------" + TIME_STEP);
 			if (this.dynamicsWorld != null) {
-				// call every object to usdate their constant forces applyed
+				// call every object to usdate their constant forces applied
 				for (final ComponentPhysics it : this.components) {
 					if (it != null) {
 						it.update(TIME_STEP);

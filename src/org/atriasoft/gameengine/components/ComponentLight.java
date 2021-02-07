@@ -6,36 +6,46 @@ import org.atriasoft.gameengine.Light;
 
 public class ComponentLight extends Component {
 	// the material is not a resource, it can change in time... with AI or selection...
-	private Light light;
+	private final Light light;
 	private ComponentPosition position;
-	
-	public ComponentLight(Light light) {
-		super();
-		this.light = light;
-	}
-	public void addFriendComponent(Component component) {
-		if (component.getType().contentEquals("position")) {
-			this.position = (ComponentPosition)component;
-		}
-	}
+	private ComponentPhysics playerPhysics = null;
 	
 	public ComponentLight() {
 		super();
 		this.light = new Light();
 	}
-	@Override
-	public String getType() {
-		return "light";
-	}
-	public Light getLight() {
-		return light;
-	}
-	public void setLight(Light light) {
+	
+	public ComponentLight(final Light light) {
+		super();
 		this.light = light;
 	}
 	
+	@Override
+	public void addFriendComponent(final Component component) {
+		if (component.getType().contentEquals("position")) {
+			this.position = (ComponentPosition) component;
+		}
+		if (component.getType().contentEquals("physics")) {
+			this.playerPhysics = (ComponentPhysics) component;
+		}
+	}
+	
+	public Light getLight() {
+		return this.light;
+	}
+	
 	public Vector3f getPosition() {
-		return position.getTransform().getPosition().clone().add(light.getPositionDelta());
+		if (this.position != null) {
+			return this.position.getTransform().getPosition().clone().add(this.light.getPositionDelta());
+		} else if (this.playerPhysics != null) {
+			return this.playerPhysics.getTransform().getPosition().clone().add(this.light.getPositionDelta());
+		}
+		return null;
+	}
+	
+	@Override
+	public String getType() {
+		return "light";
 	}
 	
 }

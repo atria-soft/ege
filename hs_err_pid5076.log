@@ -1,0 +1,21 @@
+#
+# A fatal error has been detected by the Java Runtime Environment:
+#
+#  SIGSEGV (0xb) at pc=0x00007f6a900e9101, pid=5076, tid=5118
+#
+# JRE version: OpenJDK Runtime Environment (14.0.2+13) (build 14.0.2+13)
+# Java VM: OpenJDK 64-Bit Server VM (14.0.2+13, mixed mode, sharing, tiered, compressed oops, g1 gc, linux-amd64)
+# Problematic frame:
+# C  [libjimage.so+0x4101]  ImageStrings::find(Endian*, char const*, int*, unsigned int)+0x71
+#
+# Core dump will be written. Default location: Core dumps may be processed with "/usr/lib/systemd/systemd-coredump %P %u %g %s %t %c %h" (or dumping to /home/heero/dev/workspace-game2/atriasoft/ege/core.5076)
+#
+# If you would like to submit a bug report, please visit:
+#   https://bugreport.java.com/bugreport/crash.jsp
+#
+
+---------------  S U M M A R Y ------------
+
+Command Line: -XX:+ShowCodeDetailsInExceptionMessages -agentlib:jdwp=transport=dt_socket,suspend=y,address=localhost:39203 -javaagent:/home/heero/.local/application/eclipse.app/eclipse/configuration/org.eclipse.osgi/1064/0/.cp/lib/javaagent-shaded.jar -Dfile.encoding=UTF-8 --module-path=/home/heero/dev/workspace-game2/atriasoft/ege/out/eclipse/classes:/home/heero/dev/workspace-game2/scenarium/logger/out/eclipse/classes:/home/heero/dev/workspace-game2/atriasoft/etk/out/eclipse/classes:/home/heero/dev/workspace-game2/atriasoft/gale/out/eclipse/classes:/home/heero/dev/workspace-game2/atriasoft/gale/lib/lwjgl3-awt-0.1.7.jar:/home/heero/dev/workspace-game2/atriasoft/gale/lib/pngdecoder.jar:/home/heero/dev/workspace-game2/atriasoft/gale/lib/lwjgl/lwjgl.jar:/home/heero/dev/workspace-game2/atriasoft/gale/lib/lwjgl/lwjgl-assimp.jar:/home/heero/dev/workspace-game2/atriasoft/gale/lib/lwjgl/lwjgl-assimp-natives-linux.jar:/home/heero/dev/workspace-game2/atriasoft/gale/lib/lwjgl/lwjgl-glfw.jar:/home/heero/dev/workspace-game2/atriasoft/gale/lib/lwjgl/lwjgl-glfw-natives-linux.jar:/home/heero/dev/workspace-game2/atriasoft/gale/lib/lwjgl/lwjgl-jawt.jar:/home/heero/dev/workspace-game2/atriasoft/gale/lib/lwjgl/lwjgl-natives-linux.jar:/home/heero/dev/workspace-game2/atriasoft/gale/lib/lwjgl/lwjgl-opengl.jar:/home/heero/dev/workspace-game2/atriasoft/gale/lib/lwjgl/lwjgl-stb.jar:/home/heero/dev/workspace-game2/atriasoft/gale/lib/lwjgl/lwjgl-stb-natives-linux.jar:/home/heero/dev/workspace-game2/atriasoft/gale/lib/lwjgl/lwjgl-opengl-natives-linux.jar:/home/heero/dev/workspace-game2/jReactPhysics3D/out/eclipse/classes -Djdk.module.main=org.atriasoft.gameengine org.atriasoft.gameengine/org.atriasoft.gameengine.samples.LoxelEngine.MainLoxelEngine
+
+Host: 

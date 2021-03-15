@@ -22,7 +22,7 @@
 			<attribute name="test" value="true"/>
 		</attributes>
 	</classpathentry>
-	<classpathentry combineaccessrules="false" kind="src" path="/scenarium-logger">
+	<classpathentry combineaccessrules="false" kind="src" path="/atriasoft-gale">
 		<attributes>
 			<attribute name="module" value="true"/>
 		</attributes>
@@ -32,12 +32,12 @@
 			<attribute name="module" value="true"/>
 		</attributes>
 	</classpathentry>
-	<classpathentry combineaccessrules="false" kind="src" path="/atriasoft-gale">
+	<classpathentry combineaccessrules="false" kind="src" path="/scenarium-logger">
 		<attributes>
 			<attribute name="module" value="true"/>
 		</attributes>
 	</classpathentry>
-	<classpathentry combineaccessrules="false" kind="src" path="/jReactPhysics3D">
+	<classpathentry combineaccessrules="false" kind="src" path="/atriasoft-ephysics">
 		<attributes>
 			<attribute name="module" value="true"/>
 		</attributes>

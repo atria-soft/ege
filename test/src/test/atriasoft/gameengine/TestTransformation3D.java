@@ -1,11 +1,11 @@
-package test.atriasoft.gameengine;
+package test.atriasoft.ege;
 
-import org.atriasoft.gameengine.geometry.AABB;
-import org.atriasoft.gameengine.geometry.OBB;
-import org.atriasoft.gameengine.geometry.Geometry3D;
-import org.atriasoft.gameengine.geometry.Plane;
-import org.atriasoft.gameengine.geometry.Sphere;
-import org.atriasoft.gameengine.geometry.Triangle;
+import org.atriasoft.ege.geometry.AABB;
+import org.atriasoft.ege.geometry.OBB;
+import org.atriasoft.ege.geometry.Geometry3D;
+import org.atriasoft.ege.geometry.Plane;
+import org.atriasoft.ege.geometry.Sphere;
+import org.atriasoft.ege.geometry.Triangle;
 import org.atriasoft.etk.math.Matrix3f;
 import org.atriasoft.etk.math.Vector3f;
 import org.junit.jupiter.api.Test;

@@ -1,10 +1,10 @@
-package test.atriasoft.gameengine;
+package test.atriasoft.ege;
 
 import io.scenarium.logger.LogLevel;
 import io.scenarium.logger.Logger;
 
 public class Log2 {
-	private static final String LIB_NAME = "gameengine-test-2";
+	private static final String LIB_NAME = "ege-test-2";
 	private static final String LIB_NAME_DRAW = Logger.getDrawableName(LIB_NAME);
 	private static final boolean PRINT_DEBUG = Logger.getNeedPrint(LIB_NAME, LogLevel.DEBUG);
 

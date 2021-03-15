@@ -1,5 +1,5 @@
 package engineTester;
-import org.atriasoft.gameengine.Environement;
+import org.atriasoft.ege.Environement;
 import org.lwjgl.*;
 import org.lwjgl.glfw.*;
 import org.lwjgl.opengl.*;

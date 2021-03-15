@@ -6,7 +6,7 @@
  * Contributors:
  *     Revilloud Marc - initial API and implementation
  ******************************************************************************/
-package test.atriasoft.gameengine;
+package test.atriasoft.ege;
 
 import java.util.ArrayList;
 import java.util.List;

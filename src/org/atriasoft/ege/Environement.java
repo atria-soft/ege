@@ -5,15 +5,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import org.atriasoft.etk.math.Vector2f;
-import org.atriasoft.ewol.event.EventEntry;
-import org.atriasoft.gale.backend3d.OpenGL;
-import org.atriasoft.gale.event.EventInput;
-import org.atriasoft.gale.event.EventTime;
-import org.atriasoft.gale.key.KeyKeyboard;
-import org.atriasoft.gale.key.KeySpecial;
-import org.atriasoft.gale.key.KeyStatus;
-import org.atriasoft.gale.key.KeyType;
+import org.atriasoft.echrono.Clock;
 import org.atriasoft.ege.camera.Camera;
 import org.atriasoft.ege.engines.EngineAI;
 import org.atriasoft.ege.engines.EngineDynamicMeshs;
@@ -25,12 +17,21 @@ import org.atriasoft.ege.engines.EnginePlayer;
 import org.atriasoft.ege.engines.EngineRender;
 import org.atriasoft.ege.internal.Log;
 //import org.atriasoft.ege.resource.Mesh;
+import org.atriasoft.etk.math.Vector2f;
+import org.atriasoft.ewol.event.EventEntry;
+import org.atriasoft.ewol.event.EventInput;
+import org.atriasoft.ewol.event.EventTime;
+import org.atriasoft.gale.backend3d.OpenGL;
+import org.atriasoft.gale.key.KeyKeyboard;
+import org.atriasoft.gale.key.KeySpecial;
+import org.atriasoft.gale.key.KeyStatus;
+import org.atriasoft.gale.key.KeyType;
 
 public class Environement {
-	private static Map<String, CreatorEntity> creators = new HashMap<String, CreatorEntity>();
+	private static Map<String, CreatorEntity> creators = new HashMap<>();
 	
 	/**
-	 * @brief add a creator entity system
+	 * add a creator entity system
 	 * @param type Type of the entity.
 	 * @param creator Function pointer that reference the entity creating.
 	 */
@@ -45,21 +46,21 @@ public class Environement {
 		
 	}
 	
-	public Signal<Float> signalPlayTimeChange = new Signal<Float>();
+	public Signal<Float> signalPlayTimeChange = new Signal<>();
 	private GameStatus propertyStatus = GameStatus.gameStop; // !< the display is running (not in pause)
 	public float propertyRatio = 1.0f; // !< Speed ratio
-	protected List<Engine> engines = new ArrayList<Engine>(); // !< EGE sub engine interface (like physique, rendering,
+	protected List<Engine> engines = new ArrayList<>(); // !< EGE sub engine interface (like physique, rendering,
 	// audio, ...).
-	private final List<Entity> listEntity = new ArrayList<Entity>(); // !< List of all entity added in the Game
+	private final List<Entity> listEntity = new ArrayList<>(); // !< List of all entity added in the Game
 	
-	List<ControlInterface> controls = new ArrayList<ControlInterface>();
-	long lastCallTime = 0;
+	List<ControlInterface> controls = new ArrayList<>();
+	Clock lastCallTime;
 	// ! list of all camera in the world
-	protected Map<String, Camera> listCamera = new HashMap<String, Camera>();
+	protected Map<String, Camera> listCamera = new HashMap<>();
 	
 	protected long gameTime = 0; // !< time of the game running
 	
-	private long startTime;
+	Clock startTime;
 	
 	//protected List<Mesh> listMeshToDrawFirst = new ArrayList<Mesh>();
 	public Environement() {
@@ -74,7 +75,7 @@ public class Environement {
 	}
 	
 	/**
-	 * @brief Add a camera in the camera pool.
+	 * Add a camera in the camera pool.
 	 * @param name Name of the camera.
 	 * @param camera Pointer on the camera to add.
 	 */
@@ -103,7 +104,7 @@ public class Environement {
 	}
 	
 	/**
-	 * @brief add an entity on the list availlable.
+	 * add an entity on the list availlable.
 	 * @param newEntity Entity to add.
 	 */
 	public void addEntity(final Entity newEntity) {
@@ -116,7 +117,7 @@ public class Environement {
 	}
 	
 	/**
-	 * @brief Remove all from the current environement
+	 * Remove all from the current environement
 	 */
 	public void clear() {
 		this.listEntity.clear();
@@ -127,7 +128,7 @@ public class Environement {
 	}
 	
 	/**
-	 * @brief Create an entity on the curent scene.
+	 * Create an entity on the curent scene.
 	 * @param type Type of the entity that might be created.
 	 * @param description String that describe the content of the entity
 	 *            properties.
@@ -178,7 +179,7 @@ public class Environement {
 	}
 	
 	/**
-	 * @brief generate an event on all the sub entity of the game == > usefull for
+	 * generate an event on all the sub entity of the game == > usefull for
 	 *        explosion, or lazer fire ...
 	 * @param event event that might be apply ...
 	 */
@@ -271,7 +272,7 @@ public class Environement {
 	//	}
 	
 	/**
-	 * @brief Get a specific camera.
+	 * Get a specific camera.
 	 * @param name Name of the camera.
 	 * @return A pointer on the camera requested.
 	 */
@@ -280,7 +281,7 @@ public class Environement {
 	}
 	
 	/**
-	 * @brief Get List of all camera.
+	 * Get List of all camera.
 	 * @return All the camera registerred.
 	 */
 	public Map<String, Camera> getCameraList() {
@@ -324,18 +325,18 @@ public class Environement {
 	}
 	
 	public void periodicCall() {
-		if (this.lastCallTime == 0) {
-			this.startTime = System.nanoTime() / 1000;
+		if (this.lastCallTime == null) {
+			this.startTime = Clock.now();
 			this.lastCallTime = this.startTime;
 		}
-		final long lastUpdate = this.lastCallTime;
-		this.lastCallTime = System.nanoTime() / 1000;
-		final EventTime event = new EventTime(this.lastCallTime, this.lastCallTime - this.startTime, this.lastCallTime - lastUpdate, this.lastCallTime - lastUpdate);
+		final Clock lastUpdate = this.lastCallTime;
+		this.lastCallTime = Clock.now();
+		final EventTime event = new EventTime(this.lastCallTime, this.startTime, this.lastCallTime.less(lastUpdate), this.lastCallTime.less(lastUpdate));
 		for (final ControlInterface elem : this.controls) {
 			elem.periodicCall(event);
 		}
 		for (final Engine engine : this.engines) {
-			engine.update((this.lastCallTime - lastUpdate) / 100);
+			engine.update(this.lastCallTime.less(lastUpdate).get() / 100);
 		}
 	};
 	
@@ -388,7 +389,7 @@ public class Environement {
 	}
 	
 	/**
-	 * @brief remove an entity on the list availlable.
+	 * remove an entity on the list availlable.
 	 * @param removeEntity Entity to remove.
 	 */
 	public void rmEntity(final Entity removeEntity) {

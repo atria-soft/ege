@@ -7,12 +7,12 @@ import renderEngine.DisplayManager;
 import terrains.Terrain;
 
 public class Player extends Entity {
-
+	
 	private static final float RUN_SPEED = 35;
 	private static final float TRUN_SPEED = (float) Math.toRadians(120);
 	private static final float GRAVITY = -50;
 	private static final float JUMP_POWER = 30;
-
+	
 	private static final float TERRAIN_HEIGHT = 0;
 	
 	private float currentSpeed = 0;
@@ -21,36 +21,9 @@ public class Player extends Entity {
 	
 	private boolean isInAir = false;
 	
-	public Player(TexturedModel model, Vector3f position, Vector3f rotation, float scale) {
+	public Player(final TexturedModel model, final Vector3f position, final Vector3f rotation, final float scale) {
 		super(model, position, rotation, scale);
-
-	}
-
-	public void move(Terrain terrain) {
-		checkInputs();
-		if (isInAir == false) {
-			super.increaseRotation(0, this.currentTurnSpeed * DisplayManager.getFrameTimeSecconds(), 0);
-		}
-		float distance = currentSpeed * DisplayManager.getFrameTimeSecconds();
-		float dx = (float) (distance * Math.sin(super.getRotation().y));
-		float dz = (float) (distance * Math.cos(super.getRotation().y));
-		super.increasePosition(dx, 0, dz);
-		upwardSpeed += GRAVITY * DisplayManager.getFrameTimeSecconds();
-		super.increasePosition(0, upwardSpeed * DisplayManager.getFrameTimeSecconds(), 0);
-		float terrainHeight = terrain.getHeightOfTerrain(super.getPosition().x, super.getPosition().z);
-		if (super.getPosition().y < terrainHeight) {
-			upwardSpeed = 0;
-			super.getPosition().y = terrainHeight;
-			isInAir = false;
-		}
-	}
-	
-	private void jump() {
-		if (isInAir == true) {
-			return;
-		}
-		this.upwardSpeed = JUMP_POWER;
-		isInAir = true;
+		
 	}
 	
 	public void checkInputs() {
@@ -70,10 +43,37 @@ public class Player extends Entity {
 		} else if (DisplayManager.isKeyDown('d')) {
 			this.currentTurnSpeed = -TRUN_SPEED;
 		} else {
-			this.currentTurnSpeed = 0; 
+			this.currentTurnSpeed = 0;
 		}
 		if (DisplayManager.isKeyDown(' ')) {
-			this.jump(); 
+			jump();
+		}
+	}
+	
+	private void jump() {
+		if (this.isInAir == true) {
+			return;
+		}
+		this.upwardSpeed = JUMP_POWER;
+		this.isInAir = true;
+	}
+	
+	public void move(final Terrain terrain) {
+		checkInputs();
+		if (this.isInAir == false) {
+			super.increaseRotation(0, this.currentTurnSpeed * DisplayManager.getFrameTimeSecconds(), 0);
+		}
+		float distance = this.currentSpeed * DisplayManager.getFrameTimeSecconds();
+		float dx = (float) (distance * Math.sin(super.getRotation().y()));
+		float dz = (float) (distance * Math.cos(super.getRotation().y()));
+		super.increasePosition(dx, 0, dz);
+		this.upwardSpeed += GRAVITY * DisplayManager.getFrameTimeSecconds();
+		super.increasePosition(0, this.upwardSpeed * DisplayManager.getFrameTimeSecconds(), 0);
+		float terrainHeight = terrain.getHeightOfTerrain(super.getPosition().x(), super.getPosition().z());
+		if (super.getPosition().y() < terrainHeight) {
+			this.upwardSpeed = 0;
+			super.setPosition(new Vector3f(super.getPosition().x(), terrainHeight, super.getPosition().z()));
+			this.isInAir = false;
 		}
 	}
 	

@@ -1,6 +1,7 @@
 package org.atriasoft.ege.engines;
 
-import java.util.Vector;
+import java.util.ArrayList;
+import java.util.List;
 
 import org.atriasoft.ege.internal.Log;
 import org.atriasoft.ege.Component;
@@ -12,8 +13,8 @@ import org.atriasoft.ege.components.ComponentAI;
 public class EngineAI extends Engine {
 	public static final String ENGINE_NAME = "ia";
 	private float accumulator = 0;
-	private static float TIME_STEP = 5.0f;
-	private Vector<ComponentAI> components = new Vector<ComponentAI>();
+	private static final float TIME_STEP = 5.0f;
+	private final List<ComponentAI> components = new ArrayList<ComponentAI>();
 	public EngineAI(Environement env) {
 		super(env);
 		// TODO Auto-generated constructor stub
@@ -26,7 +27,7 @@ public class EngineAI extends Engine {
 
 	@Override
 	public void componentAdd(Component ref) {
-		if (ref instanceof ComponentAI == false) {
+		if (!(ref instanceof ComponentAI)) {
 			return;
 		}
 		components.add((ComponentAI)ref);

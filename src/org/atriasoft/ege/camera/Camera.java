@@ -7,7 +7,7 @@ import org.atriasoft.etk.math.Vector3f;
 //import renderEngine.DisplayManager;
 
 public class Camera {
-	private Vector3f position = new Vector3f(0,0,2);
+	private Vector3f position = new Vector3f(0, 0, 2);
 	private float pitch = 0;
 	private float yaw = 0;
 	private float roll = 0;
@@ -15,43 +15,46 @@ public class Camera {
 	public Camera() {
 		
 	}
-
+	
 	public Matrix4f getConvertionMatrix() {
-		Matrix4f matrix = new Matrix4f();
-		matrix.setIdentity();
-		matrix.rotate(new Vector3f(1,0,0), getPitch());
-		matrix.rotate(new Vector3f(0,1,0), getYaw());
-		matrix.rotate(new Vector3f(0,0,1), getRoll());
-		matrix.translate(new Vector3f(-position.x,-position.y,-position.z));
+		Matrix4f matrix = Matrix4f.IDENTITY;
+		matrix = matrix.rotate(new Vector3f(1, 0, 0), getPitch());
+		matrix = matrix.rotate(new Vector3f(0, 1, 0), getYaw());
+		matrix = matrix.rotate(new Vector3f(0, 0, 1), getRoll());
+		matrix = matrix.translate(new Vector3f(-this.position.x(), -this.position.y(), -this.position.z()));
 		return matrix;
 	}
-	public Vector3f getPosition() {
-		return position;
-	}
-	public void setPosition(Vector3f position) {
-		this.position = position;
-	}
-
+	
 	public float getPitch() {
-		return pitch;
+		return this.pitch;
 	}
-
-	public void setPitch(float pitch) {
+	
+	public Vector3f getPosition() {
+		return this.position;
+	}
+	
+	public float getRoll() {
+		return this.roll;
+	}
+	
+	public float getYaw() {
+		return this.yaw;
+	}
+	
+	public void setPitch(final float pitch) {
 		this.pitch = pitch;
 	}
-
-	public float getYaw() {
-		return yaw;
+	
+	public void setPosition(final Vector3f position) {
+		this.position = position;
 	}
-	public void setYaw(float yaw) {
-		this.yaw = yaw;
-	}
-
-	public float getRoll() {
-		return roll;
-	}
-	public void setRoll(float roll) {
+	
+	public void setRoll(final float roll) {
 		this.roll = roll;
+	}
+	
+	public void setYaw(final float yaw) {
+		this.yaw = yaw;
 	}
 	
 }

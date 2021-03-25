@@ -6,6 +6,17 @@ import java.util.List;
 import org.atriasoft.ege.Component;
 import org.atriasoft.ege.Environement;
 import org.atriasoft.ege.Signal;
+import org.atriasoft.ege.camera.Camera;
+import org.atriasoft.ege.engines.EnginePhysics;
+import org.atriasoft.ege.internal.Log;
+import org.atriasoft.ege.physics.shape.Box;
+import org.atriasoft.ege.physics.shape.Capsule;
+import org.atriasoft.ege.physics.shape.Concave;
+import org.atriasoft.ege.physics.shape.Cone;
+import org.atriasoft.ege.physics.shape.ConvexHull;
+import org.atriasoft.ege.physics.shape.Cylinder;
+import org.atriasoft.ege.physics.shape.Shape;
+import org.atriasoft.ege.physics.shape.Sphere;
 import org.atriasoft.ephysics.body.BodyType;
 import org.atriasoft.ephysics.body.RigidBody;
 import org.atriasoft.ephysics.collision.ProxyShape;
@@ -26,17 +37,6 @@ import org.atriasoft.etk.math.Quaternion;
 import org.atriasoft.etk.math.Transform3D;
 import org.atriasoft.etk.math.Vector3f;
 import org.atriasoft.gale.resource.ResourceColored3DObject;
-import org.atriasoft.ege.camera.Camera;
-import org.atriasoft.ege.engines.EnginePhysics;
-import org.atriasoft.ege.internal.Log;
-import org.atriasoft.ege.physics.shape.Box;
-import org.atriasoft.ege.physics.shape.Capsule;
-import org.atriasoft.ege.physics.shape.Concave;
-import org.atriasoft.ege.physics.shape.Cone;
-import org.atriasoft.ege.physics.shape.ConvexHull;
-import org.atriasoft.ege.physics.shape.Cylinder;
-import org.atriasoft.ege.physics.shape.Shape;
-import org.atriasoft.ege.physics.shape.Sphere;
 
 public class ComponentPhysics extends Component {
 	public Signal<Transform3D> signalPosition = new Signal<>();;
@@ -53,12 +53,12 @@ public class ComponentPhysics extends Component {
 	protected List<Shape> shape = new ArrayList<>(); //!< collision shape module ... (independent of bullet lib)
 	
 	/**
-	 * @brief Create a basic position component (no orientation and position (0,0,0))
+	 * Create a basic position component (no orientation and position (0,0,0))
 	 */
 	public ComponentPhysics(final Environement _env) {
 		this.engine = (EnginePhysics) _env.getEngine(getType());
 		// Initial position and orientation of the rigid body
-		this.lastTransformEmit = new Transform3D(new Vector3f(0, 0, 0), Quaternion.identity());
+		this.lastTransformEmit = new Transform3D(new Vector3f(0, 0, 0), Quaternion.IDENTITY);
 		this.rigidBody = this.engine.getDynamicsWorld().createRigidBody(this.lastTransformEmit);
 		this.rigidBody.setUserData(this);
 		// set collision callback:
@@ -71,8 +71,8 @@ public class ComponentPhysics extends Component {
 	}
 	
 	/**
-	 * @brief Create a basic position component
-	 * @param[in] _transform transformation of the position
+	 * Create a basic position component
+	 * @param _transform transformation of the position
 	 */
 	public ComponentPhysics(final Environement _env, final Transform3D _transform) {
 		this.engine = (EnginePhysics) _env.getEngine(getType());
@@ -106,12 +106,12 @@ public class ComponentPhysics extends Component {
 	}
 	
 	/**
-		 * @brief Apply an external force to the body at a given point (in world-space coordinates).
-		 *        If the point is not at the center of mass of the body, it will also generate some torque and therefore, change the angular velocity of the body.
-		 *        If the body is sleeping, calling this method will wake it up. Note that the force will we added to the sum of the applied forces and that this sum will be reset to zero at the end of each call of the DynamicsWorld::update() method. You can only apply a force to a dynamic body otherwise, this method will do nothing.
-		 * @param[in] _force The force to apply on the body
-		 * @param[in] _point The point where the force is applied (in world-space coordinates)
-		 */
+	 * Apply an external force to the body at a given point (in world-space coordinates).
+	 *        If the point is not at the center of mass of the body, it will also generate some torque and therefore, change the angular velocity of the body.
+	 *        If the body is sleeping, calling this method will wake it up. Note that the force will we added to the sum of the applied forces and that this sum will be reset to zero at the end of each call of the DynamicsWorld::update() method. You can only apply a force to a dynamic body otherwise, this method will do nothing.
+	 * @param _force The force to apply on the body
+	 * @param _point The point where the force is applied (in world-space coordinates)
+	 */
 	public void applyForce(final Vector3f _force, final Vector3f _point) {
 		if (this.rigidBody == null) {
 			return;
@@ -120,12 +120,11 @@ public class ComponentPhysics extends Component {
 	}
 	
 	/**
-		 * @brief Apply an external force to the body at its center of mass.
-		 *        If the body is sleeping, calling this method will wake it up.
-		 * @note The force will we added to the sum of the applied forces and that this sum will be reset to zero at the end of each call of the DynamicsWorld::update() method. You can only apply a force to a dynamic body otherwise, this method will do nothing.
-		 * @param[in] _force The external force to apply on the center of mass of the body
-		 * @param[in] _static The torque will be apply while the user des not call the same function with 0 value ...
-		 */
+	 * Apply an external force to the body at its center of mass.
+	 *        If the body is sleeping, calling this method will wake it up.
+	 * @note The force will we added to the sum of the applied forces and that this sum will be reset to zero at the end of each call of the DynamicsWorld::update() method. You can only apply a force to a dynamic body otherwise, this method will do nothing.
+	 * @param _force The external force to apply on the center of mass of the body
+	 */
 	public void applyForceToCenterOfMass(final Vector3f _force) {
 		if (this.rigidBody == null) {
 			return;
@@ -141,12 +140,11 @@ public class ComponentPhysics extends Component {
 	}
 	
 	/**
-	 * @brief Apply an external force to the body at its center of mass.
+	 * Apply an external force to the body at its center of mass.
 	 *        If the body is sleeping, calling this method will wake it up.
 	 * @note The force is apply with a relative axis of the object
 	 * @note The force will we added to the sum of the applied forces and that this sum will be reset to zero at the end of each call of the DynamicsWorld::update() method. You can only apply a force to a dynamic body otherwise, this method will do nothing.
-	 * @param[in] _force The external force to apply on the center of mass of the body
-	 * @param[in] _static The torque will be apply while the user des not call the same function with 0 value ...
+	 * @param _force The external force to apply on the center of mass of the body
 	 */
 	public void applyRelativeForceToCenterOfMass(final Vector3f _force) {
 		if (this.rigidBody == null) {
@@ -160,18 +158,16 @@ public class ComponentPhysics extends Component {
 		if (this.rigidBody == null) {
 			return;
 		}
-		final Vector3f force = this.rigidBody.getTransform().getOrientation().multiply(_force);
 		
-		this.staticForceApplyCenterOfMass = force;
+		this.staticForceApplyCenterOfMass = this.rigidBody.getTransform().getOrientation().multiply(_force);
 	}
 	
 	/**
-	 * @brief Apply an external torque to the body.
+	 * Apply an external torque to the body.
 	 *        If the body is sleeping, calling this method will wake it up.
 	 * @note The torque is apply with a relative axis of the object
 	 * @note The force will we added to the sum of the applied torques and that this sum will be reset to zero at the end of each call of the DynamicsWorld::update() method. You can only apply a force to a dynamic body otherwise, this method will do nothing.
-	 * @param[in] _torque The external torque to apply on the body
-	 * @param[in] _static The torque will be apply while the user des not call the same function with 0 value ...
+	 * @param _torque The external torque to apply on the body
 	 */
 	public void applyRelativeTorque(final Vector3f _torque) {
 		if (this.rigidBody == null) {
@@ -185,16 +181,14 @@ public class ComponentPhysics extends Component {
 		if (this.rigidBody == null) {
 			return;
 		}
-		final Vector3f torque = this.rigidBody.getTransform().getOrientation().multiply(_torque);
-		this.staticTorqueApply = torque;
+		this.staticTorqueApply = this.rigidBody.getTransform().getOrientation().multiply(_torque);
 	}
 	
 	/**
-	 * @brief Apply an external torque to the body.
+	 * Apply an external torque to the body.
 	 *        If the body is sleeping, calling this method will wake it up.
 	 * @note The force will we added to the sum of the applied torques and that this sum will be reset to zero at the end of each call of the DynamicsWorld::update() method. You can only apply a force to a dynamic body otherwise, this method will do nothing.
-	 * @param[in] _torque The external torque to apply on the body
-	 * @param[in] _static The torque will be apply while the user des not call the same function with 0 value ...
+	 * @param _torque The external torque to apply on the body
 	 */
 	public void applyTorque(final Vector3f _torque) {
 		if (this.rigidBody == null) {
@@ -211,12 +205,12 @@ public class ComponentPhysics extends Component {
 	}
 	
 	/**
-	 * @brief Called when a new contact point is found between two bodies that were separated before.
-	 * @param[in] _other The other component that have the impact
-	 * @param[in] _normal Normal of the impact
-	 * @param[in] _pos Position of the impact at the current object
-	 * @param[in] _posOther Position of the impact at the other object
-	 * @param[in] _penetrationDepth Depth penetration in the object
+	 * Called when a new contact point is found between two bodies that were separated before.
+	 * @param _other The other component that have the impact
+	 * @param _normal Normal of the impact
+	 * @param _pos Position of the impact at the current object
+	 * @param _posOther Position of the impact at the other object
+	 * @param _penetrationDepth Depth penetration in the object
 	 */
 	public void beginContact(final Component _other, final Vector3f _normal, final Vector3f _pos, final Vector3f _posOther, final float _penetrationDepth) {
 		Log.warning("    collision [BEGIN] " + _pos + " depth=" + _penetrationDepth);
@@ -228,8 +222,7 @@ public class ComponentPhysics extends Component {
 		// Get the OpenGL matrix array of the transform 
 		final Matrix4f mmm = transform.getOpenGLMatrix();
 		
-		final Matrix4f transformationMatrix = mmm.clone();
-		transformationMatrix.transpose();
+		final Matrix4f transformationMatrix = mmm.transpose();
 		final Color tmpColor = new Color(1.0f, 0.0f, 0.0f, 0.3f);
 		for (final Shape it : this.shape) {
 			if (it.isBox()) {
@@ -238,8 +231,8 @@ public class ComponentPhysics extends Component {
 				final Transform3D transformLocal = new Transform3D(it.getOrigin(), it.getOrientation());
 				
 				Matrix4f transformationMatrixLocal = transformLocal.getOpenGLMatrix();
-				transformationMatrixLocal.transpose();
-				transformationMatrixLocal = transformationMatrix.multiplyNew(transformationMatrixLocal);
+				transformationMatrixLocal = transformationMatrixLocal.transpose();
+				transformationMatrixLocal = transformationMatrixLocal = transformationMatrix.multiply(transformationMatrixLocal);
 				_draw.drawSquare(tmpElement.getSize(), transformationMatrixLocal, tmpColor);
 			} else if (it.isCylinder()) {
 				Log.debug("    Cylinder");
@@ -247,8 +240,8 @@ public class ComponentPhysics extends Component {
 				final Transform3D transformLocal = new Transform3D(it.getOrigin(), it.getOrientation());
 				
 				Matrix4f transformationMatrixLocal = transformLocal.getOpenGLMatrix();
-				transformationMatrixLocal.transpose();
-				transformationMatrixLocal = transformationMatrix.multiplyNew(transformationMatrixLocal);
+				transformationMatrixLocal = transformationMatrixLocal.transpose();
+				transformationMatrixLocal = transformationMatrixLocal = transformationMatrix.multiply(transformationMatrixLocal);
 				_draw.drawCylinder(tmpElement.getRadius(), tmpElement.getSize(), 10, 10, transformationMatrixLocal, tmpColor);
 			} else if (it.isCapsule()) {
 				Log.debug("    Capsule");
@@ -256,8 +249,8 @@ public class ComponentPhysics extends Component {
 				final Transform3D transformLocal = new Transform3D(it.getOrigin(), it.getOrientation());
 				
 				Matrix4f transformationMatrixLocal = transformLocal.getOpenGLMatrix();
-				transformationMatrixLocal.transpose();
-				transformationMatrixLocal = transformationMatrix.multiplyNew(transformationMatrixLocal);
+				transformationMatrixLocal = transformationMatrixLocal.transpose();
+				transformationMatrixLocal = transformationMatrixLocal = transformationMatrix.multiply(transformationMatrixLocal);
 				_draw.drawCapsule(tmpElement.getRadius(), tmpElement.getSize(), 10, 10, transformationMatrixLocal, tmpColor);
 			} else if (it.isCone()) {
 				Log.debug("    Cone");
@@ -265,8 +258,8 @@ public class ComponentPhysics extends Component {
 				final Transform3D transformLocal = new Transform3D(it.getOrigin(), it.getOrientation());
 				
 				Matrix4f transformationMatrixLocal = transformLocal.getOpenGLMatrix();
-				transformationMatrixLocal.transpose();
-				transformationMatrixLocal = transformationMatrix.multiplyNew(transformationMatrixLocal);
+				transformationMatrixLocal = transformationMatrixLocal.transpose();
+				transformationMatrixLocal = transformationMatrixLocal = transformationMatrix.multiply(transformationMatrixLocal);
 				_draw.drawCone(tmpElement.getRadius(), tmpElement.getSize(), 10, 10, transformationMatrixLocal, tmpColor);
 			} else if (it.isSphere()) {
 				
@@ -275,8 +268,8 @@ public class ComponentPhysics extends Component {
 				final Transform3D transformLocal = new Transform3D(it.getOrigin(), it.getOrientation());
 				
 				Matrix4f transformationMatrixLocal = transformLocal.getOpenGLMatrix();
-				transformationMatrixLocal.transpose();
-				transformationMatrixLocal = transformationMatrix.multiplyNew(transformationMatrixLocal);
+				transformationMatrixLocal = transformationMatrixLocal.transpose();
+				transformationMatrixLocal = transformationMatrixLocal = transformationMatrix.multiply(transformationMatrixLocal);
 				_draw.drawSphere(tmpElement.getRadius(), 10, 10, transformationMatrixLocal, tmpColor);
 			} else if (it.isConcave()) {
 				
@@ -284,9 +277,9 @@ public class ComponentPhysics extends Component {
 				final Concave tmpElement = (Concave) it;
 				final Transform3D transformLocal = new Transform3D(it.getOrigin(), it.getOrientation());
 				
-				final Matrix4f transformationMatrixLocal = transformLocal.getOpenGLMatrix();
-				transformationMatrixLocal.transpose();
-				transformationMatrixLocal.multiply(transformationMatrixLocal);
+				Matrix4f transformationMatrixLocal = transformLocal.getOpenGLMatrix();
+				transformationMatrixLocal = transformationMatrixLocal.transpose();
+				transformationMatrixLocal = transformationMatrixLocal.multiply(transformationMatrixLocal);
 				
 				_draw.drawTriangles(tmpElement.getVertex(), tmpElement.getIndices(), transformationMatrixLocal, tmpColor);
 			} else if (it.isConvexHull()) {
@@ -299,7 +292,7 @@ public class ComponentPhysics extends Component {
 	
 	// call done after all cycle update of the physical engine
 	public void emitAll() {
-		// emit onbly of new ...
+		// emit only of new ...
 		final Transform3D transform = getTransform();
 		if (this.lastTransformEmit != transform) {
 			this.lastTransformEmit = transform;
@@ -322,7 +315,7 @@ public class ComponentPhysics extends Component {
 				Log.debug("    Box");
 				final Box tmpElement = (Box) it;
 				// Half extents of the box in the x, y and z directions
-				final Vector3f halfExtents = new Vector3f(tmpElement.getSize().x, tmpElement.getSize().y, tmpElement.getSize().z);
+				final Vector3f halfExtents = new Vector3f(tmpElement.getSize().x(), tmpElement.getSize().y(), tmpElement.getSize().z());
 				// Create the box shape
 				final BoxShape shape = new BoxShape(halfExtents, 0.0001f);
 				this.listShape.add(shape);
@@ -339,7 +332,7 @@ public class ComponentPhysics extends Component {
 				// Create the Cylinder shape
 				final CylinderShape shape = new CylinderShape(tmpElement.getRadius(), tmpElement.getSize());
 				// The ephysic use Y as UP ==> ege use Z as UP
-				final Quaternion orientation = it.getOrientation().multiplyNew(new Quaternion(-0.707107f, 0.0f, 0.0f, 0.707107f));
+				final Quaternion orientation = it.getOrientation().multiply(new Quaternion(-0.707107f, 0.0f, 0.0f, 0.707107f));
 				final Transform3D transform = new Transform3D(it.getOrigin(), orientation);
 				final ProxyShape proxyShape = this.rigidBody.addCollisionShape(shape, transform, it.getMass());
 				proxyShape.setUserData(this);
@@ -350,7 +343,7 @@ public class ComponentPhysics extends Component {
 				// Create the Capsule shape
 				final CapsuleShape shape = new CapsuleShape(tmpElement.getRadius(), tmpElement.getSize());
 				// The ephysic use Y as UP ==> ege use Z as UP
-				final Quaternion orientation = it.getOrientation().multiplyNew(new Quaternion(-0.707107f, 0.0f, 0.0f, 0.707107f));
+				final Quaternion orientation = it.getOrientation().multiply(new Quaternion(-0.707107f, 0.0f, 0.0f, 0.707107f));
 				final Transform3D transform = new Transform3D(it.getOrigin(), orientation);
 				final ProxyShape proxyShape = this.rigidBody.addCollisionShape(shape, transform, it.getMass());
 				proxyShape.setUserData(this);
@@ -361,7 +354,7 @@ public class ComponentPhysics extends Component {
 				// Create the Cone shape
 				final ConeShape shape = new ConeShape(tmpElement.getRadius(), tmpElement.getSize());
 				// The ephysic use Y as UP ==> ege use Z as UP
-				final Quaternion orientation = it.getOrientation().multiplyNew(new Quaternion(-0.707107f, 0.0f, 0.0f, 0.707107f));
+				final Quaternion orientation = it.getOrientation().multiply(new Quaternion(-0.707107f, 0.0f, 0.0f, 0.707107f));
 				final Transform3D transform = new Transform3D(it.getOrigin(), orientation);
 				final ProxyShape proxyShape = this.rigidBody.addCollisionShape(shape, transform, it.getMass());
 				proxyShape.setUserData(this);
@@ -372,7 +365,7 @@ public class ComponentPhysics extends Component {
 				// Create the box shape
 				final SphereShape shape = new SphereShape(tmpElement.getRadius());
 				// The ephysic use Y as UP ==> ege use Z as UP
-				final Quaternion orientation = it.getOrientation().multiplyNew(new Quaternion(-0.707107f, 0.0f, 0.0f, 0.707107f));
+				final Quaternion orientation = it.getOrientation().multiply(new Quaternion(-0.707107f, 0.0f, 0.0f, 0.707107f));
 				final Transform3D transform = new Transform3D(it.getOrigin(), orientation);
 				final ProxyShape proxyShape = this.rigidBody.addCollisionShape(shape, transform, it.getMass());
 				proxyShape.setUserData(this);
@@ -394,20 +387,20 @@ public class ComponentPhysics extends Component {
 				// TODO : Manage memory leak ...
 				final ConcaveShape shape = new ConcaveMeshShape(triangleMesh);
 				// The ephysic use Y as UP ==> ege use Z as UP
-				final Quaternion orientation = it.getOrientation().multiplyNew(new Quaternion(-0.707107f, 0.0f, 0.0f, 0.707107f));
+				final Quaternion orientation = it.getOrientation().multiply(new Quaternion(-0.707107f, 0.0f, 0.0f, 0.707107f));
 				final Transform3D transform = new Transform3D(it.getOrigin(), it.getOrientation());
 				final ProxyShape proxyShape = this.rigidBody.addCollisionShape(shape, transform, it.getMass());
 				proxyShape.setUserData(this);
 				this.listProxyShape.add(proxyShape);
 			} else {
 				Log.debug("    ???");
-				// TODO: UNKNOW type ...
+				// TODO UNKNOWN type ...
 			}
 		}
 	}
 	
 	/**
-	 * @brief Get the angular velocity (whole world).
+	 * Get the angular velocity (whole world).
 	 * @return The angular velocity vector of the body
 	 */
 	public Vector3f getAngularVelocity() {
@@ -418,7 +411,7 @@ public class ComponentPhysics extends Component {
 	}
 	
 	/**
-	 * @brief Get the linear velocity (whole world).
+	 * Get the linear velocity (whole world).
 	 * @return The linear velocity vector of the body
 	 */
 	public Vector3f getLinearVelocity() {
@@ -429,7 +422,7 @@ public class ComponentPhysics extends Component {
 	}
 	
 	/**
-	 * @brief Get the angular velocity (local Body).
+	 * Get the angular velocity (local Body).
 	 * @return The angular velocity vector of the body
 	 */
 	public Vector3f getRelativeAngularVelocity() {
@@ -437,11 +430,11 @@ public class ComponentPhysics extends Component {
 			return new Vector3f(0, 0, 0);
 		}
 		final Vector3f value = this.rigidBody.getAngularVelocity();
-		return this.rigidBody.getTransform().getOrientation().inverseNew().multiply(value);
+		return this.rigidBody.getTransform().getOrientation().inverse().multiply(value);
 	}
 	
 	/**
-	 * @brief Get the linear velocity (local Body).
+	 * Get the linear velocity (local Body).
 	 * @return The linear velocity vector of the body
 	 */
 	public Vector3f getRelativeLinearVelocity() {
@@ -449,7 +442,7 @@ public class ComponentPhysics extends Component {
 			return new Vector3f(0, 0, 0);
 		}
 		final Vector3f value = this.rigidBody.getLinearVelocity();
-		return this.rigidBody.getTransform().getOrientation().inverseNew().multiply(value);
+		return this.rigidBody.getTransform().getOrientation().inverse().multiply(value);
 	}
 	
 	public List<Shape> getShape() {
@@ -457,12 +450,12 @@ public class ComponentPhysics extends Component {
 	}
 	
 	/**
-	 * @brief set a new transformation
+	 * set a new transformation
 	 * @return Transformation of the position
 	 */
 	public Transform3D getTransform() {
 		if (this.rigidBody == null) {
-			return Transform3D.identity();
+			return Transform3D.IDENTITY;
 		}
 		return this.rigidBody.getTransform();
 	}
@@ -473,12 +466,12 @@ public class ComponentPhysics extends Component {
 	}
 	
 	/**
-	 * @brief Called when a new contact point is found between two bodies.
-	 * @param[in] _other The other component that have the impact
-	 * @param[in] _normal Normal of the impact
-	 * @param[in] _pos Position of the impact at the current object
-	 * @param[in] _posOther Position of the impact at the other object
-	 * @param[in] _penetrationDepth Depth penetration in the object
+	 * Called when a new contact point is found between two bodies.
+	 * @param _other The other component that have the impact
+	 * @param _normal Normal of the impact
+	 * @param _pos Position of the impact at the current object
+	 * @param _posOther Position of the impact at the other object
+	 * @param _penetrationDepth Depth penetration in the object
 	 */
 	public void newContact(final Component _other, final Vector3f _normal, final Vector3f _pos, final Vector3f _posOther, final float _penetrationDepth) {
 		Log.warning("    collision [ NEW ] " + _pos + " depth=" + _penetrationDepth);
@@ -488,7 +481,7 @@ public class ComponentPhysics extends Component {
 		if (this.rigidBody == null) {
 			return;
 		}
-		final Matrix4f transformationMatrix = Matrix4f.identity();
+		final Matrix4f transformationMatrix = Matrix4f.IDENTITY;
 		final Color tmpColor = new Color(0.0f, 1.0f, 0.0f, 0.8f);
 		final AABB value = this.rigidBody.getAABB();
 		_draw.drawCubeLine(value.getMin(), value.getMax(), tmpColor, transformationMatrix, true, true);
@@ -500,9 +493,9 @@ public class ComponentPhysics extends Component {
 	}
 	
 	/**
-		 * @brief Set the angular velocity (whole world).
-		 * @param[in] _linearVelocity The angular velocity vector of the body
-		 */
+	 * Set the angular velocity (whole world).
+	 * @param _angularVelocity The angular velocity vector of the body
+	 */
 	public void setAngularVelocity(final Vector3f _angularVelocity) {
 		if (this.rigidBody == null) {
 			return;
@@ -515,21 +508,15 @@ public class ComponentPhysics extends Component {
 			return;
 		}
 		switch (_type) {
-			case BODY_STATIC:
-				this.rigidBody.setType(BodyType.STATIC);
-				break;
-			case BODY_KINEMATIC:
-				this.rigidBody.setType(BodyType.KINEMATIC);
-				break;
-			case BODY_DYNAMIC:
-				this.rigidBody.setType(BodyType.DYNAMIC);
-				break;
+			case BODY_STATIC -> this.rigidBody.setType(BodyType.STATIC);
+			case BODY_KINEMATIC -> this.rigidBody.setType(BodyType.KINEMATIC);
+			case BODY_DYNAMIC -> this.rigidBody.setType(BodyType.DYNAMIC);
 		}
 	}
 	
 	/**
-	 * @brief Set the linear velocity (whole world).
-	 * @param[in] _linearVelocity The linear velocity vector of the body
+	 * Set the linear velocity (whole world).
+	 * @param _linearVelocity The linear velocity vector of the body
 	 */
 	public void setLinearVelocity(final Vector3f _linearVelocity) {
 		if (this.rigidBody == null) {
@@ -539,9 +526,9 @@ public class ComponentPhysics extends Component {
 	}
 	
 	/**
-		 * @brief Set the angular velocity (local Body).
-		 * @param[in] _linearVelocity The angular velocity vector of the body
-		 */
+	 * Set the angular velocity (local Body).
+	 * @param _angularVelocity The angular velocity vector of the body
+	 */
 	public void setRelativeAngularVelocity(final Vector3f _angularVelocity) {
 		if (this.rigidBody == null) {
 			return;
@@ -551,9 +538,9 @@ public class ComponentPhysics extends Component {
 	}
 	
 	/**
-		 * @brief Set the linear velocity (local Body).
-		 * @param[in] _linearVelocity The linear velocity vector of the body
-		 */
+	 * Set the linear velocity (local Body).
+	 * @param _linearVelocity The linear velocity vector of the body
+	 */
 	public void setRelativeLinearVelocity(final Vector3f _linearVelocity) {
 		if (this.rigidBody == null) {
 			return;
@@ -571,8 +558,8 @@ public class ComponentPhysics extends Component {
 	}
 	
 	/**
-	 * @brief set a new transformation
-	 * @param[in] _transform transformation of the position
+	 * set a new transformation
+	 * @param _transform transformation of the position
 	 */
 	public void setTransform(final Transform3D _transform) {
 		if (this.rigidBody == null) {
@@ -587,12 +574,12 @@ public class ComponentPhysics extends Component {
 			return;
 		}
 		if (!this.staticForceApplyCenterOfMass.isZero()) {
-			final Vector3f tmp = this.staticForceApplyCenterOfMass.multiplyNew(_delta);
+			final Vector3f tmp = this.staticForceApplyCenterOfMass.multiply(_delta);
 			Log.error("FORCE : " + tmp);
 			this.rigidBody.applyForceToCenterOfMass(tmp);
 		}
 		if (!this.staticTorqueApply.isZero()) {
-			final Vector3f tmp = this.staticTorqueApply.multiplyNew(_delta);
+			final Vector3f tmp = this.staticTorqueApply.multiply(_delta);
 			Log.error("TORQUE : " + tmp);
 			this.rigidBody.applyTorque(tmp);
 		}

@@ -1,5 +1,6 @@
 package shaders;
 
+import org.atriasoft.etk.Uri;
 import org.atriasoft.gale.backend3d.OpenGL;
 
 import java.io.BufferedReader;
@@ -22,8 +23,8 @@ public abstract class ShaderProgram {
 	
 
 	public ShaderProgram (String vertexFile, String fragmentFile) {
-		vertexShaderID = OpenGL.shaderLoad(vertexFile, OpenGL.ShaderType.vertex);
-		fragmentShaderID = OpenGL.shaderLoad(fragmentFile, OpenGL.ShaderType.fragment);
+		vertexShaderID = OpenGL.shaderLoad(new Uri("DATA", vertexFile), OpenGL.ShaderType.vertex);
+		fragmentShaderID = OpenGL.shaderLoad(new Uri("DATA", fragmentFile), OpenGL.ShaderType.fragment);
 		programID = OpenGL.programCreate();
 		OpenGL.programAttach(programID, vertexShaderID);
 		OpenGL.programAttach(programID, fragmentShaderID);

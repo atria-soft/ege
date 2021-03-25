@@ -55,7 +55,7 @@ public class MapVoxel extends EngineMap {
 	private void addNewChunk(Vector3i position) {
 		// simple sun to have a global light ...
 		Entity tmpEntity = new Entity(this.env);
-		tmpEntity.addComponent(new ComponentPosition(new Transform3D(new Vector3f(position.x,position.y,0))));
+		tmpEntity.addComponent(new ComponentPosition(new Transform3D(new Vector3f(position.x(),position.y(),0))));
 		VoxelChunk tmpVoxelChunk = new VoxelChunk(this, position);
 		tmpEntity.addComponent(tmpVoxelChunk);
 		ComponentDynamicMeshsVoxelMap mesh = new ComponentDynamicMeshsVoxelMap(tmpVoxelChunk);
@@ -72,7 +72,7 @@ public class MapVoxel extends EngineMap {
 				new Uri("DATA", "basicMaterial.vert"),
 				new Uri("DATA", "basicMaterial.frag"),
 				(EngineLight)env.getEngine(EngineLight.ENGINE_NAME)));
-		ComponentPhysics physics = new ComponentPhysics(false);
+		ComponentPhysics physics = new ComponentPhysics(this.env);
 		//PhysicMapVoxel box = new PhysicMapVoxel(tmpVoxelChunk);
 		//physics.addShape(box);
 		//physics.setStaticObject(true);

@@ -10,23 +10,6 @@ import org.atriasoft.ege.Environement;
 import org.atriasoft.ege.GameStatus;
 import org.atriasoft.ege.Light;
 import org.atriasoft.ege.Material;
-import org.atriasoft.etk.Color;
-import org.atriasoft.etk.Uri;
-import org.atriasoft.etk.math.Matrix4f;
-import org.atriasoft.etk.math.Quaternion;
-import org.atriasoft.etk.math.Transform3D;
-import org.atriasoft.etk.math.Vector2f;
-import org.atriasoft.etk.math.Vector3f;
-import org.atriasoft.gale.Application;
-import org.atriasoft.gale.Gale;
-import org.atriasoft.gale.backend3d.OpenGL;
-import org.atriasoft.gale.backend3d.OpenGL.Flag;
-import org.atriasoft.gale.context.Context;
-import org.atriasoft.gale.key.KeyKeyboard;
-import org.atriasoft.gale.key.KeySpecial;
-import org.atriasoft.gale.key.KeyStatus;
-import org.atriasoft.gale.key.KeyType;
-import org.atriasoft.gale.resource.ResourceColored3DObject;
 import org.atriasoft.ege.camera.Camera;
 import org.atriasoft.ege.components.ComponentGravityStatic;
 import org.atriasoft.ege.components.ComponentLight;
@@ -47,21 +30,38 @@ import org.atriasoft.ege.engines.EnginePhysics;
 import org.atriasoft.ege.map.MapVoxel;
 import org.atriasoft.ege.physics.shape.Box;
 import org.atriasoft.ege.tools.MeshGenerator;
+import org.atriasoft.etk.Color;
+import org.atriasoft.etk.Uri;
+import org.atriasoft.etk.math.Matrix4f;
+import org.atriasoft.etk.math.Quaternion;
+import org.atriasoft.etk.math.Transform3D;
+import org.atriasoft.etk.math.Vector2f;
+import org.atriasoft.etk.math.Vector3f;
+import org.atriasoft.gale.Application;
+import org.atriasoft.gale.Gale;
+import org.atriasoft.gale.backend3d.OpenGL;
+import org.atriasoft.gale.backend3d.OpenGL.Flag;
+import org.atriasoft.gale.context.Context;
+import org.atriasoft.gale.key.KeyKeyboard;
+import org.atriasoft.gale.key.KeySpecial;
+import org.atriasoft.gale.key.KeyStatus;
+import org.atriasoft.gale.key.KeyType;
+import org.atriasoft.gale.resource.ResourceColored3DObject;
 
 public class LoxelApplication extends Application {
 	//	public static ComponentPosition relativeTestPos;
 	//	public static Box boxTest;
-	public static List<Vector3f> testPoints = new ArrayList<Vector3f>();
-	public static List<Vector3f> testPointsBox = new ArrayList<Vector3f>();
-	public static List<Boolean> testPointsCollide = new ArrayList<Boolean>();
+	public static List<Vector3f> testPoints = new ArrayList<>();
+	public static List<Vector3f> testPointsBox = new ArrayList<>();
+	public static List<Boolean> testPointsCollide = new ArrayList<>();
 	public static Vector3f testRpos;
 	public static Quaternion testQTransfert;
 	public static Vector3f box1HalfSize;
 	public static Vector3f box2HalfSize;
 	private Environement env;
 	private ComponentPosition objectPosition;
-	private final Quaternion basicRotation = Quaternion.identity();
-	private final Quaternion basicRotation2 = Quaternion.identity();
+	private Quaternion basicRotation = Quaternion.IDENTITY;
+	private Quaternion basicRotation2 = Quaternion.IDENTITY;
 	private boolean creationDone;
 	private ControlCameraPlayer simpleControl;
 	private ComponentPosition lightPosition;
@@ -179,8 +179,8 @@ public class LoxelApplication extends Application {
 		{
 			// add a cube to test collision ...
 			final Entity localBox = new Entity(this.env);
-			final Quaternion orientation = new Quaternion(0.5f, 0.2f, 0.4f, 1);
-			orientation.normalize();
+			Quaternion orientation = new Quaternion(0.5f, 0.2f, 0.4f, 1);
+			orientation = orientation.normalize();
 			localBox.addComponent(new ComponentStaticMesh(new Uri("RES", "cube-one.obj")));
 			localBox.addComponent(new ComponentTexture(new Uri("DATA", "blocks/clay.png")));
 			localBox.addComponent(new ComponentRenderTexturedStaticMesh(new Uri("DATA", "basic.vert"), new Uri("DATA", "basic.frag")));
@@ -216,8 +216,8 @@ public class LoxelApplication extends Application {
 		{
 			// this is the floor
 			final Entity localBox = new Entity(this.env);
-			final Quaternion orientation = new Quaternion(0, 0, 0, 1);
-			orientation.normalize();
+			Quaternion orientation = new Quaternion(0, 0, 0, 1);
+			orientation = orientation.normalize();
 			localBox.addComponent(new ComponentStaticMesh(new Uri("RES", "cube-one.obj")));
 			localBox.addComponent(new ComponentTexture(new Uri("DATA", "blocks/dirt.png")));
 			localBox.addComponent(new ComponentRenderTexturedStaticMesh(new Uri("DATA", "basic.vert"), new Uri("DATA", "basic.frag")));
@@ -318,8 +318,8 @@ public class LoxelApplication extends Application {
 		// start the engine.
 		this.env.setPropertyStatus(GameStatus.gameStart);
 		
-		this.basicRotation.setEulerAngles(new Vector3f(0.005f, 0.005f, 0.01f));
-		this.basicRotation2.setEulerAngles(new Vector3f(0.003f, 0.01f, 0.001f));
+		this.basicRotation = Quaternion.fromEulerAngles(new Vector3f(0.005f, 0.005f, 0.01f));
+		this.basicRotation2 = Quaternion.fromEulerAngles(new Vector3f(0.003f, 0.01f, 0.001f));
 		
 		final Engine tmpEngine = this.env.getEngine("physics");
 		if (tmpEngine != null) {
@@ -371,29 +371,29 @@ public class LoxelApplication extends Application {
 			final Vector3f elem = LoxelApplication.testPoints.get(iii);
 			final boolean collide = LoxelApplication.testPointsCollide.get(iii);
 			if (collide) {
-				this.debugDrawProperty.drawSquare(new Vector3f(0.1f, 0.1f, 0.1f), Matrix4f.identity().multiplyNew(Matrix4f.createMatrixTranslate(new Vector3f(elem.x, elem.y, elem.z + 14))),
+				this.debugDrawProperty.drawSquare(new Vector3f(0.1f, 0.1f, 0.1f), Matrix4f.IDENTITY.multiply(Matrix4f.createMatrixTranslate(new Vector3f(elem.x(), elem.y(), elem.z() + 14))),
 						new Color(1, 0, 0, 1));
 			} else if (iii == 0) {
-				this.debugDrawProperty.drawSquare(new Vector3f(0.05f, 0.05f, 0.05f), Matrix4f.identity().multiplyNew(Matrix4f.createMatrixTranslate(new Vector3f(elem.x, elem.y, elem.z + 14))),
+				this.debugDrawProperty.drawSquare(new Vector3f(0.05f, 0.05f, 0.05f), Matrix4f.IDENTITY.multiply(Matrix4f.createMatrixTranslate(new Vector3f(elem.x(), elem.y(), elem.z() + 14))),
 						new Color(0, 1, 0, 1));
 			} else if (iii == 7) {
-				this.debugDrawProperty.drawSquare(new Vector3f(0.05f, 0.05f, 0.05f), Matrix4f.identity().multiplyNew(Matrix4f.createMatrixTranslate(new Vector3f(elem.x, elem.y, elem.z + 14))),
+				this.debugDrawProperty.drawSquare(new Vector3f(0.05f, 0.05f, 0.05f), Matrix4f.IDENTITY.multiply(Matrix4f.createMatrixTranslate(new Vector3f(elem.x(), elem.y(), elem.z() + 14))),
 						new Color(1, 1, 0, 1));
 			} else {
-				this.debugDrawProperty.drawSquare(new Vector3f(0.1f, 0.1f, 0.1f), Matrix4f.identity().multiplyNew(Matrix4f.createMatrixTranslate(new Vector3f(elem.x, elem.y, elem.z + 14))),
+				this.debugDrawProperty.drawSquare(new Vector3f(0.1f, 0.1f, 0.1f), Matrix4f.IDENTITY.multiply(Matrix4f.createMatrixTranslate(new Vector3f(elem.x(), elem.y(), elem.z() + 14))),
 						new Color(1, 1, 1, 1));
 			}
 		}
 		for (int iii = 0; iii < LoxelApplication.testPointsBox.size(); iii++) {
 			final Vector3f elem = LoxelApplication.testPointsBox.get(iii);
 			if (iii == 0) {
-				this.debugDrawProperty.drawSquare(new Vector3f(0.05f, 0.05f, 0.05f), Matrix4f.identity().multiplyNew(Matrix4f.createMatrixTranslate(new Vector3f(elem.x, elem.y, elem.z + 14))),
+				this.debugDrawProperty.drawSquare(new Vector3f(0.05f, 0.05f, 0.05f), Matrix4f.IDENTITY.multiply(Matrix4f.createMatrixTranslate(new Vector3f(elem.x(), elem.y(), elem.z() + 14))),
 						new Color(0, 1, 0, 1));
 			} else if (iii == 7) {
-				this.debugDrawProperty.drawSquare(new Vector3f(0.05f, 0.05f, 0.05f), Matrix4f.identity().multiplyNew(Matrix4f.createMatrixTranslate(new Vector3f(elem.x, elem.y, elem.z + 14))),
+				this.debugDrawProperty.drawSquare(new Vector3f(0.05f, 0.05f, 0.05f), Matrix4f.IDENTITY.multiply(Matrix4f.createMatrixTranslate(new Vector3f(elem.x(), elem.y(), elem.z() + 14))),
 						new Color(1, 1, 0, 1));
 			} else {
-				this.debugDrawProperty.drawSquare(new Vector3f(0.1f, 0.1f, 0.1f), Matrix4f.identity().multiplyNew(Matrix4f.createMatrixTranslate(new Vector3f(elem.x, elem.y, elem.z + 14))),
+				this.debugDrawProperty.drawSquare(new Vector3f(0.1f, 0.1f, 0.1f), Matrix4f.IDENTITY.multiply(Matrix4f.createMatrixTranslate(new Vector3f(elem.x(), elem.y(), elem.z() + 14))),
 						new Color(0, 0, 1, 1));
 			}
 		}
@@ -403,7 +403,7 @@ public class LoxelApplication extends Application {
 			//Matrix4f transformation = Matrix4f.createMatrixTranslate(new Vector3f(testRpos.x,testRpos.y,testRpos.z)).multiply(testQTransfert.getMatrix4()).multiply(Matrix4f.createMatrixTranslate(new Vector3f(0,0,14)));
 			//Matrix4f transformation = testQTransfert.getMatrix4().multiply(Matrix4f.createMatrixTranslate(new Vector3f(testRpos.x,testRpos.y,testRpos.z))).multiply(Matrix4f.createMatrixTranslate(new Vector3f(0,0,14)));
 			//Matrix4f transformation = testQTransfert.getMatrix4().multiply(Matrix4f.createMatrixTranslate(new Vector3f(testRpos.x,testRpos.y,testRpos.z))).multiply(Matrix4f.createMatrixTranslate(new Vector3f(0,0,14)));
-			final Matrix4f transformation = Matrix4f.createMatrixTranslate(new Vector3f(testRpos.x, testRpos.y, testRpos.z)).multiply(Matrix4f.createMatrixTranslate(new Vector3f(0, 0, 14)))
+			final Matrix4f transformation = Matrix4f.createMatrixTranslate(new Vector3f(testRpos.x(), testRpos.y(), testRpos.z())).multiply(Matrix4f.createMatrixTranslate(new Vector3f(0, 0, 14)))
 					.multiply(testQTransfert.getMatrix4());
 			// OK sans la box1 orientation ...
 			//Matrix4f transformation = Matrix4f.createMatrixTranslate(new Vector3f(testRpos.x,testRpos.y,testRpos.z)).multiply(testQTransfert.getMatrix4()).multiply(Matrix4f.createMatrixTranslate(new Vector3f(0,0,14)));
@@ -442,8 +442,8 @@ public class LoxelApplication extends Application {
 			return;
 		}
 		this.angleLight += 0.01;
-		this.lightPosition.getTransform().getPosition().x = 5 + (float) Math.cos(this.angleLight) * 7.0f;
-		this.lightPosition.getTransform().getPosition().y = 5 + (float) Math.sin(this.angleLight) * 7.0f;
+		this.lightPosition.setTransform(this.lightPosition.getTransform()
+				.withPosition(new Vector3f(5 + (float) Math.cos(this.angleLight) * 7.0f, 5 + (float) Math.sin(this.angleLight) * 7.0f, this.lightPosition.getTransform().getPosition().z())));
 		this.env.periodicCall();
 		markDrawingIsNeeded();
 	}

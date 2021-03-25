@@ -14,5 +14,6 @@ open module org.atriasoft.ege {
 	
 	requires transitive org.atriasoft.gale;
 	requires transitive org.atriasoft.etk;
+	requires transitive org.atriasoft.ewol;
 	requires transitive org.atriasoft.ephysics;
 }

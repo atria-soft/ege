@@ -1,19 +1,19 @@
 package org.atriasoft.ege;
 
-import org.atriasoft.etk.math.Transform3D;
-import org.atriasoft.etk.math.Vector2f;
-import org.atriasoft.etk.math.Vector3f;
-import org.atriasoft.ewol.event.EventEntry;
-import org.atriasoft.gale.Gale;
-import org.atriasoft.gale.event.EventInput;
-import org.atriasoft.gale.event.EventTime;
-import org.atriasoft.gale.key.KeyKeyboard;
-import org.atriasoft.gale.key.KeyStatus;
 import org.atriasoft.ege.camera.Camera;
 import org.atriasoft.ege.components.ComponentPhysics;
 import org.atriasoft.ege.components.ComponentPlayer;
 import org.atriasoft.ege.components.ComponentPositionPlayer;
 import org.atriasoft.ege.internal.Log;
+import org.atriasoft.etk.math.Transform3D;
+import org.atriasoft.etk.math.Vector2f;
+import org.atriasoft.etk.math.Vector3f;
+import org.atriasoft.gale.Gale;
+import org.atriasoft.ewol.event.EventEntry;
+import org.atriasoft.ewol.event.EventInput;
+import org.atriasoft.ewol.event.EventTime;
+import org.atriasoft.gale.key.KeyKeyboard;
+import org.atriasoft.gale.key.KeyStatus;
 
 public class ControlCameraPlayer implements ControlInterface {
 	private final Camera camera;
@@ -52,24 +52,24 @@ public class ControlCameraPlayer implements ControlInterface {
 	
 	@Override
 	public boolean onEventEntry(final EventEntry event) {
-		if (event.getType() == KeyKeyboard.up || (event.getType() == KeyKeyboard.character && (event.getChar() == 'z' || event.getChar() == 'Z'))) {
-			this.moveUp = getState(event.getStatus(), this.moveUp);
+		if (event.type() == KeyKeyboard.up || (event.type() == KeyKeyboard.character && (event.getChar() == 'z' || event.getChar() == 'Z'))) {
+			this.moveUp = getState(event.status(), this.moveUp);
 		}
-		if (event.getType() == KeyKeyboard.left || (event.getType() == KeyKeyboard.character && (event.getChar() == 'q' || event.getChar() == 'Q'))) {
-			this.moveLeft = getState(event.getStatus(), this.moveLeft);
+		if (event.type() == KeyKeyboard.left || (event.type() == KeyKeyboard.character && (event.getChar() == 'q' || event.getChar() == 'Q'))) {
+			this.moveLeft = getState(event.status(), this.moveLeft);
 		}
-		if (event.getType() == KeyKeyboard.right || (event.getType() == KeyKeyboard.character && (event.getChar() == 'd' || event.getChar() == 'D'))) {
-			this.moveRight = getState(event.getStatus(), this.moveRight);
+		if (event.type() == KeyKeyboard.right || (event.type() == KeyKeyboard.character && (event.getChar() == 'd' || event.getChar() == 'D'))) {
+			this.moveRight = getState(event.status(), this.moveRight);
 		}
-		if (event.getType() == KeyKeyboard.down || (event.getType() == KeyKeyboard.character && (event.getChar() == 's' || event.getChar() == 'S'))) {
-			this.moveDown = getState(event.getStatus(), this.moveDown);
+		if (event.type() == KeyKeyboard.down || (event.type() == KeyKeyboard.character && (event.getChar() == 's' || event.getChar() == 'S'))) {
+			this.moveDown = getState(event.status(), this.moveDown);
 		}
-		if (event.getType() == KeyKeyboard.shiftLeft || event.getType() == KeyKeyboard.shiftRight) {
-			this.walk = event.getSpecialKey().getShift();
+		if (event.type() == KeyKeyboard.shiftLeft || event.type() == KeyKeyboard.shiftRight) {
+			this.walk = event.specialKey().getShift();
 		}
-		if (event.getType() == KeyKeyboard.f10) {
-			if (event.getStatus() == KeyStatus.up) {
-				if (this.fpsMode == false) {
+		if (event.type() == KeyKeyboard.f10) {
+			if (event.status() == KeyStatus.up) {
+				if (!this.fpsMode) {
 					this.fpsMode = true;
 					this.distanceFromCenter = 0;
 				} else {
@@ -85,17 +85,17 @@ public class ControlCameraPlayer implements ControlInterface {
 	public boolean onEventInput(final EventInput event, final Vector2f relativePosition) {
 		// Log.info("" + event);
 		// TODO Auto-generated method stub
-		if (this.fpsMode == false) {
-			if (event.getInputId() == 4) {
-				if (event.getStatus() == KeyStatus.down) {
+		if (!this.fpsMode) {
+			if (event.inputId() == 4) {
+				if (event.status() == KeyStatus.down) {
 					this.distanceFromCenter -= 0.2;
 				}
 				if (this.distanceFromCenter < 0.0) {
 					this.distanceFromCenter = 0.0f;
 				}
 				return true;
-			} else if (event.getInputId() == 5) {
-				if (event.getStatus() == KeyStatus.down) {
+			} else if (event.inputId() == 5) {
+				if (event.status() == KeyStatus.down) {
 					this.distanceFromCenter += 0.2;
 				}
 				if (this.distanceFromCenter < 0.3) {
@@ -108,14 +108,14 @@ public class ControlCameraPlayer implements ControlInterface {
 		}
 		// TODO check if grabbing is enable ...
 		// in grabbing mouse only:
-		if (Gale.getContext().isGrabPointerEvents() == false) {
+		if (!Gale.getContext().isGrabPointerEvents()) {
 			return false;
 		}
-		if (event.getStatus() == KeyStatus.move) {
-			final Vector2f delta = event.getPosition().clone();
+		if (event.status() == KeyStatus.move) {
+			final Vector2f delta = event.pos();
 			//angleZ += delta.x;
 			//this.camera.setYaw(this.camera.getYaw() + (float)Math.toRadians(delta.x));
-			this.camera.setPitch(this.camera.getPitch() + (float) Math.toRadians(delta.y * this.player.getTurnSpeed()));
+			this.camera.setPitch(this.camera.getPitch() + (float) Math.toRadians(delta.y() * this.player.getTurnSpeed()));
 			if (this.camera.getPitch() > 0) {
 				this.camera.setPitch(0);
 			}
@@ -134,8 +134,8 @@ public class ControlCameraPlayer implements ControlInterface {
 			this.playerPosition.setAngles(new Vector3f(0,0,-this.camera.getRoll()));
 			*/
 			if (this.playerPosition != null) {
-				final float playerZAngle = this.playerPosition.getAngles().z;
-				float tmpAngle = playerZAngle + (float) Math.toRadians(delta.x * this.player.getTurnSpeed());
+				final float playerZAngle = this.playerPosition.getAngles().z();
+				float tmpAngle = playerZAngle + (float) Math.toRadians(delta.x() * this.player.getTurnSpeed());
 				
 				if (tmpAngle > Math.PI) {
 					tmpAngle -= (float) Math.PI * 2.0f;
@@ -160,7 +160,7 @@ public class ControlCameraPlayer implements ControlInterface {
 		}
 		float speed = 0;
 		float walkFactor = 1;
-		if (this.walk == true) {
+		if (this.walk) {
 			walkFactor = this.player.getWalkFactor();
 		}
 		//distanceFromCenter = 6;
@@ -175,7 +175,7 @@ public class ControlCameraPlayer implements ControlInterface {
 		float playerZAngle = 0;
 		Transform3D playerTransform = null;
 		if (this.playerPosition != null) {
-			playerZAngle = this.playerPosition.getAngles().z;
+			playerZAngle = this.playerPosition.getAngles().z();
 			playerTransform = this.playerPosition.getTransform();
 		} else if (this.playerPhysics != null) {
 			playerZAngle = 0; // TODO ...
@@ -195,8 +195,14 @@ public class ControlCameraPlayer implements ControlInterface {
 		final float dxStraf = (float) (distance * Math.sin((float) Math.PI * 0.5f + playerZAngle));
 		final float dyStraf = -(float) (distance * Math.cos((float) Math.PI * 0.5f + playerZAngle));
 		//Log.error("update position ..." + dx + "   " + dy);
-		playerTransform.getPosition().x += dx + dxStraf;
-		playerTransform.getPosition().y += dy + dyStraf;
+		Vector3f tmpPos = playerTransform.getPosition();
+		tmpPos = tmpPos.add(new Vector3f(dx + dxStraf, dy + dyStraf, 0));
+		playerTransform = playerTransform.withPosition(tmpPos);
+		if (this.playerPosition != null) {
+			this.playerPosition.setTransform(playerTransform);
+		} else if (this.playerPhysics != null) {
+			this.playerPhysics.setTransform(playerTransform);
+		}
 		// here the camera is behind the player, we need to move the camera ...
 		//Log.info(" pitch: " + Math.toDegrees(this.camera.getPitch()) + "  " + Math.toDegrees(playerZAngle));
 		final float horinzontalDistance = (float) (this.distanceFromCenter * Math.sin(this.camera.getPitch()));
@@ -207,9 +213,7 @@ public class ControlCameraPlayer implements ControlInterface {
 		final float offsetX = (float) (tmp * Math.sin(-theta));
 		final float offsetY = (float) (tmp * Math.cos(-theta));
 		//Log.info("     res" + offsetX + "  " + offsetY);
-		this.camera.getPosition().x = playerTransform.getPosition().x + offsetX;
-		this.camera.getPosition().y = playerTransform.getPosition().y + offsetY;
-		this.camera.getPosition().z = playerTransform.getPosition().z + 1.6f + verticalDistance;
+		this.camera.setPosition(new Vector3f(playerTransform.getPosition().x() + offsetX, playerTransform.getPosition().y() + offsetY, playerTransform.getPosition().z() + 1.6f + verticalDistance));
 	}
 	
 }

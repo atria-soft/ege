@@ -9,9 +9,9 @@ import org.atriasoft.etk.math.Quaternion;
 import org.atriasoft.etk.math.Vector3f;
 
 public class Shape {
-	private Quaternion orientation = Quaternion.identity();
+	private Quaternion orientation = Quaternion.IDENTITY;
 	private float mass = 1; //!< element mass in "g" then 1000 for 1kg
-	private Vector3f origin = new Vector3f(0, 0, 0);
+	private Vector3f origin = Vector3f.ZERO;
 	
 	public void display() {
 		
@@ -22,7 +22,7 @@ public class Shape {
 	}
 	
 	public Quaternion getOrientation() {
-		return this.orientation.clone();
+		return this.orientation;
 	}
 	
 	public Vector3f getOrigin() {

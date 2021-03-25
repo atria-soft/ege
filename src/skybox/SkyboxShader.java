@@ -38,7 +38,7 @@ public class SkyboxShader extends ShaderProgram {
 	public void loadViewMatrix(Camera camera){
 		Matrix4f matrix = Maths.createViewMatrixNoTranslate(camera);
 		rotation += ROTATE_SPEED * DisplayManager.getFrameTimeSecconds();
-		matrix.rotate(new Vector3f(0,1,0), rotation);
+		matrix = matrix.rotate(new Vector3f(0,1,0), rotation);
 		OpenGL.programLoadUniformMatrix(location_viewMatrix, matrix);
 	}
 	

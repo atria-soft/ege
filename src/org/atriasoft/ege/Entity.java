@@ -19,7 +19,7 @@ public class Entity {
 	protected float radius = 0; //!< Radius of the Entity (all Entity have a radius, if  == 0 ==> then ghost ...
 	
 	/**
-	 * @brief Constructor (when ructer is called just add Entity that did not change.
+	 * Constructor (when ructer is called just add Entity that did not change.
 	 * The objest will be stored in a pool of Entity and keep a second time if needed  == > reduce memory allocation,
 	 * when needed, the system will call the init and un-init function...
 	 */
@@ -45,17 +45,17 @@ public class Entity {
 	}
 	
 	/**
-	 * @brief remove this Entity from the physique engine
+	 * remove this Entity from the physique engine
 	 */
 	public void dynamicDisable() {}
 	
 	/**
-	 * @brief set the elment in the physique engine
+	 * set the elment in the physique engine
 	 */
 	public void dynamicEnable() {}
 	
 	/**
-	 * @brief Debug display of the current Entity
+	 * Debug display of the current Entity
 	 * @param[in,out] draw Basic system to draw the debug shape and informations
 	 * @param camera Current camera for display
 	 */
@@ -78,7 +78,7 @@ public class Entity {
 	//		*/
 	//	}
 	/**
-	 * @brief Event arrive when an Entity has been remove from the system  == > this permit to keep pointer of ennemy, and not search them every cycle ...
+	 * Event arrive when an Entity has been remove from the system  == > this permit to keep pointer of ennemy, and not search them every cycle ...
 	 * @param removedEntity Pointer on the Entity removed.
 	 */
 	public void entityIsRemoved(final Entity removedEntity) {};
@@ -109,7 +109,7 @@ public class Entity {
 	}
 	
 	/**
-	 * @brief get the Group of the Entity.
+	 * get the Group of the Entity.
 	 * @return The group ID
 	 */
 	public int getGroup() {
@@ -117,7 +117,7 @@ public class Entity {
 	}
 	
 	/**
-	 * @brief get the curent life ratio [0..1]
+	 * get the curent life ratio [0..1]
 	 * @return The proportionnal life
 	 */
 	public float getLifeRatio() {
@@ -128,7 +128,7 @@ public class Entity {
 	};
 	
 	/**
-	 * @brief get the current space needed by the Entity in the workspace
+	 * get the current space needed by the Entity in the workspace
 	 * @return The dimention needed.
 	 */
 	public float getRadius() {
@@ -136,7 +136,7 @@ public class Entity {
 	}
 	
 	/**
-	 * @brief get the curent Entity Unique ID in the all Game.
+	 * get the curent Entity Unique ID in the all Game.
 	 * @return The requested Unique ID.
 	 */
 	public int getUID() {
@@ -144,7 +144,7 @@ public class Entity {
 	}
 	
 	/**
-	 * @brief init the Entity with the defined properties
+	 * init the Entity with the defined properties
 	 * @param property Type of the next Entity
 	 * @param value pointer on the value type
 	 * @return true, the Entity is corectly initialized.
@@ -203,7 +203,7 @@ public class Entity {
 	}
 	
 	/*
-	 * @brief Check if the Entity is dead.
+	 * Check if the Entity is dead.
 	 * @return true if the Entity does not exist anymore, false otherwise.
 	 */
 	public boolean isDead() {
@@ -211,7 +211,7 @@ public class Entity {
 	};
 	
 	/**
-	 * @brief Request if the Entity might be removed from the system
+	 * Request if the Entity might be removed from the system
 	 * @return true  == > the object is removed
 	 */
 	public boolean needToRemove() {
@@ -224,7 +224,7 @@ public class Entity {
 	public void onDestroy() {};
 	
 	/**
-	 * @brief Call when the Entity life change.
+	 * Call when the Entity life change.
 	 */
 	public void onLifeChange() {}
 	
@@ -266,7 +266,7 @@ public class Entity {
 	};
 	
 	/**
-	 * @brief apply a fire on the Entity at a current power and a specific power.
+	 * apply a fire on the Entity at a current power and a specific power.
 	 * @param groupIdSource Source Id of the group, by default all event arrive at all group, buf some event can not be obviously apply at the ennemy like reparing ....
 	 * @param type Type of event on the life propertied
 	 * @param power Power of the event (can be >0 for adding life).
@@ -285,7 +285,7 @@ public class Entity {
 	};
 	
 	/**
-	 * @brief set the group of the curent Entity
+	 * set the group of the curent Entity
 	 * @param newGroup The new Group ID of the Entity.
 	 */
 	public void setGroup(final int newGroup) {

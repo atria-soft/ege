@@ -1,17 +1,17 @@
 package org.atriasoft.ege;
 
+import org.atriasoft.ege.camera.Camera;
+import org.atriasoft.ege.internal.Log;
 import org.atriasoft.etk.math.Vector2f;
+import org.atriasoft.etk.math.Vector3f;
 import org.atriasoft.ewol.event.EventEntry;
-import org.atriasoft.gale.event.EventInput;
-import org.atriasoft.gale.event.EventTime;
+import org.atriasoft.ewol.event.EventInput;
+import org.atriasoft.ewol.event.EventTime;
 import org.atriasoft.gale.key.KeyKeyboard;
 import org.atriasoft.gale.key.KeyStatus;
-import org.atriasoft.ege.internal.Log;
-import org.atriasoft.ege.camera.Camera;
-
 
 public class ControlCameraSimple implements ControlInterface {
-	private Camera camera;
+	private final Camera camera;
 	private float distanceFromCenter = 20;
 	private float angleZ = 0;
 	private float pitch = 0;
@@ -21,11 +21,12 @@ public class ControlCameraSimple implements ControlInterface {
 	private boolean moveRight = false;
 	private boolean moveDown = false;
 	private boolean ctrlIsSet = false;
-
-	public ControlCameraSimple(Camera camera) {
+	
+	public ControlCameraSimple(final Camera camera) {
 		this.camera = camera;
 	}
-	private boolean getState(KeyStatus state, boolean previousState) {
+	
+	private boolean getState(final KeyStatus state, final boolean previousState) {
 		if (state == KeyStatus.down) {
 			return true;
 		}
@@ -34,93 +35,91 @@ public class ControlCameraSimple implements ControlInterface {
 		}
 		return previousState;
 	}
+	
 	@Override
-	public boolean onEventEntry(EventEntry event) {
-		if(event.getType() == KeyKeyboard.up) {
-			moveUp = getState(event.getStatus(), moveUp);
+	public boolean onEventEntry(final EventEntry event) {
+		if (event.type() == KeyKeyboard.up) {
+			this.moveUp = getState(event.status(), this.moveUp);
 		}
-		if(event.getType() == KeyKeyboard.left) {
-			moveLeft = getState(event.getStatus(), moveLeft);
+		if (event.type() == KeyKeyboard.left) {
+			this.moveLeft = getState(event.status(), this.moveLeft);
 		}
-		if(event.getSpecialKey().getCtrl() == false
-				&& event.getType() == KeyKeyboard.right) {
-			moveRight = getState(event.getStatus(), moveRight);
+		if (!event.specialKey().getCtrl() && event.type() == KeyKeyboard.right) {
+			this.moveRight = getState(event.status(), this.moveRight);
 		}
-		if(event.getSpecialKey().getCtrl() == false
-				&& event.getType() == KeyKeyboard.down) {
-			moveDown = getState(event.getStatus(), moveDown);
+		if (!event.specialKey().getCtrl() && event.type() == KeyKeyboard.down) {
+			this.moveDown = getState(event.status(), this.moveDown);
 		}
-		ctrlIsSet = event.getSpecialKey().getCtrl();
+		this.ctrlIsSet = event.specialKey().getCtrl();
 		return false;
 	}
-
+	
 	@Override
-	public boolean onEventInput(EventInput event, Vector2f relativePosition) {
+	public boolean onEventInput(final EventInput event, final Vector2f relativePosition) {
 		Log.info("" + event);
 		// TODO Auto-generated method stub
-		if (event.getInputId() == 4) {
-			if (event.getStatus() == KeyStatus.down) {
-				distanceFromCenter -= 1;
+		if (event.inputId() == 4) {
+			if (event.status() == KeyStatus.down) {
+				this.distanceFromCenter -= 1;
 			}
-		} else if (event.getInputId() == 5) {
-			if (event.getStatus() == KeyStatus.down) {
-				distanceFromCenter += 1;
+		} else if (event.inputId() == 5) {
+			if (event.status() == KeyStatus.down) {
+				this.distanceFromCenter += 1;
 			}
-		} else if (event.getInputId() == 2) {
-			if (event.getStatus() == KeyStatus.down) {
-				lastMousePosition = event.getPosition();
-			} else if (event.getStatus() == KeyStatus.move) {
-				Vector2f delta = event.getPosition().clone();
-				delta.less(lastMousePosition);
-				lastMousePosition = event.getPosition().clone();
+		} else if (event.inputId() == 2) {
+			if (event.status() == KeyStatus.down) {
+				this.lastMousePosition = event.pos();
+			} else if (event.status() == KeyStatus.move) {
+				Vector2f delta = event.pos();
+				delta = delta.less(this.lastMousePosition);
+				this.lastMousePosition = event.pos();
 				//angleZ += delta.x;
 				//this.camera.setYaw(this.camera.getYaw() + (float)Math.toRadians(delta.x));
-				this.camera.setPitch(this.camera.getPitch() - (float)Math.toRadians(delta.y));
-				if (this.camera.getPitch()>0) {
+				this.camera.setPitch(this.camera.getPitch() - (float) Math.toRadians(delta.y()));
+				if (this.camera.getPitch() > 0) {
 					this.camera.setPitch(0);
 				}
-				if (this.camera.getPitch()<-Math.PI) {
-					this.camera.setPitch((float)-Math.PI);
+				if (this.camera.getPitch() < -Math.PI) {
+					this.camera.setPitch((float) -Math.PI);
 				}
-				this.camera.setRoll(this.camera.getRoll() + (float)Math.toRadians(delta.x));
+				this.camera.setRoll(this.camera.getRoll() + (float) Math.toRadians(delta.x()));
 				Log.info("Change camera: " + this.camera.getYaw() + " " + this.camera.getPitch());
-				if (this.camera.getRoll()>Math.PI) {
-					this.camera.setRoll(this.camera.getRoll()-(float)Math.PI*2.0f);
+				if (this.camera.getRoll() > Math.PI) {
+					this.camera.setRoll(this.camera.getRoll() - (float) Math.PI * 2.0f);
 				}
-				if (this.camera.getRoll()<-Math.PI) {
-					this.camera.setRoll(this.camera.getRoll()+(float)Math.PI*2.0f);
+				if (this.camera.getRoll() < -Math.PI) {
+					this.camera.setRoll(this.camera.getRoll() + (float) Math.PI * 2.0f);
 				}
 			}
 		}
 		return false;
 	}
-
+	
 	@Override
-	public void periodicCall(EventTime event) {
-		if (moveLeft != moveRight) {
-			if (moveRight) {
-				camera.getPosition().x += 0.1;
+	public void periodicCall(final EventTime event) {
+		if (this.moveLeft != this.moveRight) {
+			if (this.moveRight) {
+				this.camera.setPosition(this.camera.getPosition().add(new Vector3f(0.1f, 0, 0)));
 			} else {
-				camera.getPosition().x -= 0.1;
+				this.camera.setPosition(this.camera.getPosition().add(new Vector3f(-0.1f, 0, 0)));
 			}
 		}
-		if (ctrlIsSet == false) {
-			if (moveUp != moveDown) {
-				if (moveUp) {
-					camera.getPosition().y += 0.1;
+		if (!this.ctrlIsSet) {
+			if (this.moveUp != this.moveDown) {
+				if (this.moveUp) {
+					this.camera.setPosition(this.camera.getPosition().add(new Vector3f(0, 0.1f, 0)));
 				} else {
-					camera.getPosition().y -= 0.1;
+					this.camera.setPosition(this.camera.getPosition().add(new Vector3f(0, -0.1f, 0)));
 				}
 			}
-		} else {
-			if (moveUp != moveDown) {
-				if (moveUp) {
-					camera.getPosition().z += 0.1;
-				} else {
-					camera.getPosition().z -= 0.1;
-				}
+		} else if (this.moveUp != this.moveDown) {
+			if (this.moveUp) {
+				
+				this.camera.setPosition(this.camera.getPosition().add(new Vector3f(0, 0, 0.1f)));
+			} else {
+				this.camera.setPosition(this.camera.getPosition().add(new Vector3f(0, 0, -0.1f)));
 			}
 		}
 	}
-
+	
 }

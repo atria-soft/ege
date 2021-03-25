@@ -36,9 +36,9 @@ public class ComponentLight extends Component {
 	
 	public Vector3f getPosition() {
 		if (this.position != null) {
-			return this.position.getTransform().getPosition().clone().add(this.light.getPositionDelta());
+			return this.position.getTransform().getPosition().add(this.light.getPositionDelta());
 		} else if (this.playerPhysics != null) {
-			return this.playerPhysics.getTransform().getPosition().clone().add(this.light.getPositionDelta());
+			return this.playerPhysics.getTransform().getPosition().add(this.light.getPositionDelta());
 		}
 		return null;
 	}

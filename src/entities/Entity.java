@@ -10,67 +10,78 @@ public class Entity {
 	private Vector3f rotation;
 	private float scale;
 	private int textureIndex = 0;
-	public Entity(TexturedModel model, Vector3f position, Vector3f rotation, float scale) {
-		this.model = model;
-		this.position = position;
-		this.rotation = rotation;
-		this.scale = scale;
-	}
-	public Entity(TexturedModel model, int textureIndex, Vector3f position, Vector3f rotation, float scale) {
+	
+	public Entity(final TexturedModel model, final int textureIndex, final Vector3f position, final Vector3f rotation, final float scale) {
 		this.model = model;
 		this.textureIndex = textureIndex;
 		this.position = position;
 		this.rotation = rotation;
 		this.scale = scale;
 	}
-
-	public float getTextureXOffset() {
-		int column = textureIndex%model.getTexture().getNumberOfRows();
-		return (float)column/(float)model.getTexture().getNumberOfRows();
-	}
-	public float getTextureYOffset() {
-		int row = textureIndex/model.getTexture().getNumberOfRows();
-		return (float)row/(float)model.getTexture().getNumberOfRows();
-	}
 	
-	
-	public void increasePosition(float dx, float dy, float dz) {
-		this.position = new Vector3f(position.x + dx, position.y + dy, position.z + dz);
-	}
-	public void increasePosition(Vector3f delta) {
-		this.position = new Vector3f(position.x + delta.x, position.y + delta.y, position.z + delta.z);
-	}
-	public void increaseRotation(float dx, float dy, float dz) {
-		this.rotation = new Vector3f(rotation.x + dx, rotation.y + dy, rotation.z + dz);
-	}
-	public void increaseRotation(Vector3f delta) {
-		this.rotation = new Vector3f(rotation.x + delta.x, rotation.y + delta.y, rotation.z + delta.z);
-	}
-	
-	public TexturedModel getModel() {
-		return model;
-	}
-	public void setModel(TexturedModel model) {
+	public Entity(final TexturedModel model, final Vector3f position, final Vector3f rotation, final float scale) {
 		this.model = model;
-	}
-	public Vector3f getPosition() {
-		return position;
-	}
-	public void setPosition(Vector3f position) {
 		this.position = position;
-	}
-	public Vector3f getRotation() {
-		return rotation;
-	}
-	public void setRotation(Vector3f rotation) {
 		this.rotation = rotation;
-	}
-	public float getScale() {
-		return scale;
-	}
-	public void setScale(float scale) {
 		this.scale = scale;
 	}
 	
+	public TexturedModel getModel() {
+		return this.model;
+	}
+	
+	public Vector3f getPosition() {
+		return this.position;
+	}
+	
+	public Vector3f getRotation() {
+		return this.rotation;
+	}
+	
+	public float getScale() {
+		return this.scale;
+	}
+	
+	public float getTextureXOffset() {
+		int column = this.textureIndex % this.model.getTexture().getNumberOfRows();
+		return (float) column / (float) this.model.getTexture().getNumberOfRows();
+	}
+	
+	public float getTextureYOffset() {
+		int row = this.textureIndex / this.model.getTexture().getNumberOfRows();
+		return (float) row / (float) this.model.getTexture().getNumberOfRows();
+	}
+	
+	public void increasePosition(final float dx, final float dy, final float dz) {
+		this.position = new Vector3f(this.position.x() + dx, this.position.y() + dy, this.position.z() + dz);
+	}
+	
+	public void increasePosition(final Vector3f delta) {
+		this.position = new Vector3f(this.position.x() + delta.x(), this.position.y() + delta.y(), this.position.z() + delta.z());
+	}
+	
+	public void increaseRotation(final float dx, final float dy, final float dz) {
+		this.rotation = new Vector3f(this.rotation.x() + dx, this.rotation.y() + dy, this.rotation.z() + dz);
+	}
+	
+	public void increaseRotation(final Vector3f delta) {
+		this.rotation = new Vector3f(this.rotation.x() + delta.x(), this.rotation.y() + delta.y(), this.rotation.z() + delta.z());
+	}
+	
+	public void setModel(final TexturedModel model) {
+		this.model = model;
+	}
+	
+	public void setPosition(final Vector3f position) {
+		this.position = position;
+	}
+	
+	public void setRotation(final Vector3f rotation) {
+		this.rotation = rotation;
+	}
+	
+	public void setScale(final float scale) {
+		this.scale = scale;
+	}
 	
 }

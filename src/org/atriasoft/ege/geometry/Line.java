@@ -5,25 +5,28 @@ import org.atriasoft.etk.math.Vector3f;
 public class Line {
 	public Vector3f start;
 	public Vector3f end;
-
-	public Line(Vector3f start, Vector3f end) {
+	
+	public Line() {
+		this.start = Vector3f.ZERO;
+		this.end = Vector3f.ZERO;
+	}
+	
+	public Line(final Vector3f start, final Vector3f end) {
 		this.start = start;
 		this.end = end;
 	}
-	public Line() {
-		this.start = new Vector3f();
-		this.end = new Vector3f();
+	
+	public float length() {
+		return this.start.less(this.end).length();
 	}
+	
+	public float length2() {
+		return this.start.less(this.end).length2();
+	}
+	
 	@Override
 	public String toString() {
-		return "Line [start=" + start + ", end=" + end + "]";
+		return "Line [start=" + this.start + ", end=" + this.end + "]";
 	}
-
-	public float length2() {
-		return this.start.lessNew(this.end).length2();
-	}
-	public float length() {
-		return this.start.lessNew(this.end).length();
-	}
-
+	
 }

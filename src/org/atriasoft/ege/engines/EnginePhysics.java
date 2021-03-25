@@ -6,6 +6,9 @@ import java.util.Vector;
 import org.atriasoft.ege.Component;
 import org.atriasoft.ege.Engine;
 import org.atriasoft.ege.Environement;
+import org.atriasoft.ege.camera.Camera;
+import org.atriasoft.ege.components.ComponentPhysics;
+import org.atriasoft.ege.internal.Log;
 import org.atriasoft.ephysics.body.RigidBody;
 import org.atriasoft.ephysics.collision.ContactManifold;
 import org.atriasoft.ephysics.collision.shapes.AABB;
@@ -18,9 +21,6 @@ import org.atriasoft.etk.Color;
 import org.atriasoft.etk.math.Matrix4f;
 import org.atriasoft.etk.math.Vector3f;
 import org.atriasoft.gale.resource.ResourceColored3DObject;
-import org.atriasoft.ege.camera.Camera;
-import org.atriasoft.ege.components.ComponentPhysics;
-import org.atriasoft.ege.internal.Log;
 
 public class EnginePhysics extends Engine implements EventListener {
 	public static final String ENGINE_NAME = "physics";
@@ -34,7 +34,7 @@ public class EnginePhysics extends Engine implements EventListener {
 	//private final EngineGravity gravity;
 	private final DynamicsWorld dynamicsWorld;
 	
-	private final Vector<ComponentPhysics> components = new Vector<ComponentPhysics>();
+	private final Vector<ComponentPhysics> components = new Vector<>();
 	
 	private final ResourceColored3DObject debugDrawProperty = ResourceColored3DObject.create();
 	
@@ -75,7 +75,7 @@ public class EnginePhysics extends Engine implements EventListener {
 			component1.beginContact(component2, contact.normal, contact.localPoint1, contact.localPoint2, contact.penetrationDepth);
 		}
 		if (component2 != null) {
-			component2.beginContact(component1, contact.normal.multiplyNew(-1), contact.localPoint2, contact.localPoint1, contact.penetrationDepth);
+			component2.beginContact(component1, contact.normal.multiply(-1), contact.localPoint2, contact.localPoint1, contact.penetrationDepth);
 		}
 	}
 	
@@ -87,7 +87,7 @@ public class EnginePhysics extends Engine implements EventListener {
 	
 	@Override
 	public void componentAdd(final Component ref) {
-		if (ref instanceof ComponentPhysics == false) {
+		if (!(ref instanceof ComponentPhysics)) {
 			return;
 		}
 		final ComponentPhysics elem = (ComponentPhysics) ref;
@@ -133,7 +133,7 @@ public class EnginePhysics extends Engine implements EventListener {
 			component1.newContact(component2, contact.normal, contact.localPoint1, contact.localPoint2, contact.penetrationDepth);
 		}
 		if (component2 != null) {
-			component2.newContact(component1, contact.normal.multiplyNew(-1), contact.localPoint2, contact.localPoint1, contact.penetrationDepth);
+			component2.newContact(component1, contact.normal.multiply(-1), contact.localPoint2, contact.localPoint1, contact.penetrationDepth);
 		}
 	}
 	
@@ -152,17 +152,17 @@ public class EnginePhysics extends Engine implements EventListener {
 	
 	@Override
 	public void renderDebug(final long deltaMili, final Camera camera) {
-		if (this.propertyDebugShape == true) {
+		if (this.propertyDebugShape) {
 			for (final ComponentPhysics it : this.components) {
 				it.drawShape(this.debugDrawProperty, camera);
 			}
 		}
-		if (this.propertyDebugAABB == true) {
+		if (this.propertyDebugAABB) {
 			for (final ComponentPhysics it : this.components) {
 				it.renderDebug(this.debugDrawProperty, camera);
 			}
 		}
-		final Matrix4f transformationMatrix = Matrix4f.identity();
+		final Matrix4f transformationMatrix = Matrix4f.IDENTITY;
 		final Color tmpColor = new Color(0.0f, 0.0f, 1.0f, 0.8f);
 		final List<Island> islands = this.dynamicsWorld.getIslands();
 		for (final Island it : islands) {
@@ -180,9 +180,9 @@ public class EnginePhysics extends Engine implements EventListener {
 		for (final ContactManifold it : listContact) {
 			for (int iii = 0; iii < it.getNbContactPoints(); iii++) {
 				final ContactPoint contact = it.getContactPoint(iii);
-				this.debugDrawProperty.drawSquare(new Vector3f(0.05f, 0.05f, 0.05f), Matrix4f.identity().multiplyNew(Matrix4f.createMatrixTranslate(contact.getWorldPointOnBody1())),
+				this.debugDrawProperty.drawSquare(new Vector3f(0.05f, 0.05f, 0.05f), Matrix4f.IDENTITY.multiply(Matrix4f.createMatrixTranslate(contact.getWorldPointOnBody1())),
 						new Color(0, 1, 0, 1));
-				this.debugDrawProperty.drawSquare(new Vector3f(0.05f, 0.05f, 0.05f), Matrix4f.identity().multiplyNew(Matrix4f.createMatrixTranslate(contact.getWorldPointOnBody2())),
+				this.debugDrawProperty.drawSquare(new Vector3f(0.05f, 0.05f, 0.05f), Matrix4f.IDENTITY.multiply(Matrix4f.createMatrixTranslate(contact.getWorldPointOnBody2())),
 						new Color(0, 1, 0, 1));
 			}
 		}
@@ -191,7 +191,7 @@ public class EnginePhysics extends Engine implements EventListener {
 	
 	public void setGravity(final Vector3f _axePower) {
 		if (this.dynamicsWorld != null) {
-			final Vector3f gravity = _axePower.clone();
+			final Vector3f gravity = _axePower;
 			this.dynamicsWorld.setGravity(gravity);
 		}
 	}

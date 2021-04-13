@@ -3,30 +3,30 @@ package org.atriasoft.ege.components;
 import org.atriasoft.ege.Component;
 import org.atriasoft.ege.Light;
 import org.atriasoft.ege.Material;
+import org.atriasoft.ege.engines.EngineLight;
 import org.atriasoft.etk.Uri;
 import org.atriasoft.etk.math.Matrix4f;
 import org.atriasoft.etk.math.Vector3f;
 import org.atriasoft.gale.backend3d.OpenGL;
 import org.atriasoft.gale.resource.ResourceProgram;
-import org.atriasoft.ege.engines.EngineLight;
 
 public class ComponentRenderTexturedMaterialsStaticMesh extends ComponentRender {
 	private static final int numberOfLight = 8;
-	ComponentStaticMesh mesh = null;
-	ComponentTexture texture = null;
-	ComponentMaterial material = null;
-	ComponentPosition position = null;
-	private ComponentPhysics playerPhysics = null;
-	ResourceProgram program = null;
-	EngineLight lightEngine;
-	private int GLMatrixTransformation;
-	private int GLMatrixProjection;
-	private int GLMatrixView;
 	private int GLambientFactor;
 	private int GLdiffuseFactor;
-	private int GLspecularFactor;
-	private int GLshininess;
 	private GlLightIndex[] GLlights;
+	private int GLMatrixProjection;
+	private int GLMatrixTransformation;
+	private int GLMatrixView;
+	private int GLshininess;
+	private int GLspecularFactor;
+	EngineLight lightEngine;
+	ComponentMaterial material = null;
+	ComponentStaticMesh mesh = null;
+	private ComponentPhysics playerPhysics = null;
+	ComponentPosition position = null;
+	ResourceProgram program = null;
+	ComponentTexture texture = null;
 	
 	public ComponentRenderTexturedMaterialsStaticMesh(final Uri vertexShader, final Uri fragmentShader, final EngineLight lightEngine) {
 		this.lightEngine = lightEngine;
@@ -39,8 +39,8 @@ public class ComponentRenderTexturedMaterialsStaticMesh extends ComponentRender 
 			this.GLdiffuseFactor = this.program.getUniform("in_material.diffuseFactor");
 			this.GLspecularFactor = this.program.getUniform("in_material.specularFactor");
 			this.GLshininess = this.program.getUniform("in_material.shininess");
-			this.GLlights = new GlLightIndex[numberOfLight];
-			for (int iii = 0; iii < numberOfLight; iii++) {
+			this.GLlights = new GlLightIndex[ComponentRenderTexturedMaterialsStaticMesh.numberOfLight];
+			for (int iii = 0; iii < ComponentRenderTexturedMaterialsStaticMesh.numberOfLight; iii++) {
 				final int color = this.program.getUniform("in_lights[" + iii + "].color");
 				final int position = this.program.getUniform("in_lights[" + iii + "].position");
 				final int attenuation = this.program.getUniform("in_lights[" + iii + "].attenuation");
@@ -80,9 +80,11 @@ public class ComponentRenderTexturedMaterialsStaticMesh extends ComponentRender 
 		Light[] lights = null;
 		Matrix4f transformationMatrix = null;
 		if (this.position != null) {
+			//Log.warning("position " + this.position.getTransform());
 			lights = this.lightEngine.getNearest(this.position.getTransform().getPosition());
 			transformationMatrix = this.position.getTransform().getOpenGLMatrix();
 		} else if (this.playerPhysics != null) {
+			//Log.warning("playerPosition " + this.playerPhysics.getTransform());
 			lights = this.lightEngine.getNearest(this.playerPhysics.getTransform().getPosition());
 			transformationMatrix = this.playerPhysics.getTransform().getOpenGLMatrix();
 		}
@@ -96,7 +98,7 @@ public class ComponentRenderTexturedMaterialsStaticMesh extends ComponentRender 
 		this.program.uniformVector(this.GLdiffuseFactor, mat.getDiffuseFactor());
 		this.program.uniformVector(this.GLspecularFactor, mat.getSpecularFactor());
 		this.program.uniformFloat(this.GLshininess, mat.getShininess());
-		for (int iii = 0; iii < numberOfLight; iii++) {
+		for (int iii = 0; iii < ComponentRenderTexturedMaterialsStaticMesh.numberOfLight; iii++) {
 			if (lights[iii] != null) {
 				this.program.uniformVector(this.GLlights[iii].oGLposition, lights[iii].getPositionDelta());
 				this.program.uniformVector(this.GLlights[iii].oGLcolor, lights[iii].getColor());

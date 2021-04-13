@@ -7,14 +7,14 @@ import org.atriasoft.gale.backend3d.OpenGL;
 import org.atriasoft.gale.resource.ResourceProgram;
 
 public class ComponentRenderTexturedStaticMesh extends ComponentRender {
-	ComponentStaticMesh mesh = null;
-	ComponentTexture texture = null;
-	ComponentPosition position = null;
-	private ComponentPhysics playerPhysics = null;
-	ResourceProgram program = null;
-	private int GLMatrixTransformation;
 	private int GLMatrixProjection;
+	private int GLMatrixTransformation;
 	private int GLMatrixView;
+	ComponentStaticMesh mesh = null;
+	private ComponentPhysics playerPhysics = null;
+	ComponentPosition position = null;
+	ResourceProgram program = null;
+	ComponentTexture texture = null;
 	
 	public ComponentRenderTexturedStaticMesh(final Uri vertexShader, final Uri fragmentShader) {
 		this.program = ResourceProgram.create(vertexShader, fragmentShader);
@@ -54,8 +54,10 @@ public class ComponentRenderTexturedStaticMesh extends ComponentRender {
 		final Matrix4f viewMatrix = OpenGL.getCameraMatrix();
 		Matrix4f transformationMatrix = null;
 		if (this.position != null) {
+			//Log.warning("position " + this.position.getTransform());
 			transformationMatrix = this.position.getTransform().getOpenGLMatrix();
 		} else if (this.playerPhysics != null) {
+			//Log.warning("playerPosition " + this.playerPhysics.getTransform());
 			transformationMatrix = this.playerPhysics.getTransform().getOpenGLMatrix();
 		}
 		this.mesh.bindForRendering();

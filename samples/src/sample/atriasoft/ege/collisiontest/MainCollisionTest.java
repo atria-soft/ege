@@ -1,4 +1,4 @@
-package org.atriasoft.ege.samples.collisiontest;
+package sample.atriasoft.ege.collisiontest;
 
 import org.atriasoft.ege.Ege;
 import org.atriasoft.etk.Uri;

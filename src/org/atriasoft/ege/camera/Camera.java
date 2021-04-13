@@ -7,10 +7,10 @@ import org.atriasoft.etk.math.Vector3f;
 //import renderEngine.DisplayManager;
 
 public class Camera {
-	private Vector3f position = new Vector3f(0, 0, 2);
 	private float pitch = 0;
-	private float yaw = 0;
+	private Vector3f position = new Vector3f(0, 0, 2);
 	private float roll = 0;
+	private float yaw = 0;
 	
 	public Camera() {
 		
@@ -22,6 +22,12 @@ public class Camera {
 		matrix = matrix.rotate(new Vector3f(0, 1, 0), getYaw());
 		matrix = matrix.rotate(new Vector3f(0, 0, 1), getRoll());
 		matrix = matrix.translate(new Vector3f(-this.position.x(), -this.position.y(), -this.position.z()));
+		/*
+		matrix = matrix.rotate(new Vector3f(1, 0, 0), 0.0f);
+		matrix = matrix.rotate(new Vector3f(0, 1, 0), 0.0f);
+		matrix = matrix.rotate(new Vector3f(0, 0, 1), 0.75f);
+		matrix = matrix.translate(new Vector3f(0, 0, -7));
+		*/
 		return matrix;
 	}
 	

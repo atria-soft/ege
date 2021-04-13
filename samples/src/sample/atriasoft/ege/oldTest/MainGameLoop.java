@@ -1,12 +1,14 @@
-package engineTester;
+package sample.atriasoft.ege.oldTest;
 
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Random;
 
+import org.atriasoft.ege.Ege;
 import org.atriasoft.etk.Uri;
 import org.atriasoft.etk.math.Vector2f;
 import org.atriasoft.etk.math.Vector3f;
+import org.atriasoft.gale.Gale;
 
 import entities.Camera;
 import entities.Entity;
@@ -40,6 +42,12 @@ public class MainGameLoop {
 	 * @param args
 	 */
 	public static void main(String[] args) {
+		Gale.init();
+		Ege.init();
+		Uri.setGroup("DATA", "data/");
+		Uri.setGroup("RES", "res");
+		Uri.addLibrary("loxelEngine", MainGameLoop.class, "testDataLoxelEngine/");
+		Uri.setApplication(MainGameLoop.class, "");
 		
 		final DisplayManager manager = new DisplayManager();
 		final Loader loader = new Loader();

@@ -52,22 +52,22 @@ public class ControlCameraPlayer implements ControlInterface {
 	
 	@Override
 	public boolean onEventEntry(final EventEntry event) {
-		if (event.type() == KeyKeyboard.up || (event.type() == KeyKeyboard.character && (event.getChar() == 'z' || event.getChar() == 'Z'))) {
+		if (event.type() == KeyKeyboard.UP || (event.type() == KeyKeyboard.CHARACTER && (event.getChar() == 'z' || event.getChar() == 'Z'))) {
 			this.moveUp = getState(event.status(), this.moveUp);
 		}
-		if (event.type() == KeyKeyboard.left || (event.type() == KeyKeyboard.character && (event.getChar() == 'q' || event.getChar() == 'Q'))) {
+		if (event.type() == KeyKeyboard.LEFT || (event.type() == KeyKeyboard.CHARACTER && (event.getChar() == 'q' || event.getChar() == 'Q'))) {
 			this.moveLeft = getState(event.status(), this.moveLeft);
 		}
-		if (event.type() == KeyKeyboard.right || (event.type() == KeyKeyboard.character && (event.getChar() == 'd' || event.getChar() == 'D'))) {
+		if (event.type() == KeyKeyboard.RIGHT || (event.type() == KeyKeyboard.CHARACTER && (event.getChar() == 'd' || event.getChar() == 'D'))) {
 			this.moveRight = getState(event.status(), this.moveRight);
 		}
-		if (event.type() == KeyKeyboard.down || (event.type() == KeyKeyboard.character && (event.getChar() == 's' || event.getChar() == 'S'))) {
+		if (event.type() == KeyKeyboard.DOWN || (event.type() == KeyKeyboard.CHARACTER && (event.getChar() == 's' || event.getChar() == 'S'))) {
 			this.moveDown = getState(event.status(), this.moveDown);
 		}
-		if (event.type() == KeyKeyboard.shiftLeft || event.type() == KeyKeyboard.shiftRight) {
+		if (event.type() == KeyKeyboard.SHIFT_LEFT || event.type() == KeyKeyboard.SHIFT_RIGHT) {
 			this.walk = event.specialKey().getShift();
 		}
-		if (event.type() == KeyKeyboard.f10) {
+		if (event.type() == KeyKeyboard.F10) {
 			if (event.status() == KeyStatus.up) {
 				if (!this.fpsMode) {
 					this.fpsMode = true;

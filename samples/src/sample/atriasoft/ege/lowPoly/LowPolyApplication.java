@@ -1,4 +1,4 @@
-package org.atriasoft.ege.samples.lowPoly;
+package sample.atriasoft.ege.lowPoly;
 
 import org.atriasoft.ege.ControlCameraSimple;
 import org.atriasoft.ege.Entity;
@@ -25,7 +25,7 @@ import org.atriasoft.etk.math.Quaternion;
 import org.atriasoft.etk.math.Transform3D;
 import org.atriasoft.etk.math.Vector2f;
 import org.atriasoft.etk.math.Vector3f;
-import org.atriasoft.gale.Application;
+import org.atriasoft.gale.GaleApplication;
 import org.atriasoft.gale.backend3d.OpenGL;
 import org.atriasoft.gale.backend3d.OpenGL.Flag;
 import org.atriasoft.gale.context.Context;
@@ -34,75 +34,71 @@ import org.atriasoft.gale.key.KeySpecial;
 import org.atriasoft.gale.key.KeyStatus;
 import org.atriasoft.gale.key.KeyType;
 
-public class LowPolyApplication extends Application {
-	private Environement env;
-	private ComponentPosition objectPosition;
+public class LowPolyApplication extends GaleApplication {
+	private float angleLight = 0;
 	private Quaternion basicRotation = Quaternion.IDENTITY;
 	private Quaternion basicRotation2 = Quaternion.IDENTITY;
-	private boolean creationDone;
-	private ControlCameraSimple simpleControl;
-	private Material materialCube;
+	private Environement env;
 	private ComponentPosition lightPosition;
-	private float angleLight = 0;
+	private Material materialCube;
+	private ComponentPosition objectPosition;
+	private ControlCameraSimple simpleControl;
 	
-	public LowPolyApplication() {
-		this.creationDone = false;
-	}
+	public LowPolyApplication() {}
 	
 	@Override
 	public void onCreate(final Context context) {
 		this.env = new Environement();
-		this.canDraw = true;
 		setSize(new Vector2f(800, 600));
 		setTitle("Low Poly sample");
 		
 		// simple sun to have a global light ...
-		Entity sun = new Entity(this.env);
+		final Entity sun = new Entity(this.env);
 		sun.addComponent(new ComponentPosition(new Transform3D(new Vector3f(1000, 1000, 1000))));
 		sun.addComponent(new ComponentLightSun(new Light(new Vector3f(0.4f, 0.4f, 0.4f), new Vector3f(0, 0, 0), new Vector3f(0.8f, 0, 0))));
 		this.env.addEntity(sun);
 		
 		// add a cube to show where in the light ...
-		Entity localLight = new Entity(this.env);
+		final Entity localLight = new Entity(this.env);
 		this.lightPosition = new ComponentPosition(new Transform3D(new Vector3f(-10, -10, 0)));
 		localLight.addComponent(this.lightPosition);
 		localLight.addComponent(new ComponentStaticMesh(new Uri("RES", "cube.obj")));
 		localLight.addComponent(new ComponentTexture(new Uri("RES", "grass.png")));
 		localLight.addComponent(new ComponentLight(new Light(new Vector3f(0, 2, 0), new Vector3f(0, 0, 0), new Vector3f(0.8f, 0.01f, 0.002f))));
-		localLight.addComponent(new ComponentRenderTexturedStaticMesh(new Uri("DATA", "basic.vert"), new Uri("DATA", "basic.frag")));
+		localLight.addComponent(new ComponentRenderTexturedStaticMesh(new Uri("DATA", "basic.vert", "loxelEngine"), new Uri("DATA", "basic.frag", "loxelEngine")));
 		this.env.addEntity(localLight);
 		
-		Entity gird = new Entity(this.env);
+		final Entity gird = new Entity(this.env);
 		gird.addComponent(new ComponentPosition(new Transform3D(new Vector3f(0, 0, 0))));
 		gird.addComponent(new ComponentStaticMesh(MeshGenerator.createGrid(5)));
-		gird.addComponent(new ComponentRenderColoredStaticMesh(new Uri("DATA_EGE", "wireColor.vert"), new Uri("DATA_EGE", "wireColor.frag")));
+		gird.addComponent(new ComponentRenderColoredStaticMesh(new Uri("DATA", "wireColor.vert", "ege"), new Uri("DATA", "wireColor.frag", "ege")));
 		this.env.addEntity(gird);
 		
-		Entity basicTree = new Entity(this.env);
+		final Entity basicTree = new Entity(this.env);
 		this.objectPosition = new ComponentPosition(new Transform3D(new Vector3f(0, 0, 0)));
 		basicTree.addComponent(this.objectPosition);
 		this.materialCube = new Material();
 		basicTree.addComponent(new ComponentMaterial(this.materialCube));
 		basicTree.addComponent(new ComponentStaticMesh(new Uri("RES", "cube.obj")));
 		basicTree.addComponent(new ComponentTexture(new Uri("RES", "grass.png")));
-		basicTree.addComponent(new ComponentRenderTexturedMaterialsStaticMesh(new Uri("DATA", "basicMaterial.vert"), new Uri("DATA", "basicMaterial.frag"),
+		basicTree.addComponent(new ComponentRenderTexturedMaterialsStaticMesh(new Uri("DATA", "basicMaterial.vert", "loxelEngine"), new Uri("DATA", "basicMaterial.frag", "loxelEngine"),
 				(EngineLight) this.env.getEngine(EngineLight.ENGINE_NAME)));
 		this.env.addEntity(basicTree);
 		
 		for (int xxx = -10; xxx < 10; xxx++) {
 			for (int yyy = -10; yyy < 10; yyy++) {
-				Entity superGrass = new Entity(this.env);
+				final Entity superGrass = new Entity(this.env);
 				superGrass.addComponent(new ComponentPosition(new Transform3D(new Vector3f(xxx, yyy, -1))));
 				superGrass.addComponent(new ComponentMaterial(new Material()));
 				superGrass.addComponent(new ComponentStaticMesh(new Uri("RES", "cube-one.obj")));
 				superGrass.addComponent(new ComponentTexture(new Uri("RES", "dirt.png")));
-				superGrass.addComponent(new ComponentRenderTexturedMaterialsStaticMesh(new Uri("DATA", "basicMaterial.vert"), new Uri("DATA", "basicMaterial.frag"),
+				superGrass.addComponent(new ComponentRenderTexturedMaterialsStaticMesh(new Uri("DATA", "basicMaterial.vert", "loxelEngine"), new Uri("DATA", "basicMaterial.frag", "loxelEngine"),
 						(EngineLight) this.env.getEngine(EngineLight.ENGINE_NAME)));
 				this.env.addEntity(superGrass);
 			}
 		}
 		
-		Camera mainView = new Camera();
+		final Camera mainView = new Camera();
 		this.env.addCamera("default", mainView);
 		mainView.setPitch((float) Math.PI * -0.25f);
 		mainView.setPosition(new Vector3f(0, -5, 5));
@@ -117,30 +113,23 @@ public class LowPolyApplication extends Application {
 		this.basicRotation2 = Quaternion.fromEulerAngles(new Vector3f(0.003f, 0.01f, 0.001f));
 		// ready to let Gale & Ege manage the display
 		Log.info("==> Init APPL (END)");
-		this.creationDone = true;
 	}
 	
 	@Override
 	public void onDraw(final Context context) {
 		//Log.info("==> appl Draw ...");
-		Vector2f size = getSize();
-		if (!this.creationDone) {
-			OpenGL.setViewPort(new Vector2f(0, 0), size);
-			Color bgColor = new Color(0.8f, 0.5f, 0.5f, 1.0f);
-			OpenGL.clearColor(bgColor);
-			return;
-		}
+		final Vector2f size = getSize();
 		// Store openGl context.
 		OpenGL.push();
 		// set projection matrix:
-		Matrix4f tmpProjection = Matrix4f.createMatrixPerspective(3.14f * 0.5f, getAspectRatio(), 0.1f, 50000);
+		final Matrix4f tmpProjection = Matrix4f.createMatrixPerspective(3.14f * 0.5f, getAspectRatio(), 0.1f, 50000);
 		OpenGL.setMatrix(tmpProjection);
 		
 		// set the basic openGL view port: (Draw in all the windows...)
 		OpenGL.setViewPort(new Vector2f(0, 0), size);
 		
 		// clear background
-		Color bgColor = new Color(0.0f, 1.0f, 0.0f, 1.0f);
+		final Color bgColor = new Color(0.0f, 1.0f, 0.0f, 1.0f);
 		OpenGL.clearColor(bgColor);
 		// real clear request:
 		OpenGL.clear(OpenGL.ClearFlag.clearFlag_colorBuffer);
@@ -166,9 +155,6 @@ public class LowPolyApplication extends Application {
 	@Override
 	public void onRegenerateDisplay(final Context context) {
 		//Log.verbose("Regenerate Gale Application");
-		if (!this.creationDone) {
-			return;
-		}
 		//materialCube.setAmbientFactor(new Vector3f(1.0f,1.0f,1.0f));
 		// apply a little rotation to show the element move
 		//objectPosition.getTransform().applyRotation(basicRotation);

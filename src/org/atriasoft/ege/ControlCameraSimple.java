@@ -38,16 +38,16 @@ public class ControlCameraSimple implements ControlInterface {
 	
 	@Override
 	public boolean onEventEntry(final EventEntry event) {
-		if (event.type() == KeyKeyboard.up) {
+		if (event.type() == KeyKeyboard.UP) {
 			this.moveUp = getState(event.status(), this.moveUp);
 		}
-		if (event.type() == KeyKeyboard.left) {
+		if (event.type() == KeyKeyboard.LEFT) {
 			this.moveLeft = getState(event.status(), this.moveLeft);
 		}
-		if (!event.specialKey().getCtrl() && event.type() == KeyKeyboard.right) {
+		if (!event.specialKey().getCtrl() && event.type() == KeyKeyboard.RIGHT) {
 			this.moveRight = getState(event.status(), this.moveRight);
 		}
-		if (!event.specialKey().getCtrl() && event.type() == KeyKeyboard.down) {
+		if (!event.specialKey().getCtrl() && event.type() == KeyKeyboard.DOWN) {
 			this.moveDown = getState(event.status(), this.moveDown);
 		}
 		this.ctrlIsSet = event.specialKey().getCtrl();

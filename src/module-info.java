@@ -11,6 +11,17 @@ open module org.atriasoft.ege {
 	exports org.atriasoft.ege.map;
 	exports org.atriasoft.ege.physics.shape;
 	exports org.atriasoft.ege.resource;
+	exports org.atriasoft.ege.tools;
+	exports entities;
+	exports guis;
+	exports models;
+	exports objConverter;
+	exports renderEngine;
+	exports shaders;
+	exports skybox;
+	exports terrains;
+	exports textures;
+	exports toolbox;
 	
 	requires transitive org.atriasoft.gale;
 	requires transitive org.atriasoft.etk;

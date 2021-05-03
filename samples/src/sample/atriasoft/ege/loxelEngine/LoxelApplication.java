@@ -41,7 +41,7 @@ import org.atriasoft.gale.GaleApplication;
 import org.atriasoft.gale.Gale;
 import org.atriasoft.gale.backend3d.OpenGL;
 import org.atriasoft.gale.backend3d.OpenGL.Flag;
-import org.atriasoft.gale.context.Context;
+import org.atriasoft.gale.context.GaleContext;
 import org.atriasoft.gale.key.KeyKeyboard;
 import org.atriasoft.gale.key.KeySpecial;
 import org.atriasoft.gale.key.KeyStatus;
@@ -74,7 +74,7 @@ public class LoxelApplication extends GaleApplication {
 	}
 	
 	@Override
-	public void onCreate(final Context context) {
+	public void onCreate(final GaleContext context) {
 		// set the system global max speed
 		//ComponentPhysics.globalMaxSpeed = 3;
 		Gale.getContext().grabPointerEvents(true, new Vector2f(0, 0));
@@ -331,7 +331,7 @@ public class LoxelApplication extends GaleApplication {
 	}
 	
 	@Override
-	public void onDraw(final Context context) {
+	public void onDraw(final GaleContext context) {
 		//Log.info("==> appl Draw ...");
 		final Vector2f size = getSize();
 		// Store openGl context.
@@ -408,7 +408,7 @@ public class LoxelApplication extends GaleApplication {
 	
 	@Override
 	public void onKeyboard(final KeySpecial special, final KeyKeyboard type, final Character value, final KeyStatus state) {
-		if (type == KeyKeyboard.f1) {
+		if (type == KeyKeyboard.F1) {
 			Gale.getContext().grabPointerEvents(false, new Vector2f(0, 0));
 		}
 		if (type == KeyKeyboard.F2) {
@@ -426,7 +426,7 @@ public class LoxelApplication extends GaleApplication {
 	}
 	
 	@Override
-	public void onRegenerateDisplay(final Context context) {
+	public void onRegenerateDisplay(final GaleContext context) {
 		//Log.verbose("Regenerate Gale Application");
 		this.angleLight += 0.01;
 		this.lightPosition.setTransform(this.lightPosition.getTransform()

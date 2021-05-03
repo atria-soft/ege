@@ -2,11 +2,11 @@ package org.atriasoft.ege.map;
 
 import org.atriasoft.ege.components.ComponentDynamicMeshs;
 import org.atriasoft.ege.internal.Log;
-import org.atriasoft.ege.resource.ResourceListTexturedMesh;
 import org.atriasoft.etk.math.Vector2f;
 import org.atriasoft.etk.math.Vector3f;
 import org.atriasoft.etk.math.Vector3i;
 import org.atriasoft.gale.backend3d.OpenGL.RenderMode;
+import org.atriasoft.loader3d.resources.ResourceListTexturedMesh;
 
 public class ComponentDynamicMeshsVoxelMap extends ComponentDynamicMeshs {
 	private VoxelChunk chunk;

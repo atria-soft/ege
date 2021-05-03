@@ -28,7 +28,7 @@ import org.atriasoft.etk.math.Vector3f;
 import org.atriasoft.gale.GaleApplication;
 import org.atriasoft.gale.backend3d.OpenGL;
 import org.atriasoft.gale.backend3d.OpenGL.Flag;
-import org.atriasoft.gale.context.Context;
+import org.atriasoft.gale.context.GaleContext;
 import org.atriasoft.gale.key.KeyKeyboard;
 import org.atriasoft.gale.key.KeySpecial;
 import org.atriasoft.gale.key.KeyStatus;
@@ -47,7 +47,7 @@ public class LowPolyApplication extends GaleApplication {
 	public LowPolyApplication() {}
 	
 	@Override
-	public void onCreate(final Context context) {
+	public void onCreate(final GaleContext context) {
 		this.env = new Environement();
 		setSize(new Vector2f(800, 600));
 		setTitle("Low Poly sample");
@@ -116,7 +116,7 @@ public class LowPolyApplication extends GaleApplication {
 	}
 	
 	@Override
-	public void onDraw(final Context context) {
+	public void onDraw(final GaleContext context) {
 		//Log.info("==> appl Draw ...");
 		final Vector2f size = getSize();
 		// Store openGl context.
@@ -153,7 +153,7 @@ public class LowPolyApplication extends GaleApplication {
 	}
 	
 	@Override
-	public void onRegenerateDisplay(final Context context) {
+	public void onRegenerateDisplay(final GaleContext context) {
 		//Log.verbose("Regenerate Gale Application");
 		//materialCube.setAmbientFactor(new Vector3f(1.0f,1.0f,1.0f));
 		// apply a little rotation to show the element move

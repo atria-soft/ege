@@ -10,12 +10,10 @@ open module org.atriasoft.ege {
 	exports org.atriasoft.ege.geometry;
 	exports org.atriasoft.ege.map;
 	exports org.atriasoft.ege.physics.shape;
-	exports org.atriasoft.ege.resource;
 	exports org.atriasoft.ege.tools;
 	exports entities;
 	exports guis;
 	exports models;
-	exports objConverter;
 	exports renderEngine;
 	exports shaders;
 	exports skybox;
@@ -27,4 +25,5 @@ open module org.atriasoft.ege {
 	requires transitive org.atriasoft.etk;
 	requires transitive org.atriasoft.ewol;
 	requires transitive org.atriasoft.ephysics;
+	requires org.atriasoft.loader3d;
 }

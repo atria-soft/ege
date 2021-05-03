@@ -2,8 +2,8 @@ package org.atriasoft.ege.components;
 
 import org.atriasoft.ege.Component;
 import org.atriasoft.etk.Uri;
-import org.atriasoft.ege.resource.ResourceStaticMesh;
-import org.atriasoft.ege.resource.ResourceStaticMeshObj;
+import org.atriasoft.loader3d.resources.ResourceStaticMesh;
+import org.atriasoft.loader3d.resources.ResourceStaticMeshObj;
 
 public class ComponentStaticMesh extends Component {
 	private ResourceStaticMesh mesh = null;

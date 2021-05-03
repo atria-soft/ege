@@ -21,7 +21,7 @@ import org.atriasoft.etk.math.Vector3f;
 import org.atriasoft.gale.GaleApplication;
 import org.atriasoft.gale.backend3d.OpenGL;
 import org.atriasoft.gale.backend3d.OpenGL.Flag;
-import org.atriasoft.gale.context.Context;
+import org.atriasoft.gale.context.GaleContext;
 import org.atriasoft.gale.key.KeyKeyboard;
 import org.atriasoft.gale.key.KeySpecial;
 import org.atriasoft.gale.key.KeyStatus;
@@ -39,7 +39,7 @@ public class S1Application extends GaleApplication {
 	public S1Application() {}
 	
 	@Override
-	public void onCreate(final Context context) {
+	public void onCreate(final GaleContext context) {
 		Log.info("On create .... [BEGIN]");
 		this.env = new Environement();
 		setSize(new Vector2f(800, 600));
@@ -78,7 +78,7 @@ public class S1Application extends GaleApplication {
 	}
 	
 	@Override
-	public void onDraw(final Context context) {
+	public void onDraw(final GaleContext context) {
 		Log.info("On draw .... [BEGIN]");
 		//Log.info("==> appl Draw ...");
 		final Vector2f size = getSize();
@@ -117,7 +117,7 @@ public class S1Application extends GaleApplication {
 	}
 	
 	@Override
-	public void onRegenerateDisplay(final Context context) {
+	public void onRegenerateDisplay(final GaleContext context) {
 		Log.info("On Regenerate Display .... [BEGIN]");
 		//Log.verbose("Regenerate Gale Application");
 		

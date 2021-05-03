@@ -6,9 +6,9 @@ import java.util.Set;
 
 import org.atriasoft.ege.Component;
 import org.atriasoft.etk.Uri;
+import org.atriasoft.loader3d.resources.ResourceStaticMesh;
+import org.atriasoft.loader3d.resources.ResourceStaticMeshObj;
 import org.atriasoft.ege.internal.Log;
-import org.atriasoft.ege.resource.ResourceStaticMesh;
-import org.atriasoft.ege.resource.ResourceStaticMeshObj;
 
 public class ComponentStaticMeshs extends Component {
 	private Map<String, ResourceStaticMesh> meshs = new HashMap<String, ResourceStaticMesh>();

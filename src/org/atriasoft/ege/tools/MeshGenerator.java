@@ -3,10 +3,10 @@ package org.atriasoft.ege.tools;
 import java.util.ArrayList;
 import java.util.List;
 
-import org.atriasoft.ege.resource.ResourceStaticColoredMesh;
 import org.atriasoft.etk.Color;
 import org.atriasoft.etk.math.Vector3f;
 import org.atriasoft.gale.backend3d.OpenGL.RenderMode;
+import org.atriasoft.loader3d.resources.ResourceStaticColoredMesh;
 
 class MeshData {
 	public List<Vector3f> vertices = new ArrayList<>();

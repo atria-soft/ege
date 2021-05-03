@@ -22,17 +22,7 @@
 			<attribute name="test" value="true"/>
 		</attributes>
 	</classpathentry>
-	<classpathentry combineaccessrules="false" exported="true" kind="src" path="/atriasoft-ephysics">
-		<attributes>
-			<attribute name="module" value="true"/>
-		</attributes>
-	</classpathentry>
-	<classpathentry combineaccessrules="false" exported="true" kind="src" path="/scenarium-logger">
-		<attributes>
-			<attribute name="module" value="true"/>
-		</attributes>
-	</classpathentry>
-	<classpathentry combineaccessrules="false" exported="true" kind="src" path="/atriasoft-etk">
+	<classpathentry combineaccessrules="false" exported="true" kind="src" path="/atriasoft-ewol">
 		<attributes>
 			<attribute name="module" value="true"/>
 		</attributes>
@@ -42,7 +32,22 @@
 			<attribute name="module" value="true"/>
 		</attributes>
 	</classpathentry>
-	<classpathentry combineaccessrules="false" exported="true" kind="src" path="/atriasoft-ewol">
+	<classpathentry combineaccessrules="false" exported="true" kind="src" path="/atriasoft-etk">
+		<attributes>
+			<attribute name="module" value="true"/>
+		</attributes>
+	</classpathentry>
+	<classpathentry combineaccessrules="false" exported="true" kind="src" path="/scenarium-logger">
+		<attributes>
+			<attribute name="module" value="true"/>
+		</attributes>
+	</classpathentry>
+	<classpathentry combineaccessrules="false" exported="true" kind="src" path="/atriasoft-ephysics">
+		<attributes>
+			<attribute name="module" value="true"/>
+		</attributes>
+	</classpathentry>
+	<classpathentry combineaccessrules="false" kind="src" path="/loader3d">
 		<attributes>
 			<attribute name="module" value="true"/>
 		</attributes>

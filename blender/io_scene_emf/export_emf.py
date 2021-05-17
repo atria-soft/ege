@@ -4,7 +4,7 @@ import time
 
 import bpy
 import mathutils
-import bpy_extras.io_utils
+from bpy_extras import io_utils, node_shader_utils
 
 EXPORT_COLLISION_NAME = ""
 
@@ -117,13 +117,14 @@ def get_physics_shape(obj, mainObjScale):
 
 
 def write_collision_shape(object, file, mainObjScale, offset):
+	fw = file.write
 	if len(getChildren(object))==0:
 		# no phisical shape ...
 		return
 	string_offset = ""
 	for iii in range(offset):
 		string_offset += "\t"
-	file.write(string_offset + 'Physics:\n')
+	fw(string_offset + 'Physics:\n')
 	for subObj in getChildren(object):
 		print("        element='" + subObj.name + "' type '" + str(subObj.type) + "'")
 		if     subObj.type != 'MESH' \
@@ -133,9 +134,9 @@ def write_collision_shape(object, file, mainObjScale, offset):
 		if shape=="":
 			print("error of shape detection type ...");
 			continue
-		file.write(string_offset + "\t" + shape + "\n" )
+		fw(string_offset + "\t" + shape + "\n" )
 		for (k,v) in props.items():
-			file.write(string_offset + "\t\t%s:%s\n" % (k, v) )
+			fw(string_offset + "\t\t%s:%s\n" % (k, v) )
 
 
 
@@ -157,6 +158,7 @@ def mesh_triangulate(me):
 
 def write_mtl(scene, file, filepath, path_mode, copy_set, mtl_dict):
 	from mathutils import Color
+	fw = file.write
 	world = scene.world
 	#if world and world.ambient_color:
 	#	world_amb = world.ambient_color
@@ -164,8 +166,8 @@ def write_mtl(scene, file, filepath, path_mode, copy_set, mtl_dict):
 	world_amb = Color((0.0, 0.0, 0.0))
 	source_dir = os.path.dirname(bpy.data.filepath)
 	dest_dir = os.path.dirname(filepath)
-	file.write('\n')
-	#file.write('\nMaterials:%i\n' % len(mtl_dict))
+	fw('\n')
+	#fw('\nMaterials:%i\n' % len(mtl_dict))
 	mtl_dict_values = list(mtl_dict.values())
 	mtl_dict_values.sort(key=lambda m: m[0])
 	# Write material/image combinations we have used.
@@ -173,97 +175,100 @@ def write_mtl(scene, file, filepath, path_mode, copy_set, mtl_dict):
 	for mtl_mat_name, mat, face_img in mtl_dict_values:
 		# Get the Blender data for the material and the image.
 		# Having an image named None will make a bug, dont do it:)
-		file.write('Materials:%s\n' % mtl_mat_name)  # Define a new material: matname_imgname
-		if mat:
-			# convert from blenders spec to 0 - 1000 range.
-			if mat.specular_shader == 'WARDISO':
-				tspec = (0.4 - mat.specular_slope) / 0.0004
+		#print("material: '" + str(mtl_mat_name) + "': " + str(mat) + "    " + str(face_img));
+		#print("    mat: ");
+		#for elem in dir(mat):
+		#	print("        - " + elem);
+		fw('Materials:%s\n' % mtl_mat_name)  # Define a new material: matname_imgname
+		mat_wrap = node_shader_utils.PrincipledBSDFWrapper(mat) if mat else None
+
+		if mat_wrap:
+			use_mirror = mat_wrap.metallic != 0.0
+			use_transparency = mat_wrap.alpha != 1.0
+
+			# XXX Totally empirical conversion, trying to adapt it
+			#	 (from 1.0 - 0.0 Principled BSDF range to 0.0 - 900.0 OBJ specular exponent range)...
+			spec = (1.0 - mat_wrap.roughness) * 30
+			spec *= spec
+			fw('	Ns %.6f\n' % spec)
+
+			# Ambient
+			if use_mirror:
+				fw('	Ka %.6f %.6f %.6f\n' % (mat_wrap.metallic, mat_wrap.metallic, mat_wrap.metallic))
 			else:
-				tspec = (mat.specular_hardness - 1) * 1.9607843137254901
-			file.write('\tNs %.6f\n' % tspec)
-			del tspec
-			file.write('\tKa %.6f %.6f %.6f\n' % (mat.ambient * world_amb)[:])  # Ambient, uses mirror color,
-			file.write('\tKd %.6f %.6f %.6f\n' % (mat.diffuse_intensity * mat.diffuse_color)[:])  # Diffuse
-			file.write('\tKs %.6f %.6f %.6f\n' % (mat.specular_intensity * mat.specular_color)[:])  # Specular
-			if hasattr(mat, "ior"):
-				file.write('\tNi %.6f\n' % mat.ior)  # Refraction index
+				fw('	Ka %.6f %.6f %.6f\n' % (1.0, 1.0, 1.0))
+			fw('	Kd %.6f %.6f %.6f\n' % mat_wrap.base_color[:3])  # Diffuse
+			# XXX TODO Find a way to handle tint and diffuse color, in a consistent way with import...
+			fw('	Ks %.6f %.6f %.6f\n' % (mat_wrap.specular, mat_wrap.specular, mat_wrap.specular))  # Specular
+			# Emission, not in original MTL standard but seems pretty common, see T45766.
+			emission_strength = mat_wrap.emission_strength
+			emission = [emission_strength * c for c in mat_wrap.emission_color[:3]]
+			fw('	Ke %.6f %.6f %.6f\n' % tuple(emission))
+			fw('	vNi %.6f\n' % mat_wrap.ior)  # Refraction index
+			fw('	d %.6f\n' % mat_wrap.alpha)  # Alpha (obj uses 'd' for dissolve)
+
+			# See http://en.wikipedia.org/wiki/Wavefront_.obj_file for whole list of values...
+			# Note that mapping is rather fuzzy sometimes, trying to do our best here.
+			if mat_wrap.specular == 0:
+				fw('	illum 1\n')  # no specular.
+			elif use_mirror:
+				if use_transparency:
+					fw('	illum 6\n')  # Reflection, Transparency, Ray trace
+				else:
+					fw('	illum 3\n')  # Reflection and Ray trace
+			elif use_transparency:
+				fw('	illum 9\n')  # 'Glass' transparency and no Ray trace reflection... fuzzy matching, but...
 			else:
-				file.write('\tNi %.6f\n' % 1.0)
-			file.write('\td %.6f\n' % mat.alpha)  # Alpha (obj uses 'd' for dissolve)
-			# 0 to disable lighting, 1 for ambient & diffuse only (specular color set to black), 2 for full lighting.
-			if mat.use_shadeless:
-				file.write('\tillum 0\n')  # ignore lighting
-			elif mat.specular_intensity == 0:
-				file.write('\tillum 1\n')  # no specular.
-			else:
-				file.write('\tillum 2\n')  # light normaly
+				fw('	illum 2\n')  # light normally
+
+			#### And now, the image textures...
+			image_map = {
+					"map_Kd": "base_color_texture",
+					"map_Ka": None,  # ambient...
+					"map_Ks": "specular_texture",
+					"map_Ns": "roughness_texture",
+					"map_d": "alpha_texture",
+					"map_Tr": None,  # transmission roughness?
+					"map_Bump": "normalmap_texture",
+					"disp": None,  # displacement...
+					"refl": "metallic_texture",
+					"map_Ke": "emission_color_texture" if emission_strength != 0.0 else None,
+					}
+
+			for key, mat_wrap_key in sorted(image_map.items()):
+				if mat_wrap_key is None:
+					continue
+				tex_wrap = getattr(mat_wrap, mat_wrap_key, None)
+				if tex_wrap is None:
+					continue
+				image = tex_wrap.image
+				if image is None:
+					continue
+
+				filepath = io_utils.path_reference(image.filepath, source_dir, dest_dir,
+				                                   path_mode, "", copy_set, image.library)
+				options = []
+				if key == "map_Bump":
+					if mat_wrap.normalmap_strength != 1.0:
+						options.append('-bm %.6f' % mat_wrap.normalmap_strength)
+				if tex_wrap.translation != Vector((0.0, 0.0, 0.0)):
+					options.append('-o %.6f %.6f %.6f' % tex_wrap.translation[:])
+				if tex_wrap.scale != Vector((1.0, 1.0, 1.0)):
+					options.append('-s %.6f %.6f %.6f' % tex_wrap.scale[:])
+				if options:
+					fw('%s %s %s\n' % (key, " ".join(options), repr(filepath)[1:-1]))
+				else:
+					fw('%s %s\n' % (key, repr(filepath)[1:-1]))
+
 		else:
-			#write a dummy material here?
-			file.write('\tNs 0\n')
-			file.write('\tKa %.6f %.6f %.6f\n' % world_amb[:])  # Ambient, uses mirror color,
-			file.write('\tKd 0.8 0.8 0.8\n')
-			file.write('\tKs 0.8 0.8 0.8\n')
-			file.write('\td 1\n')  # No alpha
-			file.write('\tillum 2\n')  # light normaly
-		# Write images!
-		if face_img:  # We have an image on the face!
-			filepath = face_img.filepath
-			if filepath:  # may be '' for generated images
-				# write relative image path
-				filepath = bpy_extras.io_utils.path_reference(filepath,
-				                                              source_dir,
-				                                              dest_dir,
-				                                              path_mode,
-				                                              "",
-				                                              copy_set,
-				                                              face_img.library)
-				file.write('\tmap_Kd %s\n' % filepath)  # Diffuse mapping image
-				del filepath
-			else:
-				# so we write the materials image.
-				face_img = None
-		if mat:  # No face image. if we havea material search for MTex image.
-			image_map = {}
-			# backwards so topmost are highest priority
-			for mtex in reversed(mat.texture_slots):
-				if mtex and mtex.texture and mtex.texture.type == 'IMAGE':
-					image = mtex.texture.image
-					if image:
-						# texface overrides others
-						if(     mtex.use_map_color_diffuse
-						    and (face_img is None)
-						    and (mtex.use_map_warp is False)
-						    and (mtex.texture_coords != 'REFLECTION')
-						   ):
-							image_map["map_Kd"] = image
-						if mtex.use_map_ambient:
-							image_map["map_Ka"] = image
-						# this is the Spec intensity channel but Ks stands for specular Color
-						if mtex.use_map_color_spec:  # specular color
-							image_map["map_Ks"] = image
-						if mtex.use_map_hardness:  # specular hardness/glossiness
-							image_map["map_Ns"] = image
-						if mtex.use_map_alpha:
-							image_map["map_d"] = image
-						if mtex.use_map_translucency:
-							image_map["map_Tr"] = image
-						if mtex.use_map_normal and (mtex.texture.use_normal_map is True):
-							image_map["map_Bump"] = image
-						if mtex.use_map_normal and (mtex.texture.use_normal_map is False):
-							image_map["map_Disp"] = image
-						if mtex.use_map_color_diffuse and (mtex.texture_coords == 'REFLECTION'):
-							image_map["map_refl"] = image
-						if mtex.use_map_emit:
-							image_map["map_Ke"] = image
-			for key, image in image_map.items():
-				filepath = bpy_extras.io_utils.path_reference(image.filepath,
-				                                              source_dir,
-				                                              dest_dir,
-				                                              path_mode,
-				                                              "",
-				                                              copy_set,
-				                                              image.library)
-				file.write('\t%s %s\n' % (key, repr(filepath)[1:-1]))
+			# Write a dummy material here?
+			fw('	Ns 500\n')
+			fw('	Ka 0.8 0.8 0.8\n')
+			fw('	Kd 0.8 0.8 0.8\n')
+			fw('	Ks 0.8 0.8 0.8\n')
+			fw('	d 1\n')  # No alpha
+			fw('	illum 2\n')  # light normally
+
 
 def veckey3d(v):
 	return round(v.x, 6), round(v.y, 6), round(v.z, 6)
@@ -273,7 +278,7 @@ def veckey2d(v):
 
 def write_mesh(scene, file, object, mtl_dict):
 	print("**************** '" + str(object.name) + "' *******************")
-	
+	fw = file.write
 	# Initialize totals, these are updated each object
 	totverts = 1
 	totuvco = 1
@@ -288,7 +293,7 @@ def write_mesh(scene, file, object, mtl_dict):
 	
 	if object.type != 'MESH':
 		print(object.name + 'is not a mesh type - ignoring type=' + object.type)
-		file.write('# can not export:"%s":type="%s"\n' % (object.name, str(object.type)))
+		fw('# can not export:"%s":type="%s"\n' % (object.name, str(object.type)))
 		return
 	#print("name:'%s'" % object.name)
 	#for plop in object.child:
@@ -319,16 +324,16 @@ def write_mesh(scene, file, object, mtl_dict):
 		if me is None:
 			continue
 		me.transform(ob_mat)
-		#print("ploppp:" + str(ob_mat) )
+		print("ploppp:" + str(ob_mat) )
 		# _must_ do this first since it re-allocs arrays
 		# triangulate all the mesh:
 		mesh_triangulate(me)
 		# calculated normals:
 		me.calc_normals()
 		# export UV mapping:
-		faceuv = len(me.uv_textures) > 0
+		faceuv = len(me.uv_layers) > 0
 		if faceuv:
-			uv_texture = me.uv_textures.active.data[:]
+			uv_texture = me.uv_layers.active.data[:]
 			uv_layer = me.uv_layers.active.data[:]
 		me_verts = me.vertices[:]
 		# Make our own list so it can be sorted to reduce context switching
@@ -365,19 +370,19 @@ def write_mesh(scene, file, object, mtl_dict):
 			obnamestring = name_compat(name1)
 		else:
 			obnamestring = '%s_%s' % (name_compat(name1), name_compat(name2))
-		file.write('Mesh:%s\n' % obnamestring)  # Write Object name
+		fw('Mesh:%s\n' % obnamestring)  # Write Object name
 		###########################################################
 		## Vert
 		###########################################################
-		file.write('\tVertex:%d\n\t\t' % len(me_verts))
+		fw('\tVertex:%d\n\t\t' % len(me_verts))
 		for v in me_verts:
-			file.write('%.6f %.6f %.6f|' % v.co[:])
-		file.write('\n')
+			fw('%.6f %.6f %.6f|' % v.co[:])
+		fw('\n')
 		###########################################################
 		## UV
 		###########################################################
 		if faceuv:
-			file.write('\tUV-mapping:\n\t\t')
+			fw('\tUV-mapping:\n\t\t')
 			# in case removing some of these dont get defined.
 			uv = uvkey = uv_dict = f_index = uv_index = None
 			uv_face_mapping = [None] * len(face_index_pairs)
@@ -391,12 +396,12 @@ def write_mesh(scene, file, object, mtl_dict):
 						uv_k = uv_dict[uvkey]
 					except:
 						uv_k = uv_dict[uvkey] = len(uv_dict)
-						file.write('%.6f %.6f|' % uv[:])
+						fw('%.6f %.6f|' % uv[:])
 					uv_ls.append(uv_k)
 			uv_unique_count = len(uv_dict)
 			del uv, uvkey, uv_dict, f_index, uv_index, uv_ls, uv_k
 			# Only need uv_unique_count and uv_face_mapping
-			file.write('\n')
+			fw('\n')
 		else:
 			print("does not use UV-MAPPING")
 		###########################################################
@@ -409,7 +414,7 @@ def write_mesh(scene, file, object, mtl_dict):
 				localIsSmooth = 'face'
 		else:
 			localIsSmooth = 'face'
-		file.write('\tNormal(%s):%d\n\t\t' % (localIsSmooth, len(face_index_pairs)) )
+		fw('\tNormal(%s):%d\n\t\t' % (localIsSmooth, len(face_index_pairs)) )
 		for f, f_index in face_index_pairs:
 			if f.use_smooth:
 				for v_idx in f.vertices:
@@ -418,22 +423,22 @@ def write_mesh(scene, file, object, mtl_dict):
 					if noKey not in globalNormals:
 						globalNormals[noKey] = totno
 						totno += 1
-						file.write('%.6f %.6f %.6f|' % noKey)
+						fw('%.6f %.6f %.6f|' % noKey)
 			else:
 				# Hard, 1 normal from the face.
 				noKey = veckey3d(f.normal)
 				if noKey not in globalNormals:
 					globalNormals[noKey] = totno
 					totno += 1
-					file.write('%.6f %.6f %.6f|' % noKey)
+					fw('%.6f %.6f %.6f|' % noKey)
 		
-		file.write('\n')
+		fw('\n')
 		if not faceuv:
 			f_image = None
 		###########################################################
 		## faces
 		###########################################################
-		file.write('\tFace:%d' % len(face_index_pairs))
+		fw('\tFace:%d' % len(face_index_pairs))
 		for f, f_index in face_index_pairs:
 			f_smooth = f.use_smooth
 			f_mat = min(f.material_index, len(materials) - 1)
@@ -451,7 +456,7 @@ def write_mesh(scene, file, object, mtl_dict):
 			else:
 				if key[0] is None and key[1] is None:
 					# inform the use of a material:
-					file.write("\n\t\t---:")  # mat, image
+					fw("\n\t\t---:")  # mat, image
 				else:
 					mat_data = mtl_dict.get(key)
 					if not mat_data:
@@ -476,14 +481,14 @@ def write_mesh(scene, file, object, mtl_dict):
 						mat_data = mtl_dict[key] = mtl_name, materials[f_mat], f_image
 						mtl_rev_dict[mtl_name] = key
 					# set the use of a material:
-					file.write("\n\t\t%s\n\t\t\t" % mat_data[0])  # can be mat_image or (null)
+					fw("\n\t\t%s\n\t\t\t" % mat_data[0])  # can be mat_image or (null)
 			contextMat = key
 			f_v = [(vi, me_verts[v_idx]) for vi, v_idx in enumerate(f.vertices)]
 			if faceuv:
 				# export the normals:
 				if f_smooth:  # Smoothed, use vertex normals
 					for vi, v in f_v:
-						file.write(" %d/%d/%d" %
+						fw(" %d/%d/%d" %
 						   (v.index + totverts-1,
 						    totuvco + uv_face_mapping[f_index][vi]-1,
 						    globalNormals[veckey3d(v.normal)]-1,
@@ -491,7 +496,7 @@ def write_mesh(scene, file, object, mtl_dict):
 				else:  # No smoothing, face normals
 					no = globalNormals[veckey3d(f.normal)]
 					for vi, v in f_v:
-						file.write(" %d/%d/%d" %
+						fw(" %d/%d/%d" %
 						   (v.index + totverts-1,
 						    totuvco + uv_face_mapping[f_index][vi]-1,
 						    no-1,
@@ -501,31 +506,31 @@ def write_mesh(scene, file, object, mtl_dict):
 				# export the normals:
 				if f_smooth:  # Smoothed, use vertex normals
 					for vi, v in f_v:
-						file.write(" %d/%d" % (
+						fw(" %d/%d" % (
 								   v.index + totverts-1,
 								   globalNormals[veckey3d(v.normal)]-1,
 								   ))
 				else:  # No smoothing, face normals
 					no = globalNormals[veckey3d(f.normal)]
 					for vi, v in f_v:
-						file.write(" %d/%d" % (v.index + totverts-1, no-1))
-			file.write('|')
-		file.write('\n')
+						fw(" %d/%d" % (v.index + totverts-1, no-1))
+			fw('|')
+		fw('\n')
 		# Write edges. ==> did not know what it is ...
-		#file.write('Faces:%d' % len(edges))
+		#fw('Faces:%d' % len(edges))
 		#for ed in edges:
 		#	if ed.is_loose:
-		#		file.write('%d %d\n' % (ed.vertices[0] + totverts, ed.vertices[1] + totverts))
+		#		fw('%d %d\n' % (ed.vertices[0] + totverts, ed.vertices[1] + totverts))
 		
 		# Make the indices global rather then per mesh
 		totverts += len(me_verts)
 		if faceuv:
 			totuvco += uv_unique_count
 		# clean up
-		bpy.data.meshes.remove(me)
+		# TODO:                                                                                         bpy.data.  .remove(me)
 	
-	if object.dupli_type != 'NONE':
-		object.dupli_list_clear()
+	# TODO:                          if object.dupli_type != 'NONE':
+	# TODO:                          	object.dupli_list_clear()
 	#####################################################################
 	## Save collision shapes (for one object):
 	#####################################################################
@@ -554,10 +559,10 @@ def write_file(filepath,
 	mtlfilepath = os.path.splitext(filepath)[0] + ".mtl"
 	
 	file = open(filepath, "w", encoding="utf8", newline="\n")
-	
+	fw = file.write
 	# Write Header
-	file.write('EMF(STRING)\n') # if binary:file.write('EMF(BINARY)\n')
-	file.write('# Blender v%s EMF File: %r\n' % (bpy.app.version_string, os.path.basename(bpy.data.filepath)))
+	fw('EMF(STRING)\n') # if binary:fw('EMF(BINARY)\n')
+	fw('# Blender v%s EMF File: %r\n' % (bpy.app.version_string, os.path.basename(bpy.data.filepath)))
 	
 	# A Dict of Materials
 	# (material.name, image.name):matname_imagename # matname_imagename has gaps removed.

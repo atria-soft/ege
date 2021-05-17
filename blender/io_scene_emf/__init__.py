@@ -4,7 +4,7 @@
 bl_info = {
     "name": "EGE Mesh file format emf",
     "author": "Edouard DUPIN",
-    "blender": (2, 80, 0),
+    "blender": (2, 81, 6),
     "location": "File > Import-Export",
     "description": "Import-Export emf, Import EMF mesh, UV's, materials and textures",
     "category": "Import-Export"}
@@ -161,4 +161,9 @@ def unregister():
 
 
 if __name__ == "__main__":
-    register()
+   print("Registering.");
+   register();
+   #print("Executing.");
+   #bpy.ops.export_scene.emf();
+
+

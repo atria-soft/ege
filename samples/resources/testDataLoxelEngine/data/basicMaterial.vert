@@ -13,9 +13,9 @@ struct Light {
 const int MAX_LIGHT_NUMBER = 8;
 
 // Input:
-in vec3 in_position;
-in vec3 in_normal;
-in vec2 in_textureCoords;
+layout (location = 0) in vec3 in_position;
+layout (location = 1) in vec2 in_textureCoords;
+layout (location = 2) in vec3 in_normal;
 // 2 light for suns and other for locals ...
 uniform Light in_lights[MAX_LIGHT_NUMBER];
 

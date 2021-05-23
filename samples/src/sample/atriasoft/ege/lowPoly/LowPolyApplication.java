@@ -48,6 +48,12 @@ public class LowPolyApplication extends GaleApplication {
 	
 	@Override
 	public void onCreate(final GaleContext context) {
+		try {
+			Thread.sleep(1000);
+		} catch (InterruptedException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
 		this.env = new Environement();
 		setSize(new Vector2f(800, 600));
 		setTitle("Low Poly sample");
@@ -60,9 +66,9 @@ public class LowPolyApplication extends GaleApplication {
 		
 		// add a cube to show where in the light ...
 		final Entity localLight = new Entity(this.env);
-		this.lightPosition = new ComponentPosition(new Transform3D(new Vector3f(-10, -10, 0)));
+		this.lightPosition = new ComponentPosition(new Transform3D(new Vector3f(-10, -10, 1)));
 		localLight.addComponent(this.lightPosition);
-		localLight.addComponent(new ComponentStaticMesh(new Uri("RES", "cube.obj")));
+		localLight.addComponent(new ComponentStaticMesh(new Uri("RES", "cube-one.obj")));
 		localLight.addComponent(new ComponentTexture(new Uri("RES", "grass.png")));
 		localLight.addComponent(new ComponentLight(new Light(new Vector3f(0, 2, 0), new Vector3f(0, 0, 0), new Vector3f(0.8f, 0.01f, 0.002f))));
 		localLight.addComponent(new ComponentRenderTexturedStaticMesh(new Uri("DATA", "basic.vert", "loxelEngine"), new Uri("DATA", "basic.frag", "loxelEngine")));
@@ -80,11 +86,12 @@ public class LowPolyApplication extends GaleApplication {
 		this.materialCube = new Material();
 		basicTree.addComponent(new ComponentMaterial(this.materialCube));
 		basicTree.addComponent(new ComponentStaticMesh(new Uri("RES", "cube.obj")));
-		basicTree.addComponent(new ComponentTexture(new Uri("RES", "grass.png")));
+		basicTree.addComponent(new ComponentTexture(new Uri("RES", "mud.png")));
+		//basicTree.addComponent(new ComponentRenderTexturedStaticMesh(new Uri("DATA", "basic.vert", "loxelEngine"), new Uri("DATA", "basic.frag", "loxelEngine")));
 		basicTree.addComponent(new ComponentRenderTexturedMaterialsStaticMesh(new Uri("DATA", "basicMaterial.vert", "loxelEngine"), new Uri("DATA", "basicMaterial.frag", "loxelEngine"),
 				(EngineLight) this.env.getEngine(EngineLight.ENGINE_NAME)));
 		this.env.addEntity(basicTree);
-		
+
 		for (int xxx = -10; xxx < 10; xxx++) {
 			for (int yyy = -10; yyy < 10; yyy++) {
 				final Entity superGrass = new Entity(this.env);

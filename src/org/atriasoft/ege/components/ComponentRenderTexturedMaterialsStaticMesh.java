@@ -104,8 +104,8 @@ public class ComponentRenderTexturedMaterialsStaticMesh extends ComponentRender 
 				this.program.uniformVector(this.GLlights[iii].oGLcolor, lights[iii].getColor());
 				this.program.uniformVector(this.GLlights[iii].oGLattenuation, lights[iii].getAttenuation());
 			} else {
-				this.program.uniformVector(this.GLlights[iii].oGLposition, new Vector3f(0, 0, 0));
-				this.program.uniformVector(this.GLlights[iii].oGLcolor, new Vector3f(0, 0, 0));
+				this.program.uniformVector(this.GLlights[iii].oGLposition, Vector3f.ZERO);
+				this.program.uniformVector(this.GLlights[iii].oGLcolor, Vector3f.ZERO);
 				this.program.uniformVector(this.GLlights[iii].oGLattenuation, new Vector3f(1, 0, 0));
 			}
 		}

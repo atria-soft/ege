@@ -6,8 +6,8 @@ precision mediump int;
 #endif
 
 // Input:
-in vec3 in_position;
-in vec2 in_textureCoords;
+layout (location = 0) in vec3 in_position;
+layout (location = 1) in vec2 in_textureCoords;
 uniform mat4 in_matrixTransformation;
 uniform mat4 in_matrixProjection;
 uniform mat4 in_matrixView;

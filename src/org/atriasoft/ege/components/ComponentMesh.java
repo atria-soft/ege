@@ -2,19 +2,14 @@ package org.atriasoft.ege.components;
 
 import org.atriasoft.ege.Component;
 import org.atriasoft.etk.Uri;
+import org.atriasoft.loader3d.resources.ResourceMesh;
 import org.atriasoft.loader3d.resources.ResourceStaticMesh;
-import org.atriasoft.loader3d.resources.ResourceStaticMeshObj;
 
-public class ComponentStaticMesh extends Component {
-	private ResourceStaticMesh mesh = null;
+public class ComponentMesh extends Component {
+	private ResourceMesh mesh = null;
 	
-	public ComponentStaticMesh(ResourceStaticMesh mesh) {
-		this.mesh = mesh;
-	}
-	
-	public ComponentStaticMesh(Uri objectFileName) {
-		// TODO check if it is OBJ ...
-		this.mesh = ResourceStaticMeshObj.create(objectFileName);
+	public ComponentMesh(Uri objectFileName) {
+		this.mesh = ResourceMesh.create(objectFileName);
 	}
 	
 	public void bindForRendering() {
@@ -31,7 +26,7 @@ public class ComponentStaticMesh extends Component {
 	@Override
 	public String getType() {
 		// TODO Auto-generated method stub
-		return "static-mesh";
+		return "mesh";
 	}
 	
 	public void render() {

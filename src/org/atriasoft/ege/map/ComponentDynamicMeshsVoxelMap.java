@@ -10,10 +10,10 @@ import org.atriasoft.loader3d.resources.ResourceListTexturedMesh;
 
 public class ComponentDynamicMeshsVoxelMap extends ComponentDynamicMeshs {
 	private VoxelChunk chunk;
-	ResourceListTexturedMesh unbreakable = ResourceListTexturedMesh.create(RenderMode.triangle);
-	ResourceListTexturedMesh stone = ResourceListTexturedMesh.create(RenderMode.triangle);
-	ResourceListTexturedMesh dirt = ResourceListTexturedMesh.create(RenderMode.triangle);
-	ResourceListTexturedMesh grass = ResourceListTexturedMesh.create(RenderMode.triangle);
+	ResourceListTexturedMesh unbreakable = ResourceListTexturedMesh.create(RenderMode.TRIANGLE);
+	ResourceListTexturedMesh stone = ResourceListTexturedMesh.create(RenderMode.TRIANGLE);
+	ResourceListTexturedMesh dirt = ResourceListTexturedMesh.create(RenderMode.TRIANGLE);
+	ResourceListTexturedMesh grass = ResourceListTexturedMesh.create(RenderMode.TRIANGLE);
 	
 	public ComponentDynamicMeshsVoxelMap(final VoxelChunk chunk) {
 		super();

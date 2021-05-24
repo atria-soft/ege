@@ -460,9 +460,7 @@ def write_file(filepath, objects, depsgraph, scene,
                         if faceuv:
                             # in case removing some of these dont get defined.
                             uv = f_index = uv_index = uv_key = uv_val = uv_ls = None
-
                             uv_face_mapping = [None] * len(face_index_pairs)
-
                             uv_dict = {}
                             uv_get = uv_dict.get
                             for f, f_index in face_index_pairs:
@@ -471,21 +469,17 @@ def write_file(filepath, objects, depsgraph, scene,
                                     uv = uv_layer[l_index].uv
                                     # include the vertex index in the key so we don't share UV's between vertices,
                                     # allowed by the OBJ spec but can cause issues for other importers, see: T47010.
-
                                     # this works too, shared UV's for all verts
                                     #~ uv_key = veckey2d(uv)
                                     uv_key = loops[l_index].vertex_index, veckey2d(uv)
-
                                     uv_val = uv_get(uv_key)
                                     if uv_val is None:
                                         uv_val = uv_dict[uv_key] = uv_unique_count
                                         fw('vt %.6f %.6f\n' % uv[:])
                                         uv_unique_count += 1
                                     uv_ls.append(uv_val)
-
                             del uv_dict, uv, f_index, uv_index, uv_ls, uv_get, uv_key, uv_val
                             # Only need uv_unique_count and uv_face_mapping
-
                         subprogress2.step()
 
                         # NORMAL, Smooth/Non smoothed.

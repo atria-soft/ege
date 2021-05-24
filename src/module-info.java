@@ -25,5 +25,5 @@ open module org.atriasoft.ege {
 	requires transitive org.atriasoft.etk;
 	requires transitive org.atriasoft.ewol;
 	requires transitive org.atriasoft.ephysics;
-	requires org.atriasoft.loader3d;
+	requires transitive org.atriasoft.loader3d;
 }

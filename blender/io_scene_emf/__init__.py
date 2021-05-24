@@ -84,7 +84,7 @@ class ExportEMF(bpy.types.Operator, ExportHelper):
 	use_selection = BoolProperty(
 	    name="Selection Only",
 	    description="Export selected objects only",
-	    default=True,
+	    default=False,
 	    )
 	# generate binary file
 	use_binary = BoolProperty(

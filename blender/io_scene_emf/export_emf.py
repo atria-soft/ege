@@ -59,7 +59,7 @@ def out_quaternion( q ):
 	return "%g %g %g %g" % ( q.x, q.y, q.z, q.w )
 
 
-def get_physics_shape(obj, mainObjScale):
+def get_physics_shape(obj):
 	shape = ""
 	props = { }
 	name = obj.name.lower()
@@ -73,7 +73,7 @@ def get_physics_shape(obj, mainObjScale):
 	# SPHERE
 	elif name.startswith('sph'):
 		shape = "Sphere"
-		props["radius"] = obj.scale.x * mainObjScale.x
+		props["radius"] = obj.scale.x
 	# CONE
 	elif name.startswith('cone'):
 		shape = "Cone"
@@ -116,21 +116,21 @@ def get_physics_shape(obj, mainObjScale):
 	return (shape, props)
 
 
-def write_collision_shape(object, file, mainObjScale, offset):
+def write_collision_shape(objects, file, offset):
 	fw = file.write
-	if len(getChildren(object))==0:
+	if len(objects)==0:
 		# no phisical shape ...
 		return
 	string_offset = ""
 	for iii in range(offset):
 		string_offset += "\t"
 	fw(string_offset + 'Physics:\n')
-	for subObj in getChildren(object):
+	for subObj in objects:
 		print("        element='" + subObj.name + "' type '" + str(subObj.type) + "'")
 		if     subObj.type != 'MESH' \
 		   and subObj.type != 'EMPTY':
 			continue
-		(shape, props) = get_physics_shape(subObj, mainObjScale)
+		(shape, props) = get_physics_shape(subObj)
 		if shape=="":
 			print("error of shape detection type ...");
 			continue
@@ -179,7 +179,11 @@ def write_mtl(scene, file, filepath, path_mode, copy_set, mtl_dict):
 		#print("    mat: ");
 		#for elem in dir(mat):
 		#	print("        - " + elem);
-		fw('Materials:%s\n' % mtl_mat_name)  # Define a new material: matname_imgname
+		if mtl_mat_name.lower().startswith("palette_"):
+			fw('# Just for information:\nPalettes:%s\n' % mtl_mat_name[8:])  # Define a new material: matname_imgname
+		else:
+			fw('Materials:%s\n' % mtl_mat_name)  # Define a new material: matname_imgname
+		
 		mat_wrap = node_shader_utils.PrincipledBSDFWrapper(mat) if mat else None
 
 		if mat_wrap:
@@ -256,9 +260,9 @@ def write_mtl(scene, file, filepath, path_mode, copy_set, mtl_dict):
 				if tex_wrap.scale != Vector((1.0, 1.0, 1.0)):
 					options.append('-s %.6f %.6f %.6f' % tex_wrap.scale[:])
 				if options:
-					fw('%s %s %s\n' % (key, " ".join(options), repr(filepath)[1:-1]))
+					fw('\t%s %s %s\n' % (key, " ".join(options), repr(filepath)[1:-1]))
 				else:
-					fw('%s %s\n' % (key, repr(filepath)[1:-1]))
+					fw('\t%s %s\n' % (key, repr(filepath)[1:-1]))
 
 		else:
 			# Write a dummy material here?
@@ -295,7 +299,7 @@ def write_mesh(scene, file, object, mtl_dict):
 		print(object.name + 'is not a mesh type - ignoring type=' + object.type)
 		fw('# can not export:"%s":type="%s"\n' % (object.name, str(object.type)))
 		return
-	#print("name:'%s'" % object.name)
+	print("generate Object name:'%s'" % object.name)
 	#for plop in object.child:
 	#	print("    child:'%s'" % plop.name)
 	# ignore dupli children
@@ -330,8 +334,10 @@ def write_mesh(scene, file, object, mtl_dict):
 		mesh_triangulate(me)
 		# calculated normals:
 		me.calc_normals()
+		#print("nb UB layers: " + str(len(me.uv_layers)) + "  " + str(dir(me.uv_layers)));
 		# export UV mapping:
 		faceuv = len(me.uv_layers) > 0
+		# TODO: This does not work with V facing ==> need to rework it ... designed for Low poly then we use Palette 
 		if faceuv:
 			uv_texture = me.uv_layers.active.data[:]
 			uv_layer = me.uv_layers.active.data[:]
@@ -353,13 +359,27 @@ def write_mesh(scene, file, object, mtl_dict):
 			material_names = [name_compat(None)]
 		# Sort by Material, then images
 		# so we dont over context switch in the obj file.
-		if faceuv:
-			face_index_pairs.sort(key=lambda a: (a[0].material_index, hash(uv_texture[a[1]].image), a[0].use_smooth))
-		elif len(materials) > 1:
-			face_index_pairs.sort(key=lambda a: (a[0].material_index, a[0].use_smooth))
+		if False:
+			if len(materials) > 1:
+				if smooth_groups:
+					sort_func = lambda a: (a[0].material_index,
+										   smooth_groups[a[1]] if a[0].use_smooth else False)
+				else:
+					sort_func = lambda a: (a[0].material_index,
+										   a[0].use_smooth)
+			else:
+				# no materials
+				if smooth_groups:
+					sort_func = lambda a: smooth_groups[a[1] if a[0].use_smooth else False]
+				else:
+					sort_func = lambda a: a[0].use_smooth
+			face_index_pairs.sort(key=sort_func)
+			del sort_func
 		else:
-			# no materials
-			face_index_pairs.sort(key=lambda a: a[0].use_smooth)
+			face_index_pairs.sort(key=lambda a: (a[0].material_index))
+		
+		
+		
 		# Set the default mat to no material and no image.
 		contextMat = 0, 0  # Can never be this, so we will label a new material the first chance we get.
 		contextSmooth = None  # Will either be true or false,  set bad to force initialization switch.
@@ -440,13 +460,21 @@ def write_mesh(scene, file, object, mtl_dict):
 		###########################################################
 		fw('\tFace:%d' % len(face_index_pairs))
 		for f, f_index in face_index_pairs:
+			f_image = None
 			f_smooth = f.use_smooth
 			f_mat = min(f.material_index, len(materials) - 1)
-			if faceuv:
+			tmp_faceuv = faceuv
+			if tmp_faceuv:
 				tface = uv_texture[f_index]
-				f_image = tface.image
+				#print("mesh_uvloop:" + str(dir(tface.uv)))
+				if 'image' in dir(uv_texture[f_index]):
+					f_image = tface.image
+				else:
+					# TODO: remove export of UV when no UV needed...
+					#tmp_faceuv = False
+					pass
 			# MAKE KEY
-			if faceuv and f_image:  # Object is always true.
+			if tmp_faceuv and f_image:  # Object is always true.
 				key = material_names[f_mat], f_image.name
 			else:
 				key = material_names[f_mat], None  # No image, use None instead.
@@ -481,10 +509,10 @@ def write_mesh(scene, file, object, mtl_dict):
 						mat_data = mtl_dict[key] = mtl_name, materials[f_mat], f_image
 						mtl_rev_dict[mtl_name] = key
 					# set the use of a material:
-					fw("\n\t\t%s\n\t\t\t" % mat_data[0])  # can be mat_image or (null)
+					fw("\n\t\t%s\n\t\t\t" % mat_data[0].replace("palette_", "palette:"))  # can be mat_image or (null)
 			contextMat = key
 			f_v = [(vi, me_verts[v_idx]) for vi, v_idx in enumerate(f.vertices)]
-			if faceuv:
+			if tmp_faceuv:
 				# export the normals:
 				if f_smooth:  # Smoothed, use vertex normals
 					for vi, v in f_v:
@@ -546,7 +574,7 @@ def write_mesh(scene, file, object, mtl_dict):
  " @brief Basic write function. The context and options must be already set.
 """
 def write_file(filepath,
-               objects,
+               collection,
                scene,
                EXPORT_PATH_MODE='AUTO',
                EXPORT_BINARY_MODE=False,
@@ -592,25 +620,18 @@ def write_file(filepath,
 	print("nb_total_physic: " + str(nb_total_physic))
 	"""
 	
+	print("Find Mesh in collection: '" + str(collection.name) + "'")
 	# Get all meshes
-	for ob_main in objects:
+	for ob_main in collection.objects:
 		if ob_main.type == 'MESH':
 			write_mesh(scene, file, ob_main, mtl_dict)
-		elif ob_main.type == 'EMPTY':
-			for sub_obj in getChildren(ob_main):
-				print("     child:'" + str(sub_obj.name) + "' type=" + sub_obj.type)
-				if sub_obj.type == 'MESH':
-					write_mesh(scene, file, sub_obj, mtl_dict)
-				elif     sub_obj.type == 'EMPTY' \
-				     and sub_obj.name.lower().startswith("physic"):
-					print("     child:'" + str(sub_obj.name) + "' type=" + sub_obj.type)
-					#####################################################################
-					## Save collision shapes (for one all):
-					#####################################################################
-					write_collision_shape(sub_obj, file, sub_obj.scale, 0)
-				else:
-					print("     child:'" + str(sub_obj.name) + "' type=" + sub_obj.type + " not parsed ...")
-					
+	
+	print("Find Physics in collection: '" + str(collection.name) + "'")
+	for col in collection.children:
+		print("    - name: " + str(col.name) + "/" + str(col.name_full) )
+		if col.name.lower().startswith("physic"):
+			write_collision_shape(col.objects, file, 0)
+	
 	#####################################################################
 	## Now we have all our materials, save them in the material section
 	#####################################################################
@@ -653,14 +674,27 @@ def _write(context,
 	scene.frame_set(frame, subframe=0.0)
 	# get only the object that are selected or all...
 	if EXPORT_SEL_ONLY:
-		objects = context.selected_objects
+		collection = bpy.context.collection
 	else:
-		objects = scene.objects
+		print("collection auto detect 'root': ")
+		collection = scene.collection
+		if collection.name != "root":
+			for col in collection.children:
+				if col.name == "root":
+					collection = col
+					break
+		if collection.name != "root":
+			raise "Can not detect collition 'root'"
+	
+	#print("* collection name: " + str(collection.name) + "/" + str(collection.name_full) )
+	print("============================================================================================");
+	draw_tree(scene.collection, 0, collection);
+	print("============================================================================================");
 	
 	full_path = ''.join(context_name)
 	
 	write_file(full_path,
-	           objects,
+	           collection,
 	           scene,
 	           EXPORT_PATH_MODE,
 	           EXPORT_BINARY_MODE,
@@ -668,6 +702,24 @@ def _write(context,
 	           )
 	
 
+
+
+##
+## Display all the element in the collection tree (for help debug exporting)
+##
+def draw_tree(collection, offset, export_collection):
+	string_offset = ""
+	for iii in range(offset):
+		string_offset += "\t"
+	if export_collection == collection:
+		print(string_offset + "- collection: '" + str(collection.name) + "'         !!!! exported node !!!!")
+	else:
+		print(string_offset + "- collection: '" + str(collection.name) + "'")
+	for col in collection.children:
+		draw_tree(col, offset+1, export_collection);
+	if 'objects' in dir(collection):
+		for obj in collection.objects:
+			print(string_offset + "\t- objects: '" + str(obj.name) + "' type '" + str(obj.type) + "'")
 
 """
  " @brief Save the current element in the file requested.

@@ -128,7 +128,7 @@ public class MeshGenerator {
 			//out.addPoint(_materialName, new Vector3f(iii,-_lineCount,0), etk::color::white);
 			//out.addPoint(_materialName, new Vector3f(iii,_lineCount,0), etk::color::white);
 		}
-		return ResourceStaticColoredMesh.create(meshData.getListOfVertices(), meshData.getListOfColors(), null, meshData.getListOfIndices(), RenderMode.line);
+		return ResourceStaticColoredMesh.create(meshData.getListOfVertices(), meshData.getListOfColors(), null, meshData.getListOfIndices(), RenderMode.LINE);
 	}
 	
 	private MeshGenerator() {}

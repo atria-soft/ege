@@ -23,8 +23,8 @@ public abstract class ShaderProgram {
 	
 
 	public ShaderProgram (String vertexFile, String fragmentFile) {
-		vertexShaderID = OpenGL.shaderLoad(new Uri("DATA", vertexFile), OpenGL.ShaderType.vertex);
-		fragmentShaderID = OpenGL.shaderLoad(new Uri("DATA", fragmentFile), OpenGL.ShaderType.fragment);
+		vertexShaderID = OpenGL.shaderLoad(new Uri("DATA", vertexFile), OpenGL.ShaderType.VERTEX);
+		fragmentShaderID = OpenGL.shaderLoad(new Uri("DATA", fragmentFile), OpenGL.ShaderType.FRAGMENT);
 		programID = OpenGL.programCreate();
 		OpenGL.programAttach(programID, vertexShaderID);
 		OpenGL.programAttach(programID, fragmentShaderID);

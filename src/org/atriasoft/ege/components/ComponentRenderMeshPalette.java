@@ -31,7 +31,7 @@ public class ComponentRenderMeshPalette extends ComponentRender {
 		if (component.getType().contentEquals("mesh")) {
 			this.mesh = (ComponentMesh) component;
 		}
-		if (component.getType().contentEquals("palette")) {
+		if (component.getType().contentEquals("texture")) {
 			this.texture = (ComponentTexturePalette) component;
 		}
 		if (component.getType().contentEquals("position")) {
@@ -69,7 +69,8 @@ public class ComponentRenderMeshPalette extends ComponentRender {
 		// update of flags is done asynchronously ==> need update before drawing...
 		OpenGL.updateAllFlags();
 		// Request the draw all the elements:
-		this.mesh.render();
+		this.mesh.renderArrays();
+		
 		this.texture.unBindForRendering();
 		this.mesh.unBindForRendering();
 		this.program.unUse();

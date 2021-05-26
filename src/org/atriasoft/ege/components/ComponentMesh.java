@@ -35,6 +35,12 @@ public class ComponentMesh extends Component {
 		}
 		this.mesh.render();
 	}
+	public void renderArrays() {
+		if (this.mesh == null) {
+			return;
+		}
+		this.mesh.renderArrays();
+	}
 	
 	public void unBindForRendering() {
 		if (this.mesh == null) {

@@ -26,4 +26,5 @@ open module org.atriasoft.ege {
 	requires transitive org.atriasoft.ewol;
 	requires transitive org.atriasoft.ephysics;
 	requires transitive org.atriasoft.loader3d;
+	requires org.atriasoft.iogami;
 }

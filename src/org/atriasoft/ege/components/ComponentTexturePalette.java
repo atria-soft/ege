@@ -1,10 +1,14 @@
 package org.atriasoft.ege.components;
 
+import java.awt.Image;
+
 import org.atriasoft.egami.ImageByte;
+import org.atriasoft.egami.ToolImage;
 import org.atriasoft.ege.Component;
 import org.atriasoft.ege.internal.Log;
 import org.atriasoft.etk.Uri;
 import org.atriasoft.gale.resource.ResourceTexture2;
+import org.atriasoft.iogami.IOgami;
 import org.atriasoft.loader3d.resources.ResourcePaletteFile;
 
 public class ComponentTexturePalette extends Component {
@@ -18,11 +22,19 @@ public class ComponentTexturePalette extends Component {
 		if (this.texture == null) {
 			Log.error("can not instanciate Texture ...");
 		}
+		// element already called
+		updateFromPalette();
+		// for next update (realTime reload)
 		this.palette.onUpdate(() -> {
-			Log.warning("update palet environnement");
-			final ImageByte img = this.palette.getImageByte();
-			this.texture.set(img);
+			updateFromPalette();
 		});
+	}
+	
+	public void updateFromPalette() {
+		Log.warning("update palet environnement");
+		final ImageByte img = this.palette.getImageByte();
+		IOgami.storePNG(new Uri("/home/heero/000000000aaaaplopppp.png"), img);
+		this.texture.set(img);
 	}
 	
 	public void bindForRendering() {

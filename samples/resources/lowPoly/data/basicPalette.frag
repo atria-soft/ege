@@ -14,4 +14,5 @@ out vec4 out_Color;
 
 void main(void) {
 	out_Color = texture(in_textureBase, io_textureCoords);
+	//out_Color = vec4(1,0,0,1);
 }

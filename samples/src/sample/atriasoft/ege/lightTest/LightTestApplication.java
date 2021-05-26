@@ -1,4 +1,4 @@
-package sample.atriasoft.ege.lowPoly;
+package sample.atriasoft.ege.lightTest;
 
 import org.atriasoft.ege.ControlCameraSimple;
 import org.atriasoft.ege.Entity;
@@ -10,15 +10,12 @@ import org.atriasoft.ege.camera.Camera;
 import org.atriasoft.ege.components.ComponentLight;
 import org.atriasoft.ege.components.ComponentLightSun;
 import org.atriasoft.ege.components.ComponentMaterial;
-import org.atriasoft.ege.components.ComponentMesh;
 import org.atriasoft.ege.components.ComponentPosition;
 import org.atriasoft.ege.components.ComponentRenderColoredStaticMesh;
-import org.atriasoft.ege.components.ComponentRenderMeshPalette;
 import org.atriasoft.ege.components.ComponentRenderTexturedMaterialsStaticMesh;
 import org.atriasoft.ege.components.ComponentRenderTexturedStaticMesh;
 import org.atriasoft.ege.components.ComponentStaticMesh;
 import org.atriasoft.ege.components.ComponentTexture;
-import org.atriasoft.ege.components.ComponentTexturePalette;
 import org.atriasoft.ege.engines.EngineLight;
 import org.atriasoft.ege.tools.MeshGenerator;
 import org.atriasoft.etk.Color;
@@ -37,7 +34,7 @@ import org.atriasoft.gale.key.KeySpecial;
 import org.atriasoft.gale.key.KeyStatus;
 import org.atriasoft.gale.key.KeyType;
 
-public class LowPolyApplication extends GaleApplication {
+public class LightTestApplication extends GaleApplication {
 	private float angleLight = 0;
 	private Quaternion basicRotation = Quaternion.IDENTITY;
 	private Quaternion basicRotation2 = Quaternion.IDENTITY;
@@ -47,7 +44,7 @@ public class LowPolyApplication extends GaleApplication {
 	private ComponentPosition objectPosition;
 	private ControlCameraSimple simpleControl;
 	
-	public LowPolyApplication() {}
+	public LightTestApplication() {}
 	
 	@Override
 	public void onCreate(final GaleContext context) {
@@ -71,45 +68,42 @@ public class LowPolyApplication extends GaleApplication {
 		final Entity localLight = new Entity(this.env);
 		this.lightPosition = new ComponentPosition(new Transform3D(new Vector3f(-10, -10, 1)));
 		localLight.addComponent(this.lightPosition);
-		localLight.addComponent(new ComponentStaticMesh(new Uri("DATA", "cube-one.obj")));
-		localLight.addComponent(new ComponentTexture(new Uri("DATA", "grass.png")));
+		localLight.addComponent(new ComponentStaticMesh(new Uri("RES", "cube-one.obj")));
+		localLight.addComponent(new ComponentTexture(new Uri("RES", "grass.png")));
 		localLight.addComponent(new ComponentLight(new Light(new Vector3f(0, 2, 0), new Vector3f(0, 0, 0), new Vector3f(0.8f, 0.01f, 0.002f))));
 		localLight.addComponent(new ComponentRenderTexturedStaticMesh(new Uri("DATA", "basic.vert", "loxelEngine"), new Uri("DATA", "basic.frag", "loxelEngine")));
 		this.env.addEntity(localLight);
 		
-		// Simple Gird
 		final Entity gird = new Entity(this.env);
 		gird.addComponent(new ComponentPosition(new Transform3D(new Vector3f(0, 0, 0))));
 		gird.addComponent(new ComponentStaticMesh(MeshGenerator.createGrid(5)));
 		gird.addComponent(new ComponentRenderColoredStaticMesh(new Uri("DATA", "wireColor.vert", "ege"), new Uri("DATA", "wireColor.frag", "ege")));
 		this.env.addEntity(gird);
 		
-		// test entity
 		final Entity basicTree = new Entity(this.env);
 		this.objectPosition = new ComponentPosition(new Transform3D(new Vector3f(0, 0, 0)));
 		basicTree.addComponent(this.objectPosition);
-		//this.materialCube = new Material();
-		//basicTree.addComponent(new ComponentMaterial(this.materialCube));
-		basicTree.addComponent(new ComponentMesh(new Uri("DATA", "tree1.emf")));
-		//basicTree.addComponent(new ComponentMesh(new Uri("DATA", "simple3D.emf")));
-		//basicTree.addComponent(new ComponentTexture(new Uri("RES", "mud.png")));
-		basicTree.addComponent(new ComponentTexturePalette(new Uri("DATA", "palette_1.json")));
+		this.materialCube = new Material();
+		basicTree.addComponent(new ComponentMaterial(this.materialCube));
+		basicTree.addComponent(new ComponentStaticMesh(new Uri("RES", "cube.obj")));
+		basicTree.addComponent(new ComponentTexture(new Uri("RES", "mud.png")));
 		//basicTree.addComponent(new ComponentRenderTexturedStaticMesh(new Uri("DATA", "basic.vert", "loxelEngine"), new Uri("DATA", "basic.frag", "loxelEngine")));
-		basicTree.addComponent(new ComponentRenderMeshPalette(new Uri("DATA", "basicPalette.vert"), new Uri("DATA", "basicPalette.frag")));
+		basicTree.addComponent(new ComponentRenderTexturedMaterialsStaticMesh(new Uri("DATA", "basicMaterial.vert", "loxelEngine"), new Uri("DATA", "basicMaterial.frag", "loxelEngine"),
+				(EngineLight) this.env.getEngine(EngineLight.ENGINE_NAME)));
 		this.env.addEntity(basicTree);
 
-//		for (int xxx = -10; xxx < 10; xxx++) {
-//			for (int yyy = -10; yyy < 10; yyy++) {
-//				final Entity superGrass = new Entity(this.env);
-//				superGrass.addComponent(new ComponentPosition(new Transform3D(new Vector3f(xxx, yyy, -1))));
-//				superGrass.addComponent(new ComponentMaterial(new Material()));
-//				superGrass.addComponent(new ComponentStaticMesh(new Uri("RES", "cube-one.obj")));
-//				superGrass.addComponent(new ComponentTexture(new Uri("RES", "dirt.png")));
-//				superGrass.addComponent(new ComponentRenderTexturedMaterialsStaticMesh(new Uri("DATA", "basicMaterial.vert", "loxelEngine"), new Uri("DATA", "basicMaterial.frag", "loxelEngine"),
-//						(EngineLight) this.env.getEngine(EngineLight.ENGINE_NAME)));
-//				this.env.addEntity(superGrass);
-//			}
-//		}
+		for (int xxx = -10; xxx < 10; xxx++) {
+			for (int yyy = -10; yyy < 10; yyy++) {
+				final Entity superGrass = new Entity(this.env);
+				superGrass.addComponent(new ComponentPosition(new Transform3D(new Vector3f(xxx, yyy, -1))));
+				superGrass.addComponent(new ComponentMaterial(new Material()));
+				superGrass.addComponent(new ComponentStaticMesh(new Uri("RES", "cube-one.obj")));
+				superGrass.addComponent(new ComponentTexture(new Uri("RES", "dirt.png")));
+				superGrass.addComponent(new ComponentRenderTexturedMaterialsStaticMesh(new Uri("DATA", "basicMaterial.vert", "loxelEngine"), new Uri("DATA", "basicMaterial.frag", "loxelEngine"),
+						(EngineLight) this.env.getEngine(EngineLight.ENGINE_NAME)));
+				this.env.addEntity(superGrass);
+			}
+		}
 		
 		final Camera mainView = new Camera();
 		this.env.addCamera("default", mainView);

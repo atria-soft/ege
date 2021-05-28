@@ -2,31 +2,26 @@ package org.atriasoft.ege.components;
 
 import org.atriasoft.ege.Component;
 import org.atriasoft.ege.Light;
+import org.atriasoft.ege.components.part.PositionningInterface;
 import org.atriasoft.etk.math.Vector3f;
 
 public class ComponentLight extends Component {
 	// the material is not a resource, it can change in time... with AI or selection...
 	private final Light light;
-	private ComponentPosition position;
-	private ComponentPhysics playerPhysics = null;
+	private PositionningInterface position = null;
 	
 	public ComponentLight() {
-		super();
 		this.light = new Light();
 	}
 	
 	public ComponentLight(final Light light) {
-		super();
 		this.light = light;
 	}
 	
 	@Override
 	public void addFriendComponent(final Component component) {
-		if (component.getType().contentEquals("position")) {
-			this.position = (ComponentPosition) component;
-		}
-		if (component.getType().contentEquals("physics")) {
-			this.playerPhysics = (ComponentPhysics) component;
+		if (component.getType().contentEquals("position") || component.getType().contentEquals("physics")) {
+			this.position = (PositionningInterface)component;
 		}
 	}
 	
@@ -37,8 +32,6 @@ public class ComponentLight extends Component {
 	public Vector3f getPosition() {
 		if (this.position != null) {
 			return this.position.getTransform().getPosition().add(this.light.getPositionDelta());
-		} else if (this.playerPhysics != null) {
-			return this.playerPhysics.getTransform().getPosition().add(this.light.getPositionDelta());
 		}
 		return null;
 	}

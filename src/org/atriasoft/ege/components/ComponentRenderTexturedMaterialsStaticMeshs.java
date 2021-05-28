@@ -3,111 +3,90 @@ package org.atriasoft.ege.components;
 import java.util.Set;
 
 import org.atriasoft.ege.Component;
-import org.atriasoft.ege.Light;
-import org.atriasoft.ege.Material;
+import org.atriasoft.ege.components.part.LightRender;
+import org.atriasoft.ege.components.part.MaterialsRender;
+import org.atriasoft.ege.components.part.PositionningInterface;
+import org.atriasoft.ege.components.part.TransformRender;
+import org.atriasoft.ege.engines.EngineLight;
 import org.atriasoft.etk.Uri;
-import org.atriasoft.etk.math.Matrix4f;
-import org.atriasoft.etk.math.Vector3f;
 import org.atriasoft.gale.backend3d.OpenGL;
 import org.atriasoft.gale.resource.ResourceProgram;
-import org.atriasoft.ege.engines.EngineLight;
 
 public class ComponentRenderTexturedMaterialsStaticMeshs extends ComponentRender {
-	private static final int numberOfLight = 8;
 	ComponentStaticMeshs meshs = null;
 	ComponentTextures textures = null;
 	ComponentMaterials materials = null;
-	ComponentPosition position = null;
 	ResourceProgram program = null;
-	EngineLight lightEngine;
-	private int GLMatrixTransformation;
-	private int GLMatrixProjection;
-	private int GLMatrixView;
-	private int GLambientFactor;
-	private int GLdiffuseFactor;
-	private int GLspecularFactor;
-	private int GLshininess;
-	private GlLightIndex[] GLlights;
+	LightRender renderLight = null;
+	MaterialsRender renderMaterials = null;
+	TransformRender renderTransform = null;
 	
-	public ComponentRenderTexturedMaterialsStaticMeshs(Uri vertexShader, Uri fragmentShader, EngineLight lightEngine) {
-		this.lightEngine = lightEngine;
+	public ComponentRenderTexturedMaterialsStaticMeshs(final Uri vertexShader, final Uri fragmentShader, final EngineLight lightEngine) {
+		if (lightEngine != null) {
+			this.renderLight = new LightRender(lightEngine);
+		}
+		this.renderTransform = new TransformRender();
+		this.renderMaterials = new MaterialsRender();
 		this.program = ResourceProgram.create(vertexShader, fragmentShader);
 		if (this.program != null) {
-			this.GLMatrixTransformation = this.program.getUniform("in_matrixTransformation");
-			this.GLMatrixProjection     = this.program.getUniform("in_matrixProjection");
-			this.GLMatrixView           = this.program.getUniform("in_matrixView");
-			this.GLambientFactor        = this.program.getUniform("in_material.ambientFactor");
-			this.GLdiffuseFactor        = this.program.getUniform("in_material.diffuseFactor");
-			this.GLspecularFactor       = this.program.getUniform("in_material.specularFactor");
-			this.GLshininess            = this.program.getUniform("in_material.shininess");
-			this.GLlights = new GlLightIndex[numberOfLight];
-			for (int iii=0; iii<numberOfLight; iii++) {
-				int color       = this.program.getUniform("in_lights[" + iii + "].color");
-				int position    = this.program.getUniform("in_lights[" + iii + "].position");
-				int attenuation = this.program.getUniform("in_lights[" + iii + "].attenuation");
-				this.GLlights[iii] = new GlLightIndex(color, position, attenuation);
+			this.renderTransform.init(this.program);
+			if (this.renderLight != null) {
+				this.renderLight.init(this.program);
 			}
+			this.renderMaterials.init(this.program);
 		}
 		
 	}
 	@Override
-	public void addFriendComponent(Component component) {
-		if (component.getType().contentEquals("static-meshs")) {
-			meshs = (ComponentStaticMeshs)component;
+	public void addFriendComponent(final Component component) {
+		if (component instanceof ComponentStaticMeshs refTyped) {
+			this.meshs = refTyped;
 		}
-		if (component.getType().contentEquals("textures")) {
-			textures = (ComponentTextures)component;
+		if (component instanceof ComponentTextures refTyped) {
+			this.textures = refTyped;
 		}
-		if (component.getType().contentEquals("materials")) {
-			materials = (ComponentMaterials)component;
+		if (component instanceof ComponentMaterials refTyped) {
+			this.renderMaterials.setMaterial(refTyped);
 		}
-		if (component.getType().contentEquals("position")) {
-			position = (ComponentPosition)component;
+		if (component instanceof PositionningInterface refTyped) {
+			this.renderTransform.setPositionning(refTyped);
+			if (this.renderLight != null) {
+				this.renderLight.setPositionning(refTyped);
+			}
 		}
 	}
 	@Override
-	public void removeFriendComponent(Component component) {
+	public void removeFriendComponent(final Component component) {
 		// nothing to do.
 	}
 	@Override
 	public void render() {
+		// Select the program:
 		this.program.use();
-		Light[] lights = this.lightEngine.getNearest(position.getTransform().getPosition());
-		Matrix4f projectionMatrix = OpenGL.getMatrix();
-		Matrix4f viewMatrix = OpenGL.getCameraMatrix();
-		Matrix4f transformationMatrix = position.getTransform().getOpenGLMatrix();
-		Set<String> keys = this.meshs.getKeys();
-		
-		for (int iii=0; iii<numberOfLight; iii++) {
-			if (lights[iii] != null) {
-				this.program.uniformVector(this.GLlights[iii].oGLposition, lights[iii].getPositionDelta());
-				this.program.uniformVector(this.GLlights[iii].oGLcolor, lights[iii].getColor());
-				this.program.uniformVector(this.GLlights[iii].oGLattenuation, lights[iii].getAttenuation());
-			} else {
-				this.program.uniformVector(this.GLlights[iii].oGLposition, new Vector3f(0,0,0));
-				this.program.uniformVector(this.GLlights[iii].oGLcolor, new Vector3f(0,0,0));
-				this.program.uniformVector(this.GLlights[iii].oGLattenuation, new Vector3f(1,0,0));
-			}
+		// Bind all the element for the rendering:
+		if (this.renderLight != null) {
+			this.renderLight.bindForRendering(this.program);
 		}
-		this.program.uniformMatrix(this.GLMatrixView, viewMatrix);
-		this.program.uniformMatrix(this.GLMatrixProjection, projectionMatrix);
-		// Change the position for each element with the same pipeline you need to render ...
-		this.program.uniformMatrix(this.GLMatrixTransformation, transformationMatrix);
+		this.renderTransform.bindForRendering(this.program);
+		Set<String> keys = this.meshs.getKeys();
 		
 		for (String key : keys) {
 			this.meshs.bindForRendering(key);
 			this.textures.bindForRendering(key);
-			Material mat = this.materials.getMaterial(key);
-			this.program.uniformVector(GLambientFactor, mat.getAmbientFactor());
-			this.program.uniformVector(GLdiffuseFactor, mat.getDiffuseFactor());
-			this.program.uniformVector(GLspecularFactor, mat.getSpecularFactor());
-			this.program.uniformFloat(GLshininess, mat.getShininess());
+			this.renderMaterials.bindForRendering(this.program, key);
 			// update of flags is done asynchronously ==> need update before drawing...
 			OpenGL.updateAllFlags();
 			// Request the draw all the elements:
 			this.meshs.render(key);
+			// remove all element to render:
+			this.renderMaterials.unBindForRendering();
 			this.textures.unBindForRendering(key);
 			this.meshs.unBindForRendering(key);
+		}
+		// remove all element to render:
+		this.renderTransform.unBindForRendering();
+		if (this.renderLight != null) {
+			this.renderLight.unBindForRendering();
 		}
 		this.program.unUse();
 	}

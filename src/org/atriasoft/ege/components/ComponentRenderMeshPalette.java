@@ -1,44 +1,50 @@
 package org.atriasoft.ege.components;
 
 import org.atriasoft.ege.Component;
+import org.atriasoft.ege.components.part.LightRender;
+import org.atriasoft.ege.components.part.PositionningInterface;
+import org.atriasoft.ege.components.part.TransformRender;
+import org.atriasoft.ege.engines.EngineLight;
 import org.atriasoft.etk.Uri;
-import org.atriasoft.etk.math.Matrix4f;
 import org.atriasoft.gale.backend3d.OpenGL;
 import org.atriasoft.gale.resource.ResourceProgram;
 
 public class ComponentRenderMeshPalette extends ComponentRender {
-	private int GLMatrixProjection;
-	private int GLMatrixTransformation;
-	private int GLMatrixView;
 	ComponentMesh mesh = null;
-	private ComponentPhysics playerPhysics = null;
-	ComponentPosition position = null;
 	ResourceProgram program = null;
 	ComponentTexturePalette texture = null;
 	
-	public ComponentRenderMeshPalette(final Uri vertexShader, final Uri fragmentShader) {
+	LightRender renderLight = null;
+	TransformRender renderTransform = null;
+	
+	public ComponentRenderMeshPalette(final Uri vertexShader, final Uri fragmentShader, final EngineLight lightEngine) {
+		if (lightEngine != null) {
+			this.renderLight = new LightRender(lightEngine);
+		}
+		this.renderTransform = new TransformRender();
 		this.program = ResourceProgram.create(vertexShader, fragmentShader);
 		if (this.program != null) {
-			this.GLMatrixTransformation = this.program.getUniform("in_matrixTransformation");
-			this.GLMatrixProjection = this.program.getUniform("in_matrixProjection");
-			this.GLMatrixView = this.program.getUniform("in_matrixView");
+			this.renderTransform.init(this.program);
+			if (this.renderLight != null) {
+				this.renderLight.init(this.program);
+			}
 		}
 		
 	}
 	
 	@Override
 	public void addFriendComponent(final Component component) {
-		if (component.getType().contentEquals("mesh")) {
-			this.mesh = (ComponentMesh) component;
+		if (component instanceof ComponentMesh refTyped) {
+			this.mesh = refTyped;
 		}
-		if (component.getType().contentEquals("texture")) {
-			this.texture = (ComponentTexturePalette) component;
+		if (component instanceof ComponentTexturePalette refTyped) {
+			this.texture = refTyped;
 		}
-		if (component.getType().contentEquals("position")) {
-			this.position = (ComponentPosition) component;
-		}
-		if (component.getType().contentEquals("physics")) {
-			this.playerPhysics = (ComponentPhysics) component;
+		if (component instanceof PositionningInterface refTyped) {
+			this.renderTransform.setPositionning(refTyped);
+			if (this.renderLight != null) {
+				this.renderLight.setPositionning(refTyped);
+			}
 		}
 	}
 	
@@ -49,30 +55,27 @@ public class ComponentRenderMeshPalette extends ComponentRender {
 	
 	@Override
 	public void render() {
+		// Select the program:
 		this.program.use();
-		final Matrix4f projectionMatrix = OpenGL.getMatrix();
-		final Matrix4f viewMatrix = OpenGL.getCameraMatrix();
-		Matrix4f transformationMatrix = null;
-		if (this.position != null) {
-			//Log.warning("position " + this.position.getTransform());
-			transformationMatrix = this.position.getTransform().getOpenGLMatrix();
-		} else if (this.playerPhysics != null) {
-			//Log.warning("playerPosition " + this.playerPhysics.getTransform());
-			transformationMatrix = this.playerPhysics.getTransform().getOpenGLMatrix();
-		}
+		// Bind all the element for the rendering:
 		this.mesh.bindForRendering();
 		this.texture.bindForRendering();
-		this.program.uniformMatrix(this.GLMatrixView, viewMatrix);
-		this.program.uniformMatrix(this.GLMatrixProjection, projectionMatrix);
-		// Change the position for each element with the same pipeline you need to render ...
-		this.program.uniformMatrix(this.GLMatrixTransformation, transformationMatrix);
+		if (this.renderLight != null) {
+			this.renderLight.bindForRendering(this.program);
+		}
+		this.renderTransform.bindForRendering(this.program);
 		// update of flags is done asynchronously ==> need update before drawing...
 		OpenGL.updateAllFlags();
 		// Request the draw all the elements:
 		this.mesh.renderArrays();
-		
+		// remove all element to render:
+		this.renderTransform.unBindForRendering();
+		if (this.renderLight != null) {
+			this.renderLight.unBindForRendering();
+		}
 		this.texture.unBindForRendering();
 		this.mesh.unBindForRendering();
+		// Disable program:
 		this.program.unUse();
 	}
 }

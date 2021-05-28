@@ -2,10 +2,11 @@ package org.atriasoft.ege.components;
 
 import org.atriasoft.ege.Component;
 import org.atriasoft.ege.Signal;
+import org.atriasoft.ege.components.part.PositionningInterface;
 import org.atriasoft.ege.internal.Log;
 import org.atriasoft.etk.math.Transform3D;
 
-public class ComponentPosition extends Component {
+public class ComponentPosition extends Component implements PositionningInterface {
 	public final Signal<Transform3D> signalPosition = new Signal<Transform3D>();
 	protected Transform3D transform;
 	
@@ -35,6 +36,7 @@ public class ComponentPosition extends Component {
 	 * set a new transformation
 	 * @return Transformation of the position
 	 */
+	@Override
 	public Transform3D getTransform() {
 		return this.transform;
 	}

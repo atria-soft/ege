@@ -9,12 +9,10 @@ import org.atriasoft.ege.Material;
 import org.atriasoft.ege.camera.Camera;
 import org.atriasoft.ege.components.ComponentLight;
 import org.atriasoft.ege.components.ComponentLightSun;
-import org.atriasoft.ege.components.ComponentMaterial;
 import org.atriasoft.ege.components.ComponentMesh;
 import org.atriasoft.ege.components.ComponentPosition;
 import org.atriasoft.ege.components.ComponentRenderColoredStaticMesh;
 import org.atriasoft.ege.components.ComponentRenderMeshPalette;
-import org.atriasoft.ege.components.ComponentRenderTexturedMaterialsStaticMesh;
 import org.atriasoft.ege.components.ComponentRenderTexturedStaticMesh;
 import org.atriasoft.ege.components.ComponentStaticMesh;
 import org.atriasoft.ege.components.ComponentTexture;
@@ -64,7 +62,7 @@ public class LowPolyApplication extends GaleApplication {
 		// simple sun to have a global light ...
 		final Entity sun = new Entity(this.env);
 		sun.addComponent(new ComponentPosition(new Transform3D(new Vector3f(1000, 1000, 1000))));
-		sun.addComponent(new ComponentLightSun(new Light(new Vector3f(0.4f, 0.4f, 0.4f), new Vector3f(0, 0, 0), new Vector3f(0.8f, 0, 0))));
+		sun.addComponent(new ComponentLightSun(new Light(new Color(1.0f, 1.0f, 1.0f), new Vector3f(0, 0, 0), new Vector3f(1.0f, 0, 0))));
 		this.env.addEntity(sun);
 		
 		// add a cube to show where in the light ...
@@ -73,7 +71,7 @@ public class LowPolyApplication extends GaleApplication {
 		localLight.addComponent(this.lightPosition);
 		localLight.addComponent(new ComponentStaticMesh(new Uri("DATA", "cube-one.obj")));
 		localLight.addComponent(new ComponentTexture(new Uri("DATA", "grass.png")));
-		localLight.addComponent(new ComponentLight(new Light(new Vector3f(0, 2, 0), new Vector3f(0, 0, 0), new Vector3f(0.8f, 0.01f, 0.002f))));
+		localLight.addComponent(new ComponentLight(new Light(new Color(0.0f, 0.0f, 2.0f), new Vector3f(0, 0, 0), new Vector3f(0.8f, 0.01f, 0.002f))));
 		localLight.addComponent(new ComponentRenderTexturedStaticMesh(new Uri("DATA", "basic.vert", "loxelEngine"), new Uri("DATA", "basic.frag", "loxelEngine")));
 		this.env.addEntity(localLight);
 		
@@ -85,19 +83,31 @@ public class LowPolyApplication extends GaleApplication {
 		this.env.addEntity(gird);
 		
 		// test entity
-		final Entity basicTree = new Entity(this.env);
+		Entity basicTree = new Entity(this.env);
 		this.objectPosition = new ComponentPosition(new Transform3D(new Vector3f(0, 0, 0)));
 		basicTree.addComponent(this.objectPosition);
 		//this.materialCube = new Material();
 		//basicTree.addComponent(new ComponentMaterial(this.materialCube));
 		basicTree.addComponent(new ComponentMesh(new Uri("DATA", "tree1.emf")));
-		//basicTree.addComponent(new ComponentMesh(new Uri("DATA", "simple3D.emf")));
-		//basicTree.addComponent(new ComponentTexture(new Uri("RES", "mud.png")));
 		basicTree.addComponent(new ComponentTexturePalette(new Uri("DATA", "palette_1.json")));
 		//basicTree.addComponent(new ComponentRenderTexturedStaticMesh(new Uri("DATA", "basic.vert", "loxelEngine"), new Uri("DATA", "basic.frag", "loxelEngine")));
-		basicTree.addComponent(new ComponentRenderMeshPalette(new Uri("DATA", "basicPalette.vert"), new Uri("DATA", "basicPalette.frag")));
+		basicTree.addComponent(new ComponentRenderMeshPalette(new Uri("DATA", "basicPalette.vert"), new Uri("DATA", "basicPalette.frag"),
+					(EngineLight) this.env.getEngine(EngineLight.ENGINE_NAME)));
 		this.env.addEntity(basicTree);
 
+		
+		basicTree = new Entity(this.env);
+		this.objectPosition = new ComponentPosition(new Transform3D(new Vector3f(3, 2, 0)));
+		basicTree.addComponent(this.objectPosition);
+		//this.materialCube = new Material();
+		//basicTree.addComponent(new ComponentMaterial(this.materialCube));
+		basicTree.addComponent(new ComponentMesh(new Uri("DATA", "tree2.emf")));
+		basicTree.addComponent(new ComponentTexturePalette(new Uri("DATA", "palette_1.json")));
+		//basicTree.addComponent(new ComponentRenderTexturedStaticMesh(new Uri("DATA", "basic.vert", "loxelEngine"), new Uri("DATA", "basic.frag", "loxelEngine")));
+		basicTree.addComponent(new ComponentRenderMeshPalette(new Uri("DATA", "basicPalette.vert"), new Uri("DATA", "basicPalette.frag"),
+					(EngineLight) this.env.getEngine(EngineLight.ENGINE_NAME)));
+		this.env.addEntity(basicTree);
+		
 //		for (int xxx = -10; xxx < 10; xxx++) {
 //			for (int yyy = -10; yyy < 10; yyy++) {
 //				final Entity superGrass = new Entity(this.env);

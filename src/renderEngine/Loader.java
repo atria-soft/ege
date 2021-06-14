@@ -16,8 +16,8 @@ import org.lwjgl.opengl.GL15;
 import org.lwjgl.opengl.GL20;
 import org.lwjgl.opengl.GL30;
 
-import de.matthiasmann.twl.utils.PNGDecoder;
-import de.matthiasmann.twl.utils.PNGDecoder.Format;
+import org.atriasoft.pngdecoder.PNGDecoder;
+import org.atriasoft.pngdecoder.PNGDecoder.Format;
 import models.RawModel;
 import textures.TextureData;
 

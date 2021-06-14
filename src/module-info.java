@@ -21,6 +21,7 @@ open module org.atriasoft.ege {
 	exports textures;
 	exports toolbox;
 	
+	requires transitive java.desktop; // todo: remove this deprecated element...
 	requires transitive org.atriasoft.gale;
 	requires transitive org.atriasoft.etk;
 	requires transitive org.atriasoft.ewol;

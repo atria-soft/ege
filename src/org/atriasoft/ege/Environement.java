@@ -1,11 +1,12 @@
 package org.atriasoft.ege;
 
+import java.time.Clock;
+import java.time.Duration;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import org.atriasoft.echrono.Clock;
 import org.atriasoft.ege.camera.Camera;
 import org.atriasoft.ege.engines.EngineAI;
 import org.atriasoft.ege.engines.EngineDynamicMeshs;
@@ -54,13 +55,14 @@ public class Environement {
 	private final List<Entity> listEntity = new ArrayList<>(); // !< List of all entity added in the Game
 	
 	List<ControlInterface> controls = new ArrayList<>();
-	Clock lastCallTime;
+	long lastCallTime = 0;
 	// ! list of all camera in the world
 	protected Map<String, Camera> listCamera = new HashMap<>();
 	
 	protected long gameTime = 0; // !< time of the game running
-	
-	Clock startTime;
+
+	long startTime = 0;
+	Clock startClock = null;
 	
 	//protected List<Mesh> listMeshToDrawFirst = new ArrayList<Mesh>();
 	public Environement() {
@@ -72,6 +74,7 @@ public class Environement {
 		addEngine(new EnginePhysics(this));
 		addEngine(new EngineParticle(this));
 		addEngine(new EngineLight(this));
+		startClock = Clock.systemUTC();
 	}
 	
 	/**
@@ -325,18 +328,19 @@ public class Environement {
 	}
 	
 	public void periodicCall() {
-		if (this.lastCallTime == null) {
-			this.startTime = Clock.now();
+		if (this.lastCallTime == 0) {
+			this.startTime = System.nanoTime();
 			this.lastCallTime = this.startTime;
 		}
-		final Clock lastUpdate = this.lastCallTime;
-		this.lastCallTime = Clock.now();
-		final EventTime event = new EventTime(this.lastCallTime, this.startTime, this.lastCallTime.less(lastUpdate), this.lastCallTime.less(lastUpdate));
+		final long lastUpdate = this.lastCallTime;
+		this.lastCallTime = System.nanoTime();
+		Clock currentClock = Clock.systemUTC();
+		final EventTime event = new EventTime(currentClock, this.startClock, this.lastCallTime , this.startTime, Duration.ofNanos(this.lastCallTime - lastUpdate), Duration.ofNanos(this.lastCallTime - lastUpdate));
 		for (final ControlInterface elem : this.controls) {
 			elem.periodicCall(event);
 		}
 		for (final Engine engine : this.engines) {
-			engine.update(this.lastCallTime.less(lastUpdate).get() / 100);
+			engine.update((long)((this.lastCallTime - lastUpdate)/1000000));
 		}
 	};
 	

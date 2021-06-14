@@ -90,7 +90,7 @@ public class CollisionTestApplication extends GaleApplication {
 		// simple sun to have a global light ...
 		final Entity sun = new Entity(this.env);
 		sun.addComponent(new ComponentPosition(new Transform3D(new Vector3f(1000, 1000, 1000))));
-		sun.addComponent(new ComponentLightSun(new Light(new Vector3f(0.4f, 0.4f, 0.4f), Vector3f.ZERO, new Vector3f(0.8f, 0, 0))));
+		sun.addComponent(new ComponentLightSun(new Light(new Color(0.4f, 0.4f, 0.4f), Vector3f.ZERO, new Vector3f(0.8f, 0, 0))));
 		this.env.addEntity(sun);
 		
 		// add a cube to show where in the light ...

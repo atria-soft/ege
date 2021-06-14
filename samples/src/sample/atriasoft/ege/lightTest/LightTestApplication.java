@@ -61,7 +61,7 @@ public class LightTestApplication extends GaleApplication {
 		// simple sun to have a global light ...
 		final Entity sun = new Entity(this.env);
 		sun.addComponent(new ComponentPosition(new Transform3D(new Vector3f(1000, 1000, 1000))));
-		sun.addComponent(new ComponentLightSun(new Light(new Vector3f(0.4f, 0.4f, 0.4f), new Vector3f(0, 0, 0), new Vector3f(0.8f, 0, 0))));
+		sun.addComponent(new ComponentLightSun(new Light(new Color(0.4f, 0.4f, 0.4f), new Vector3f(0, 0, 0), new Vector3f(0.8f, 0, 0))));
 		this.env.addEntity(sun);
 		
 		// add a cube to show where in the light ...
@@ -70,7 +70,7 @@ public class LightTestApplication extends GaleApplication {
 		localLight.addComponent(this.lightPosition);
 		localLight.addComponent(new ComponentStaticMesh(new Uri("RES", "cube-one.obj")));
 		localLight.addComponent(new ComponentTexture(new Uri("RES", "grass.png")));
-		localLight.addComponent(new ComponentLight(new Light(new Vector3f(0, 2, 0), new Vector3f(0, 0, 0), new Vector3f(0.8f, 0.01f, 0.002f))));
+		localLight.addComponent(new ComponentLight(new Light(new Color(0.0f, 2.0f, 0.0f), new Vector3f(0, 0, 0), new Vector3f(0.8f, 0.01f, 0.002f))));
 		localLight.addComponent(new ComponentRenderTexturedStaticMesh(new Uri("DATA", "basic.vert", "loxelEngine"), new Uri("DATA", "basic.frag", "loxelEngine")));
 		this.env.addEntity(localLight);
 		

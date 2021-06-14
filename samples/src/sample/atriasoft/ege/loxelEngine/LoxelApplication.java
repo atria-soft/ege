@@ -93,7 +93,7 @@ public class LoxelApplication extends GaleApplication {
 		// simple sun to have a global light ...
 		final Entity sun = new Entity(this.env);
 		sun.addComponent(new ComponentPosition(new Transform3D(new Vector3f(1000, 1000, 1000))));
-		sun.addComponent(new ComponentLightSun(new Light(new Vector3f(0.4f, 0.4f, 0.4f), new Vector3f(0, 0, 0), new Vector3f(0.8f, 0, 0))));
+		sun.addComponent(new ComponentLightSun(new Light(new Color(0.4f, 0.4f, 0.4f), new Vector3f(0, 0, 0), new Vector3f(0.8f, 0, 0))));
 		this.env.addEntity(sun);
 		
 		// add a cube to show where in the light ...
@@ -112,7 +112,7 @@ public class LoxelApplication extends GaleApplication {
 			final Entity localBox = new Entity(this.env);
 			localBox.addComponent(new ComponentStaticMesh(new Uri("RES", "cube-one.obj")));
 			localBox.addComponent(new ComponentTexture(new Uri("DATA", "blocks/clay.png", "loxelEngine")));
-			localBox.addComponent(new ComponentLight(new Light(new Vector3f(0, 1, 0), new Vector3f(0, 0, 0), new Vector3f(0.8f, 0.03f, 0.002f))));
+			localBox.addComponent(new ComponentLight(new Light(new Color(0.0f, 1.0f, 0.0f), new Vector3f(0, 0, 0), new Vector3f(0.8f, 0.03f, 0.002f))));
 			localBox.addComponent(new ComponentRenderTexturedStaticMesh(new Uri("DATA", "basic.vert", "loxelEngine"), new Uri("DATA", "basic.frag", "loxelEngine")));
 			final ComponentPhysics physics2 = new ComponentPhysics(this.env);
 			physics2.setTransform(new Transform3D(new Vector3f(0, 0, 5)));
@@ -129,7 +129,7 @@ public class LoxelApplication extends GaleApplication {
 			final Entity localBox = new Entity(this.env);
 			localBox.addComponent(new ComponentStaticMesh(new Uri("RES", "cube-one.obj")));
 			localBox.addComponent(new ComponentTexture(new Uri("DATA", "blocks/clay.png", "loxelEngine")));
-			localBox.addComponent(new ComponentLight(new Light(new Vector3f(0, 1, 0), new Vector3f(0, 0, 0), new Vector3f(0.8f, 0.03f, 0.002f))));
+			localBox.addComponent(new ComponentLight(new Light(new Color(0.0f,1.0f, 0.0f), new Vector3f(0, 0, 0), new Vector3f(0.8f, 0.03f, 0.002f))));
 			localBox.addComponent(new ComponentRenderTexturedStaticMesh(new Uri("DATA", "basic.vert", "loxelEngine"), new Uri("DATA", "basic.frag", "loxelEngine")));
 			final ComponentPhysics physics2 = new ComponentPhysics(this.env);
 			physics2.setTransform(new Transform3D(new Vector3f(0, 4, 12.5f)));

@@ -3,6 +3,7 @@ package org.atriasoft.ege.components;
 import org.atriasoft.ege.Component;
 import org.atriasoft.ege.Light;
 import org.atriasoft.ege.components.part.PositionningInterface;
+import org.atriasoft.ege.internal.Log;
 import org.atriasoft.etk.math.Vector3f;
 
 public class ComponentLight extends Component {
@@ -21,7 +22,11 @@ public class ComponentLight extends Component {
 	@Override
 	public void addFriendComponent(final Component component) {
 		if (component.getType().contentEquals("position") || component.getType().contentEquals("physics")) {
-			this.position = (PositionningInterface)component;
+			if (component instanceof PositionningInterface tmp) {
+				this.position = tmp;
+			} else {
+				Log.error("component: " + component.getClass().getCanonicalName() + " is not an instance of " + PositionningInterface.class.getCanonicalName());
+			}
 		}
 	}
 	

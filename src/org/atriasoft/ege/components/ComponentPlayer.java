@@ -4,7 +4,7 @@ import org.atriasoft.ege.Component;
 import org.atriasoft.ege.engines.EnginePlayer;
 
 public class ComponentPlayer extends Component {
-	private float runSpeed = 35;
+	private float runSpeed = 20;
 	private float strafSpeed = 25;
 	private float turnSpeed = 0.45f;
 	private float jumpPower = 30;

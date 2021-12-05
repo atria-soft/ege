@@ -7,6 +7,7 @@ import org.atriasoft.ege.Component;
 import org.atriasoft.ege.Environement;
 import org.atriasoft.ege.Signal;
 import org.atriasoft.ege.camera.Camera;
+import org.atriasoft.ege.components.part.PositionningInterface;
 import org.atriasoft.ege.engines.EnginePhysics;
 import org.atriasoft.ege.internal.Log;
 import org.atriasoft.ege.physics.shape.Box;
@@ -38,8 +39,8 @@ import org.atriasoft.etk.math.Transform3D;
 import org.atriasoft.etk.math.Vector3f;
 import org.atriasoft.gale.resource.ResourceColored3DObject;
 
-public class ComponentPhysics extends Component {
-	public Signal<Transform3D> signalPosition = new Signal<>();;
+public class ComponentPhysics extends Component implements PositionningInterface {
+	public Signal<Transform3D> signalPosition = new Signal<>();
 	protected Transform3D lastTransformEmit;
 	protected EnginePhysics engine;
 	protected RigidBody rigidBody;
@@ -232,7 +233,7 @@ public class ComponentPhysics extends Component {
 				
 				Matrix4f transformationMatrixLocal = transformLocal.getOpenGLMatrix();
 				transformationMatrixLocal = transformationMatrixLocal.transpose();
-				transformationMatrixLocal = transformationMatrixLocal = transformationMatrix.multiply(transformationMatrixLocal);
+				transformationMatrixLocal = transformationMatrix.multiply(transformationMatrixLocal);
 				_draw.drawSquare(tmpElement.getSize(), transformationMatrixLocal, tmpColor);
 			} else if (it.isCylinder()) {
 				Log.debug("    Cylinder");
@@ -241,7 +242,7 @@ public class ComponentPhysics extends Component {
 				
 				Matrix4f transformationMatrixLocal = transformLocal.getOpenGLMatrix();
 				transformationMatrixLocal = transformationMatrixLocal.transpose();
-				transformationMatrixLocal = transformationMatrixLocal = transformationMatrix.multiply(transformationMatrixLocal);
+				transformationMatrixLocal = transformationMatrix.multiply(transformationMatrixLocal);
 				_draw.drawCylinder(tmpElement.getRadius(), tmpElement.getSize(), 10, 10, transformationMatrixLocal, tmpColor);
 			} else if (it.isCapsule()) {
 				Log.debug("    Capsule");
@@ -250,7 +251,7 @@ public class ComponentPhysics extends Component {
 				
 				Matrix4f transformationMatrixLocal = transformLocal.getOpenGLMatrix();
 				transformationMatrixLocal = transformationMatrixLocal.transpose();
-				transformationMatrixLocal = transformationMatrixLocal = transformationMatrix.multiply(transformationMatrixLocal);
+				transformationMatrixLocal = transformationMatrix.multiply(transformationMatrixLocal);
 				_draw.drawCapsule(tmpElement.getRadius(), tmpElement.getSize(), 10, 10, transformationMatrixLocal, tmpColor);
 			} else if (it.isCone()) {
 				Log.debug("    Cone");
@@ -259,7 +260,7 @@ public class ComponentPhysics extends Component {
 				
 				Matrix4f transformationMatrixLocal = transformLocal.getOpenGLMatrix();
 				transformationMatrixLocal = transformationMatrixLocal.transpose();
-				transformationMatrixLocal = transformationMatrixLocal = transformationMatrix.multiply(transformationMatrixLocal);
+				transformationMatrixLocal = transformationMatrix.multiply(transformationMatrixLocal);
 				_draw.drawCone(tmpElement.getRadius(), tmpElement.getSize(), 10, 10, transformationMatrixLocal, tmpColor);
 			} else if (it.isSphere()) {
 				
@@ -269,7 +270,7 @@ public class ComponentPhysics extends Component {
 				
 				Matrix4f transformationMatrixLocal = transformLocal.getOpenGLMatrix();
 				transformationMatrixLocal = transformationMatrixLocal.transpose();
-				transformationMatrixLocal = transformationMatrixLocal = transformationMatrix.multiply(transformationMatrixLocal);
+				transformationMatrixLocal = transformationMatrix.multiply(transformationMatrixLocal);
 				_draw.drawSphere(tmpElement.getRadius(), 10, 10, transformationMatrixLocal, tmpColor);
 			} else if (it.isConcave()) {
 				
@@ -453,6 +454,7 @@ public class ComponentPhysics extends Component {
 	 * set a new transformation
 	 * @return Transformation of the position
 	 */
+	@Override
 	public Transform3D getTransform() {
 		if (this.rigidBody == null) {
 			return Transform3D.IDENTITY;

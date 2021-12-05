@@ -5,6 +5,7 @@
  */
 package org.atriasoft.ege.physics.shape;
 
+import org.atriasoft.ege.internal.Log;
 import org.atriasoft.etk.math.Quaternion;
 import org.atriasoft.etk.math.Vector3f;
 
@@ -58,6 +59,7 @@ public class Shape {
 	};
 	
 	public boolean parse(final String _line) {
+		Log.error("dfgdfg");
 		/*
 		if(strncmp(_line, "origin:", 7) == 0) {
 			sscanf(&_line[7], "%f %f %f", &m_origin.m_floats[0], &m_origin.m_floats[1], &m_origin.m_floats[2] );

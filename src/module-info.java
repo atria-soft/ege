@@ -11,6 +11,7 @@ open module org.atriasoft.ege {
 	exports org.atriasoft.ege.map;
 	exports org.atriasoft.ege.physics.shape;
 	exports org.atriasoft.ege.tools;
+	exports org.atriasoft.phyligram;
 	exports entities;
 	exports guis;
 	exports models;

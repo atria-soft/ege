@@ -15,3 +15,15 @@ build.number
 /.settings/
 /junit/
 /target/
+
+*.blend1
+*.blend2
+*.blend3
+*.blend4
+*.blend5
+
+*.pyc
+
+__pycache__
+*.log
+

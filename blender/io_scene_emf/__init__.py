@@ -125,7 +125,7 @@ class ExportEMF(bpy.types.Operator, ExportHelper):
 		
 		global_matrix[0][0] = \
 		global_matrix[1][1] = \
-		global_matrix[2][2] = self.global_scale
+		global_matrix[2][2] = 1.0 #self.global_scale
 		
 		return export_emf.save(self, context, **keywords)
 

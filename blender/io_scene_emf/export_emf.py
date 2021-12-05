@@ -684,7 +684,7 @@ def _write(context,
 					collection = col
 					break
 		if collection.name != "root":
-			raise "Can not detect collition 'root'"
+			raise "Can not detect collection 'root'"
 	
 	#print("* collection name: " + str(collection.name) + "/" + str(collection.name_full) )
 	print("============================================================================================");

@@ -27,8 +27,8 @@ public class ComponentPosition extends Component implements PositionningInterfac
 	
 	@Override
 	public void addFriendComponent(final Component component) {
-		if (component.getType().contains("physics")) {
-			Log.critical("Can not add a 'physic' component and a 'position' component ... ==> incompatible");
+		if (component.getType().equals("physics")) {
+			Log.critical("Can not add a 'physics' component and a 'position' component ... ==> incompatible");
 		}
 	}
 	

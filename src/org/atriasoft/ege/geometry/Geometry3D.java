@@ -52,7 +52,7 @@ public class Geometry3D {
 		return true;
 	}
 	
-	public static boolean pointInPlane(final Vector3f point, final Plane plane) {
+	public static boolean pointInPlane(final Vector3f point, final Plane____ plane) {
 		// This should probably use an epsilon!
 		//return Dot(point, plane.normal) - plane.distance == 0.0f;
 		return CMP(point.dot(plane.normal) - plane.distance, 0.0f);

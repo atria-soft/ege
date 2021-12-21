@@ -8,13 +8,11 @@ import java.util.List;
 import java.util.Map;
 
 import org.atriasoft.ege.camera.Camera;
-import org.atriasoft.ege.components.ComponentPhysicsPerso;
 import org.atriasoft.ege.engines.EngineAI;
 import org.atriasoft.ege.engines.EngineDynamicMeshs;
 import org.atriasoft.ege.engines.EngineGravity;
 import org.atriasoft.ege.engines.EngineLight;
 import org.atriasoft.ege.engines.EngineParticle;
-import org.atriasoft.ege.engines.EnginePhysics;
 import org.atriasoft.ege.engines.EnginePhysicsPerso;
 import org.atriasoft.ege.engines.EnginePlayer;
 import org.atriasoft.ege.engines.EngineRender;
@@ -62,7 +60,7 @@ public class Environement {
 	protected Map<String, Camera> listCamera = new HashMap<>();
 	
 	protected long gameTime = 0; // !< time of the game running
-
+	
 	long startTime = 0;
 	Clock startClock = null;
 	
@@ -73,11 +71,11 @@ public class Environement {
 		addEngine(new EngineAI(this));
 		addEngine(new EngineDynamicMeshs(this));
 		addEngine(new EngineRender(this));
-		addEngine(new EnginePhysics(this));
+		//addEngine(new EnginePhysics(this));
 		addEngine(new EnginePhysicsPerso(this));
 		addEngine(new EngineParticle(this));
 		addEngine(new EngineLight(this));
-		startClock = Clock.systemUTC();
+		this.startClock = Clock.systemUTC();
 	}
 	
 	/**
@@ -221,9 +219,9 @@ public class Environement {
 	//		EGEVERBOSE("    Emit Signal");
 	//		signalPlayTimeChange.emit(mgameTime*0.000001f);
 	//	}
-	//	
+	//
 	//	//EWOLDEBUG("Time: mlastCallTime=" + mlastCallTime + " deltaTime=" + deltaTime);
-	//	
+	//
 	//	// update camera positions:
 	//	for (auto it : mlistCamera) {
 	//		if (it.second != null) {
@@ -239,7 +237,7 @@ public class Environement {
 	//		EGEVERBOSE("    update: " + it.getType());
 	//		it.update(echrono::Duration(double(curentDelta)));
 	//	}
-	//	
+	//
 	//	//EGE.debug("stepSimulation (start)");
 	//	///step the simulation
 	//	// TODO mphysicEngine.update(curentDelta);
@@ -338,14 +336,15 @@ public class Environement {
 		final long lastUpdate = this.lastCallTime;
 		this.lastCallTime = System.nanoTime();
 		Clock currentClock = Clock.systemUTC();
-		final EventTime event = new EventTime(currentClock, this.startClock, this.lastCallTime , this.startTime, Duration.ofNanos(this.lastCallTime - lastUpdate), Duration.ofNanos(this.lastCallTime - lastUpdate));
+		final EventTime event = new EventTime(currentClock, this.startClock, this.lastCallTime, this.startTime, Duration.ofNanos(this.lastCallTime - lastUpdate),
+				Duration.ofNanos(this.lastCallTime - lastUpdate));
 		for (final ControlInterface elem : this.controls) {
 			elem.periodicCall(event);
 		}
 		for (final Engine engine : this.engines) {
-			engine.update((long)((this.lastCallTime - lastUpdate)/1000000));
+			engine.update((this.lastCallTime - lastUpdate) / 1000000);
 		}
-	};
+	}
 	
 	public void removeControlInterface(final ControlInterface ref) {
 		this.controls.remove(ref);

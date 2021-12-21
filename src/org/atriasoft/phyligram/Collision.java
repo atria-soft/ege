@@ -1,12 +1,12 @@
 package org.atriasoft.phyligram;
 
 public class Collision {
-	public final ColisionPoints[] colisionPointLocal;
+	public final ColisionPoint[] colisionPointLocal;
 	public final PhysicShape shapeRemote;
-	public final ColisionPoints[] colisionPointRemote;
+	public final ColisionPoint[] colisionPointRemote;
 	public final boolean staticRemote;
-	public Collision(ColisionPoints[] colisionPointLocal, PhysicShape shapeRemote,
-			ColisionPoints[] colisionPointRemote, boolean staticRemote) {
+	public Collision(ColisionPoint[] colisionPointLocal, PhysicShape shapeRemote,
+			ColisionPoint[] colisionPointRemote, boolean staticRemote) {
 		super();
 		this.colisionPointLocal = colisionPointLocal;
 		this.shapeRemote = shapeRemote;

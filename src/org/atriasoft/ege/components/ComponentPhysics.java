@@ -10,20 +10,11 @@ import org.atriasoft.ege.camera.Camera;
 import org.atriasoft.ege.components.part.PositionningInterface;
 import org.atriasoft.ege.engines.EnginePhysics;
 import org.atriasoft.ege.internal.Log;
-import org.atriasoft.ege.physics.shape.Box;
-import org.atriasoft.ege.physics.shape.Capsule;
-import org.atriasoft.ege.physics.shape.Concave;
-import org.atriasoft.ege.physics.shape.Cone;
-import org.atriasoft.ege.physics.shape.ConvexHull;
-import org.atriasoft.ege.physics.shape.Cylinder;
-import org.atriasoft.ege.physics.shape.Shape;
-import org.atriasoft.ege.physics.shape.Sphere;
 import org.atriasoft.ephysics.body.BodyType;
 import org.atriasoft.ephysics.body.RigidBody;
 import org.atriasoft.ephysics.collision.ProxyShape;
 import org.atriasoft.ephysics.collision.TriangleMesh;
 import org.atriasoft.ephysics.collision.TriangleVertexArray;
-import org.atriasoft.ephysics.collision.shapes.AABB;
 import org.atriasoft.ephysics.collision.shapes.BoxShape;
 import org.atriasoft.ephysics.collision.shapes.CapsuleShape;
 import org.atriasoft.ephysics.collision.shapes.CollisionShape;
@@ -38,6 +29,14 @@ import org.atriasoft.etk.math.Quaternion;
 import org.atriasoft.etk.math.Transform3D;
 import org.atriasoft.etk.math.Vector3f;
 import org.atriasoft.gale.resource.ResourceColored3DObject;
+import org.atriasoft.phyligram.shape.Box;
+import org.atriasoft.phyligram.shape.Capsule;
+import org.atriasoft.phyligram.shape.Concave;
+import org.atriasoft.phyligram.shape.Cone;
+import org.atriasoft.phyligram.shape.ConvexHull;
+import org.atriasoft.phyligram.shape.Cylinder;
+import org.atriasoft.phyligram.shape.Shape;
+import org.atriasoft.phyligram.shape.Sphere;
 
 public class ComponentPhysics extends Component implements PositionningInterface {
 	public Signal<Transform3D> signalPosition = new Signal<>();
@@ -220,62 +219,56 @@ public class ComponentPhysics extends Component implements PositionningInterface
 	public void drawShape(final ResourceColored3DObject _draw, final Camera _camera) {
 		final Transform3D transform = getTransform();
 		//final float[] mmm = new float[16];
-		// Get the OpenGL matrix array of the transform 
+		// Get the OpenGL matrix array of the transform
 		final Matrix4f mmm = transform.getOpenGLMatrix();
 		
 		final Matrix4f transformationMatrix = mmm.transpose();
 		final Color tmpColor = new Color(1.0f, 0.0f, 0.0f, 0.3f);
 		for (final Shape it : this.shape) {
-			if (it.isBox()) {
+			if (it instanceof Box tmpElement) {
 				Log.debug("    Box");
-				final Box tmpElement = (Box) it;
 				final Transform3D transformLocal = new Transform3D(it.getOrigin(), it.getOrientation());
 				
 				Matrix4f transformationMatrixLocal = transformLocal.getOpenGLMatrix();
 				transformationMatrixLocal = transformationMatrixLocal.transpose();
 				transformationMatrixLocal = transformationMatrix.multiply(transformationMatrixLocal);
 				_draw.drawSquare(tmpElement.getSize(), transformationMatrixLocal, tmpColor);
-			} else if (it.isCylinder()) {
+			} else if (it instanceof Cylinder tmpElement) {
 				Log.debug("    Cylinder");
-				final Cylinder tmpElement = (Cylinder) it;
 				final Transform3D transformLocal = new Transform3D(it.getOrigin(), it.getOrientation());
 				
 				Matrix4f transformationMatrixLocal = transformLocal.getOpenGLMatrix();
 				transformationMatrixLocal = transformationMatrixLocal.transpose();
 				transformationMatrixLocal = transformationMatrix.multiply(transformationMatrixLocal);
 				_draw.drawCylinder(tmpElement.getRadius(), tmpElement.getSize(), 10, 10, transformationMatrixLocal, tmpColor);
-			} else if (it.isCapsule()) {
+			} else if (it instanceof Capsule tmpElement) {
 				Log.debug("    Capsule");
-				final Capsule tmpElement = (Capsule) it;
 				final Transform3D transformLocal = new Transform3D(it.getOrigin(), it.getOrientation());
 				
 				Matrix4f transformationMatrixLocal = transformLocal.getOpenGLMatrix();
 				transformationMatrixLocal = transformationMatrixLocal.transpose();
 				transformationMatrixLocal = transformationMatrix.multiply(transformationMatrixLocal);
 				_draw.drawCapsule(tmpElement.getRadius(), tmpElement.getSize(), 10, 10, transformationMatrixLocal, tmpColor);
-			} else if (it.isCone()) {
+			} else if (it instanceof Cone tmpElement) {
 				Log.debug("    Cone");
-				final Cone tmpElement = (Cone) it;
 				final Transform3D transformLocal = new Transform3D(it.getOrigin(), it.getOrientation());
 				
 				Matrix4f transformationMatrixLocal = transformLocal.getOpenGLMatrix();
 				transformationMatrixLocal = transformationMatrixLocal.transpose();
 				transformationMatrixLocal = transformationMatrix.multiply(transformationMatrixLocal);
 				_draw.drawCone(tmpElement.getRadius(), tmpElement.getSize(), 10, 10, transformationMatrixLocal, tmpColor);
-			} else if (it.isSphere()) {
+			} else if (it instanceof Sphere tmpElement) {
 				
 				Log.debug("    Sphere");
-				final Sphere tmpElement = (Sphere) it;
 				final Transform3D transformLocal = new Transform3D(it.getOrigin(), it.getOrientation());
 				
 				Matrix4f transformationMatrixLocal = transformLocal.getOpenGLMatrix();
 				transformationMatrixLocal = transformationMatrixLocal.transpose();
 				transformationMatrixLocal = transformationMatrix.multiply(transformationMatrixLocal);
 				_draw.drawSphere(tmpElement.getRadius(), 10, 10, transformationMatrixLocal, tmpColor);
-			} else if (it.isConcave()) {
+			} else if (it instanceof Concave tmpElement) {
 				
 				Log.debug("    concave");
-				final Concave tmpElement = (Concave) it;
 				final Transform3D transformLocal = new Transform3D(it.getOrigin(), it.getOrientation());
 				
 				Matrix4f transformationMatrixLocal = transformLocal.getOpenGLMatrix();
@@ -283,9 +276,8 @@ public class ComponentPhysics extends Component implements PositionningInterface
 				transformationMatrixLocal = transformationMatrixLocal.multiply(transformationMatrixLocal);
 				
 				_draw.drawTriangles(tmpElement.getVertex(), tmpElement.getIndices(), transformationMatrixLocal, tmpColor);
-			} else if (it.isConvexHull()) {
+			} else if (it instanceof ConvexHull tmpElement) {
 				Log.debug("    convexHull");
-				final ConvexHull tmpElement = (ConvexHull) it;
 				break;
 			}
 		}
@@ -312,9 +304,8 @@ public class ComponentPhysics extends Component implements PositionningInterface
 			if (it == null) {
 				continue;
 			}
-			if (it.isBox()) {
+			if (it instanceof Box tmpElement) {
 				Log.debug("    Box");
-				final Box tmpElement = (Box) it;
 				// Half extents of the box in the x, y and z directions
 				final Vector3f halfExtents = new Vector3f(tmpElement.getSize().x(), tmpElement.getSize().y(), tmpElement.getSize().z());
 				// Create the box shape
@@ -326,9 +317,8 @@ public class ComponentPhysics extends Component implements PositionningInterface
 				final ProxyShape proxyShape = this.rigidBody.addCollisionShape(shape, transform, it.getMass());
 				proxyShape.setUserData(this);
 				this.listProxyShape.add(proxyShape);
-			} else if (it.isCylinder()) {
+			} else if (it instanceof Cylinder tmpElement) {
 				Log.debug("    Cylinder");
-				final Cylinder tmpElement = (Cylinder) it;
 				// Create the Cylinder shape
 				// Create the Cylinder shape
 				final CylinderShape shape = new CylinderShape(tmpElement.getRadius(), tmpElement.getSize());
@@ -338,9 +328,8 @@ public class ComponentPhysics extends Component implements PositionningInterface
 				final ProxyShape proxyShape = this.rigidBody.addCollisionShape(shape, transform, it.getMass());
 				proxyShape.setUserData(this);
 				this.listProxyShape.add(proxyShape);
-			} else if (it.isCapsule()) {
+			} else if (it instanceof Capsule tmpElement) {
 				Log.debug("    Capsule");
-				final Capsule tmpElement = (Capsule) it;
 				// Create the Capsule shape
 				final CapsuleShape shape = new CapsuleShape(tmpElement.getRadius(), tmpElement.getSize());
 				// The ephysic use Y as UP ==> ege use Z as UP
@@ -349,9 +338,8 @@ public class ComponentPhysics extends Component implements PositionningInterface
 				final ProxyShape proxyShape = this.rigidBody.addCollisionShape(shape, transform, it.getMass());
 				proxyShape.setUserData(this);
 				this.listProxyShape.add(proxyShape);
-			} else if (it.isCone()) {
+			} else if (it instanceof Cone tmpElement) {
 				Log.debug("    Cone");
-				final Cone tmpElement = (Cone) it;
 				// Create the Cone shape
 				final ConeShape shape = new ConeShape(tmpElement.getRadius(), tmpElement.getSize());
 				// The ephysic use Y as UP ==> ege use Z as UP
@@ -360,9 +348,8 @@ public class ComponentPhysics extends Component implements PositionningInterface
 				final ProxyShape proxyShape = this.rigidBody.addCollisionShape(shape, transform, it.getMass());
 				proxyShape.setUserData(this);
 				this.listProxyShape.add(proxyShape);
-			} else if (it.isSphere()) {
+			} else if (it instanceof Sphere tmpElement) {
 				Log.debug("    Sphere");
-				final Sphere tmpElement = (Sphere) it;
 				// Create the box shape
 				final SphereShape shape = new SphereShape(tmpElement.getRadius());
 				// The ephysic use Y as UP ==> ege use Z as UP
@@ -371,9 +358,8 @@ public class ComponentPhysics extends Component implements PositionningInterface
 				final ProxyShape proxyShape = this.rigidBody.addCollisionShape(shape, transform, it.getMass());
 				proxyShape.setUserData(this);
 				this.listProxyShape.add(proxyShape);
-			} else if (it.isConcave()) {
+			} else if (it instanceof Concave tmpElement) {
 				Log.debug("    Concave");
-				final Concave tmpElement = (Concave) it;
 				//static  etk::Vector<Vector3f> vertices = {Vector3f(-100.0f,-100.0f,-50.0f),Vector3f(100.0f,-100.0f,-50.0f),Vector3f(100.0f,100.0f,-50.0f)};
 				//static  etk::Vector<uint32_t> indices = {0,1,2};
 				
@@ -480,14 +466,13 @@ public class ComponentPhysics extends Component implements PositionningInterface
 	}
 	
 	public void renderDebug(final ResourceColored3DObject _draw, final Camera _camera) {
-		if (this.rigidBody == null) {
-			return;
-		}
+		if (this.rigidBody == null) {}
+		/*
 		final Matrix4f transformationMatrix = Matrix4f.IDENTITY;
 		final Color tmpColor = new Color(0.0f, 1.0f, 0.0f, 0.8f);
 		final AABB value = this.rigidBody.getAABB();
 		_draw.drawCubeLine(value.getMin(), value.getMax(), tmpColor, transformationMatrix, true, true);
-		
+		*/
 	}
 	
 	public void setAngularReactionEnable(final boolean value) {

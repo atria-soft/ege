@@ -141,7 +141,7 @@ public class ToolCollisionOBBWithOBB {
 		// getCollidePointsAABBCenteredWithOBB(box2.narrowPhaseHalfSize, box1.narrowPhaseHalfSize, quatTransfer2, rPos1);
 		// fonctionne quand le block est trourner de 90% petit pb de positionnement en hauteur....
 		// getCollidePointsAABBCenteredWithOBB(box2.narrowPhaseHalfSize, box1.narrowPhaseHalfSize, quatTransfer2, quat2.multiply(rPos2));
-		ColisionPoints[] collide1 = getCollidePointsAABBCenteredWithOBB(box2.narrowPhaseHalfSize, box1.narrowPhaseHalfSize, quatTransfer2, quat2.inverse().getMatrix4().multiply(rPos1));
+		ColisionPoint[] collide1 = getCollidePointsAABBCenteredWithOBB(box2.narrowPhaseHalfSize, box1.narrowPhaseHalfSize, quatTransfer2, quat2.inverse().getMatrix4().multiply(rPos1));
 		// transfer detection point collision in global environement:
 		if (collide1 != null) {
 			for (int iii = 0; iii < collide1.length; iii++) {
@@ -155,7 +155,7 @@ public class ToolCollisionOBBWithOBB {
 		DebugDisplay.testQTransfert = quatTransfer1;
 		DebugDisplay.box1HalfSize = box1.narrowPhaseHalfSize;
 		DebugDisplay.box2HalfSize = box2.narrowPhaseHalfSize;
-		ColisionPoints[] collide2 = getCollidePointsAABBCenteredWithOBB(box1.narrowPhaseHalfSize, box2.narrowPhaseHalfSize, quatTransfer1, quat1.inverse().getMatrix4().multiply(rPos2));
+		ColisionPoint[] collide2 = getCollidePointsAABBCenteredWithOBB(box1.narrowPhaseHalfSize, box2.narrowPhaseHalfSize, quatTransfer1, quat1.inverse().getMatrix4().multiply(rPos2));
 		if (collide2 != null) {
 			for (int iii = 0; iii < collide2.length; iii++) {
 				collide2[iii].position = quat2.multiply(collide2[iii].position).add(box2.narrowPhaseGlobalPos);
@@ -174,7 +174,7 @@ public class ToolCollisionOBBWithOBB {
 
 	}
 
-	public static ColisionPoints[] getCollidePointsAABBCenteredWithOBB(Vector3f box1HalfSize, Vector3f box2HalfSize, Quaternion box2Orientation, Vector3f box2Position) {
+	public static ColisionPoint[] getCollidePointsAABBCenteredWithOBB(Vector3f box1HalfSize, Vector3f box2HalfSize, Quaternion box2Orientation, Vector3f box2Position) {
 
 		// point in AABB
 		Vector3f topBackRight = box2Orientation.multiply(new Vector3f(+box2HalfSize.x(), +box2HalfSize.y(), +box2HalfSize.z())).add(box2Position);
@@ -245,38 +245,38 @@ public class ToolCollisionOBBWithOBB {
 		if (insideBottomFrontLeft != null) {
 			count++;
 		}
-		ColisionPoints[] out = new ColisionPoints[count];
+		ColisionPoint[] out = new ColisionPoint[count];
 		count = 0;
 		if (insideTopBackRight != null) {
-			out[count] = new ColisionPoints(new Vector3f(+box2HalfSize.x(), +box2HalfSize.y(), +box2HalfSize.z()), insideTopBackRight);
+			out[count] = new ColisionPoint(new Vector3f(+box2HalfSize.x(), +box2HalfSize.y(), +box2HalfSize.z()), insideTopBackRight);
 			count++;
 		}
 		if (insideTopBackLeft != null) {
-			out[count] = new ColisionPoints(new Vector3f(-box2HalfSize.x(), +box2HalfSize.y(), +box2HalfSize.z()), insideTopBackLeft);
+			out[count] = new ColisionPoint(new Vector3f(-box2HalfSize.x(), +box2HalfSize.y(), +box2HalfSize.z()), insideTopBackLeft);
 			count++;
 		}
 		if (insideTopFrontRight != null) {
-			out[count] = new ColisionPoints(new Vector3f(+box2HalfSize.x(), -box2HalfSize.y(), +box2HalfSize.z()), insideTopFrontRight);
+			out[count] = new ColisionPoint(new Vector3f(+box2HalfSize.x(), -box2HalfSize.y(), +box2HalfSize.z()), insideTopFrontRight);
 			count++;
 		}
 		if (insideTopFrontLeft != null) {
-			out[count] = new ColisionPoints(new Vector3f(-box2HalfSize.x(), -box2HalfSize.y(), +box2HalfSize.z()), insideTopFrontLeft);
+			out[count] = new ColisionPoint(new Vector3f(-box2HalfSize.x(), -box2HalfSize.y(), +box2HalfSize.z()), insideTopFrontLeft);
 			count++;
 		}
 		if (insideBottomBackRight != null) {
-			out[count] = new ColisionPoints(new Vector3f(+box2HalfSize.x(), +box2HalfSize.y(), -box2HalfSize.z()), insideBottomBackRight);
+			out[count] = new ColisionPoint(new Vector3f(+box2HalfSize.x(), +box2HalfSize.y(), -box2HalfSize.z()), insideBottomBackRight);
 			count++;
 		}
 		if (insideBottomBackLeft != null) {
-			out[count] = new ColisionPoints(new Vector3f(-box2HalfSize.x(), +box2HalfSize.y(), -box2HalfSize.z()), insideBottomBackLeft);
+			out[count] = new ColisionPoint(new Vector3f(-box2HalfSize.x(), +box2HalfSize.y(), -box2HalfSize.z()), insideBottomBackLeft);
 			count++;
 		}
 		if (insideBottomFrontRight != null) {
-			out[count] = new ColisionPoints(new Vector3f(+box2HalfSize.x(), -box2HalfSize.y(), -box2HalfSize.z()), insideBottomFrontRight);
+			out[count] = new ColisionPoint(new Vector3f(+box2HalfSize.x(), -box2HalfSize.y(), -box2HalfSize.z()), insideBottomFrontRight);
 			count++;
 		}
 		if (insideBottomFrontLeft != null) {
-			out[count] = new ColisionPoints(new Vector3f(-box2HalfSize.x(), -box2HalfSize.y(), -box2HalfSize.z()), insideBottomFrontLeft);
+			out[count] = new ColisionPoint(new Vector3f(-box2HalfSize.x(), -box2HalfSize.y(), -box2HalfSize.z()), insideBottomFrontLeft);
 			count++;
 		}
 		if (count != 0) {

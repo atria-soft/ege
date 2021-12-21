@@ -3,7 +3,7 @@
  * @copyright 2011, Edouard DUPIN, all right reserved
  * @license MPL v2.0 (see license file)
  */
-package org.atriasoft.ege.physics.shape;
+package org.atriasoft.phyligram.shape;
 
 import org.atriasoft.ege.internal.Log;
 import org.atriasoft.etk.math.Quaternion;
@@ -29,34 +29,6 @@ public class Shape {
 	public Vector3f getOrigin() {
 		return this.origin;
 	}
-	
-	public boolean isBox() {
-		return this instanceof Box;
-	};
-	
-	public boolean isCapsule() {
-		return this instanceof Capsule;
-	}
-	
-	public boolean isConcave() {
-		return this instanceof Concave;
-	}
-	
-	public boolean isCone() {
-		return this instanceof Cone;
-	}
-	
-	public boolean isConvexHull() {
-		return this instanceof ConvexHull;
-	};
-	
-	public boolean isCylinder() {
-		return this instanceof Cylinder;
-	};
-	
-	public boolean isSphere() {
-		return this instanceof Sphere;
-	};
 	
 	public boolean parse(final String _line) {
 		Log.error("dfgdfg");

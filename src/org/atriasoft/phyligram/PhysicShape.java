@@ -7,13 +7,9 @@ import org.atriasoft.etk.math.Quaternion;
 import org.atriasoft.etk.math.Transform3D;
 import org.atriasoft.etk.math.Vector3f;
 import org.atriasoft.gale.resource.ResourceColored3DObject;
-
-
-
+import org.atriasoft.phyligram.shape.AABB;
 
 public abstract class PhysicShape {
-
-	
 	
 	protected List<Collision> colisionPoints = new ArrayList<>();
 	// protected Quaternion quaternion;
@@ -21,81 +17,73 @@ public abstract class PhysicShape {
 	protected Transform3D transform;
 	protected Transform3D transformGlobal;
 	protected float mass = 0;
-	protected final PhysicShapeType type;
-
-	public PhysicShape(PhysicShapeType type) {
-		this.type = type;
+	
+	public PhysicShape() {
 		this.transform = Transform3D.IDENTITY;
 		// this.quaternion = Quaternion.identity();
 		// this.origin = Vector3f.zero();
 		this.mass = 0;
 	}
-
-	public PhysicShape(PhysicShapeType type, Quaternion quaternion, Vector3f origin, float mass) {
-		this.type = type;
+	
+	public PhysicShape(Quaternion quaternion, Vector3f origin, float mass) {
 		this.transform = new Transform3D(origin, quaternion);
 		// this.quaternion = quaternion;
 		// this.origin = origin;
 		this.mass = mass;
 	}
-
-	public Quaternion getQuaternionFull() {
-		return transformGlobal.getOrientation().multiply(transform.getOrientation());
+	
+	public void addColision(Collision colision) {
+		this.colisionPoints.add(colision);
 	}
-
-	public Quaternion getQuaternion() {
-		return transform.getOrientation();
+	
+	public float getMass() {
+		return this.mass;
 	}
-
-	public void setQuaternion(Quaternion quaternion) {
-		this.transform = this.transform.withOrientation(quaternion);
-	}
-
+	
 	public Vector3f getOrigin() {
 		return this.transform.getPosition();
 	}
-
-	public void setOrigin(Vector3f origin) {
-		this.transform = this.transform.withPosition(origin);
+	
+	public Quaternion getQuaternion() {
+		return this.transform.getOrientation();
 	}
-
+	
+	public Quaternion getQuaternionFull() {
+		return this.transformGlobal.getOrientation().multiply(this.transform.getOrientation());
+	}
+	
 	public Transform3D getTransform() {
-		return transform;
+		return this.transform;
 	}
-
-	public void setTransform(Transform3D transform) {
-		this.transform = transform;
-	}
-
+	
 	public Transform3D getTransformGlobal() {
-		return transformGlobal;
+		return this.transformGlobal;
 	}
-
-	public void setTransformGlobal(Transform3D transform) {
-		this.transformGlobal = transform;
-	}
-
-	public float getMass() {
-		return mass;
-	}
-
+	
+	public abstract void renderDebug(Transform3D transform, ResourceColored3DObject debugDrawProperty);
+	
 	public void setMass(float mass) {
 		this.mass = mass;
 	}
-
-	public PhysicShapeType getType() {
-		return type;
-	}
-
-	public void addColision(Collision colision) {
-		colisionPoints.add(colision);
+	
+	public void setOrigin(Vector3f origin) {
+		this.transform = this.transform.withPosition(origin);
 	}
 	
+	public void setQuaternion(Quaternion quaternion) {
+		this.transform = this.transform.withOrientation(quaternion);
+	}
 	
-	public abstract void updateAABB(Transform3D transform, PhysicCollisionAABB aabb);
-
+	public void setTransform(Transform3D transform) {
+		this.transform = transform;
+	}
+	
+	public void setTransformGlobal(Transform3D transform) {
+		this.transformGlobal = transform;
+	}
+	
+	public abstract void updateAABB(Transform3D transform, AABB aabb);
+	
 	public abstract void updateForNarrowCollision(Transform3D transform);
-
-	public abstract void renderDebug(Transform3D transform, ResourceColored3DObject debugDrawProperty);
-
+	
 }

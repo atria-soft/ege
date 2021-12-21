@@ -3,7 +3,7 @@
  * @copyright 2011, Edouard DUPIN, all right reserved
  * @license MPL v2.0 (see license file)
  */
-package org.atriasoft.ege.physics.shape;
+package org.atriasoft.phyligram.shape;
 
 import org.atriasoft.etk.math.Vector3f;
 

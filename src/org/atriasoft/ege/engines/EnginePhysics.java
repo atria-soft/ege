@@ -87,10 +87,9 @@ public class EnginePhysics extends Engine implements EventListener {
 	
 	@Override
 	public void componentAdd(final Component ref) {
-		if (!(ref instanceof ComponentPhysics)) {
+		if (!(ref instanceof ComponentPhysics elem)) {
 			return;
 		}
-		final ComponentPhysics elem = (ComponentPhysics) ref;
 		this.components.add(elem);
 		elem.generate();
 	}
@@ -180,10 +179,8 @@ public class EnginePhysics extends Engine implements EventListener {
 		for (final ContactManifold it : listContact) {
 			for (int iii = 0; iii < it.getNbContactPoints(); iii++) {
 				final ContactPoint contact = it.getContactPoint(iii);
-				this.debugDrawProperty.drawSquare(new Vector3f(0.05f, 0.05f, 0.05f), Matrix4f.IDENTITY.multiply(Matrix4f.createMatrixTranslate(contact.getWorldPointOnBody1())),
-						new Color(0, 1, 0, 1));
-				this.debugDrawProperty.drawSquare(new Vector3f(0.05f, 0.05f, 0.05f), Matrix4f.IDENTITY.multiply(Matrix4f.createMatrixTranslate(contact.getWorldPointOnBody2())),
-						new Color(0, 1, 0, 1));
+				this.debugDrawProperty.drawSquare(new Vector3f(0.05f, 0.05f, 0.05f), Matrix4f.IDENTITY.multiply(Matrix4f.createMatrixTranslate(contact.getWorldPointOnBody1())), new Color(0, 1, 0, 1));
+				this.debugDrawProperty.drawSquare(new Vector3f(0.05f, 0.05f, 0.05f), Matrix4f.IDENTITY.multiply(Matrix4f.createMatrixTranslate(contact.getWorldPointOnBody2())), new Color(0, 1, 0, 1));
 			}
 		}
 		

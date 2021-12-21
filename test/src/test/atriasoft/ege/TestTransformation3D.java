@@ -3,7 +3,7 @@ package test.atriasoft.ege;
 import org.atriasoft.ege.geometry.AABB;
 import org.atriasoft.ege.geometry.Geometry3D;
 import org.atriasoft.ege.geometry.OBB;
-import org.atriasoft.ege.geometry.Plane;
+import org.atriasoft.ege.geometry.Plane____;
 import org.atriasoft.ege.geometry.Sphere;
 import org.atriasoft.ege.geometry.Triangle;
 import org.atriasoft.etk.math.Matrix3f;
@@ -53,7 +53,7 @@ public class TestTransformation3D {
 	
 	@Test
 	void testPointInPlane() {
-		final Plane shape = new Plane((new Vector3f(4, 4, 4)).normalize(), (float) Math.sqrt(1 * 1 + 1 * 1));
+		final Plane____ shape = new Plane____((new Vector3f(4, 4, 4)).normalize(), (float) Math.sqrt(1 * 1 + 1 * 1));
 		Assert.assertFalse(Geometry3D.pointInPlane(new Vector3f(0, 0, 0), shape));
 		Assert.assertFalse(Geometry3D.pointInPlane(new Vector3f(6, 6, 6), shape));
 		Assert.assertTrue(Geometry3D.pointInPlane(new Vector3f(3, 3, 3), shape));

@@ -3,50 +3,49 @@ package org.atriasoft.ege.components;
 import java.util.ArrayList;
 import java.util.List;
 
+import org.atriasoft.ege.Component;
+import org.atriasoft.ege.Environement;
+import org.atriasoft.ege.engines.EngineGravity;
+import org.atriasoft.ege.engines.EnginePhysicsPerso;
+import org.atriasoft.ege.internal.Log;
 import org.atriasoft.etk.Color;
 import org.atriasoft.etk.math.Matrix4f;
 import org.atriasoft.etk.math.Vector3f;
 import org.atriasoft.gale.resource.ResourceColored3DObject;
-import org.atriasoft.ege.internal.Log;
-import org.atriasoft.ege.Component;
-import org.atriasoft.ege.Environement;
-import org.atriasoft.ege.engines.EngineGravity;
-import org.atriasoft.ege.engines.EnginePhysics;
-import org.atriasoft.ege.engines.EnginePhysicsPerso;
+import org.atriasoft.phyligram.ColisionPoint;
 import org.atriasoft.phyligram.PhysicBox;
-import org.atriasoft.phyligram.PhysicCollisionAABB;
+import org.atriasoft.phyligram.PhysicHeightMapChunk;
 import org.atriasoft.phyligram.PhysicMapVoxel;
 import org.atriasoft.phyligram.PhysicShape;
 import org.atriasoft.phyligram.PhysicSphere;
+import org.atriasoft.phyligram.PhysicTriangle;
 import org.atriasoft.phyligram.ToolCollisionOBBWithOBB;
-
+import org.atriasoft.phyligram.ToolCollisionSphereWithHeightMapChunk;
+import org.atriasoft.phyligram.ToolCollisionSphereWithSphere;
+import org.atriasoft.phyligram.ToolCollisionSphereWithTriangle;
+import org.atriasoft.phyligram.shape.AABB;
 
 public class ComponentPhysicsPerso extends Component {
-	private PhysicCollisionAABB aabb;
-	private List<ComponentPhysicsPerso> aabbIntersection = new ArrayList<ComponentPhysicsPerso>();
-	private List<ComponentPhysicsPerso> narrowIntersection = new ArrayList<ComponentPhysicsPerso>();
-	private List<PhysicShape> shapes = new ArrayList<PhysicShape>();
+	public static float globalMaxSpeed = Float.MAX_VALUE;
+	private AABB aabb;
+	private List<ComponentPhysicsPerso> aabbIntersection = new ArrayList<>();
+	private List<ComponentPhysicsPerso> narrowIntersection = new ArrayList<>();
+	List<ColisionPoint> collisionPoints = new ArrayList<>();
+	private List<PhysicShape> shapes = new ArrayList<>();
 	private ComponentPosition position;
 	private boolean staticObject = false;
-	private boolean manageGravity = false;
-	public static float globalMaxSpeed = Float.MAX_VALUE;
+	private boolean manageGravity = true;
 	private float maxSpeed = globalMaxSpeed;
 	// current speed of the object
-	private Vector3f speed = new Vector3f(0,0,0);
+	private Vector3f speed = new Vector3f(0, 0, 0);
 	// current acceleration of the object
-	private Vector3f acceleration = new Vector3f(0,0,0);
+	private Vector3f acceleration = new Vector3f(0, 0, 0);
 	// Applied static force on it
-	private Vector3f staticForce = new Vector3f(0,0,0);
+	private Vector3f staticForce = new Vector3f(0, 0, 0);
 	// Apply dynamic force on it
-	private Vector3f dynamicForce = new Vector3f(0,0,0);
+	private Vector3f dynamicForce = new Vector3f(0, 0, 0);
 	private EnginePhysicsPerso engine;
-	private PhysicBodyType bodyType; 
-	
-	
-	@Override
-	public String getType() {
-		return EnginePhysicsPerso.ENGINE_NAME;
-	}
+	private PhysicBodyType bodyType;
 	
 	public ComponentPhysicsPerso(final Environement _env) {
 		this.engine = (EnginePhysicsPerso) _env.getEngine(getType());
@@ -56,123 +55,114 @@ public class ComponentPhysicsPerso extends Component {
 	public void addFriendComponent(Component component) {
 		if (component.getType().contentEquals("position")) {
 			if (component instanceof ComponentPosition tmp) {
-				position = tmp;
+				this.position = tmp;
 			} else {
 				Log.error("Not manage position model...");
 			}
 		}
 	}
-	@Override
-	public void removeFriendComponent(Component component) {
-		// nothing to do.
+	
+	public void addIntersection(ComponentPhysicsPerso component) {
+		// do not add multiple times
+		if (this.aabbIntersection.contains(component)) {
+			return;
+		}
+		this.aabbIntersection.add(component);
 	}
 	
-	public void updateAABB() {
-		if (position == null) {
-			Log.info("No position in Entity ");
-			return;
-		}
-		// TODO Add a flag to check if it is needed to update the AABB...
-		PhysicCollisionAABB aabbNew = PhysicCollisionAABB.beforeCalculated();
-		for (PhysicShape shape : shapes) {
-			shape.updateAABB(position.getTransform(), aabbNew);
-		}
-		aabb = aabbNew;
+	public void addShape(PhysicShape shape) {
+		this.shapes.add(shape);
 	}
 	
-	public PhysicCollisionAABB getAABB() {
-		return aabb;
+	public void applyColisionForce() {
+		for (ColisionPoint impact : this.collisionPoints) {
+			this.position.applyForce(impact.force);
+		}
+		
 	}
 	
-	public void updateForNarrowCollision() {
-		narrowIntersection.clear();
-		if (aabbIntersection.size() == 0) {
-			return;
+	public void applyForces(float timeStep, EngineGravity gravity) {
+		// get the gravity at the specific position...
+		Vector3f gravityForce;
+		if (this.manageGravity) {
+			gravityForce = gravity.getGravityAtPosition(this.position.getTransform().getPosition()).multiply(timeStep);
+		} else {
+			gravityForce = new Vector3f(0, 0, 0);
 		}
-		if (position == null) {
-			Log.info("No position in Entity ");
-			return;
+		// apply this force on the Object
+		Log.info("apply gravity: " + gravityForce);
+		// relative to the object
+		Vector3f staticForce = this.staticForce.multiply(timeStep);
+		float globalMass = 0;
+		for (PhysicShape shape : this.shapes) {
+			globalMass += shape.getMass();
 		}
-		for (PhysicShape shape : shapes) {
-			shape.updateForNarrowCollision(position.getTransform());
-		}
+		// note the acceleration is not real, it depend on the current delta time...
+		this.acceleration = gravityForce.add(this.position.getTransform().getOrientation().multiply(staticForce)).add(this.position.getTransform().getOrientation().multiply(this.dynamicForce))
+				.multiply(globalMass);
+		this.dynamicForce = new Vector3f(0, 0, 0);
+		this.speed = this.speed.add(this.acceleration);
+		limitWithMaxSpeed();
+		Log.info("apply acceleration: " + this.acceleration);
+		Log.info("apply speed: " + this.speed);
+		this.position.setTransform(this.position.getTransform().withPosition(this.position.getTransform().getPosition().add(this.speed.multiply(timeStep))));
 	}
-	public boolean isNarrowCollide() {
-		if (narrowIntersection.size() == 0) {
-			return false;
-		}
-		return true;
-	}
-	public boolean checkNarrowCollision() {
-		if (this.staticObject == true) {
-			return false;
-		}
-		for (ComponentPhysicsPerso elem : aabbIntersection) {
-			boolean collide = false;
-			for (PhysicShape shapeCurrent : shapes) {
-				if (elem.checkCollide(shapeCurrent) == true) {
-					collide = true;
-					break;
-				}
-			}
-			if (collide == true) {
-				narrowIntersection.add(elem);
-				elem.narrowIntersection.add(this);
-			}
-		}
-		return isNarrowCollide();
-	}
-	public void narrowCollisionCreateContactAndForce() {
-		if (narrowIntersection.size() == 0) {
-			return;
-		}
-		for (ComponentPhysicsPerso elem : narrowIntersection) {
-			for (PhysicShape shapeCurrent : this.shapes) {
-				//TODO Do a better method we do this many times ...
-				if (elem.checkCollide(shapeCurrent) == false) {
-					continue;
-				}
-				elem.getCollidePoints(shapeCurrent, this.staticObject);
-			}
-		}
-	}
-
+	
 	private boolean checkCollide(PhysicShape shapeCurrent) {
-		if (shapeCurrent instanceof PhysicBox) {
-			PhysicBox shape111 = (PhysicBox)shapeCurrent;
-			for (PhysicShape shape : shapes) {
-				if (shape instanceof PhysicBox) {
-					PhysicBox shape222 = (PhysicBox)shape;
-					if (ToolCollisionOBBWithOBB.testCollide(shape111, shape222) == true) {
+		if (shapeCurrent instanceof PhysicBox shape111) {
+			for (PhysicShape shape : this.shapes) {
+				if (shape instanceof PhysicHeightMapChunk shape222) {
+					// detect collision from cube on height-map !!!
+					
+				} else if (shape instanceof PhysicBox shape222) {
+					// detect collision between 2 cubes
+					if (ToolCollisionOBBWithOBB.testCollide(shape111, shape222)) {
 						return true;
 					}
-				} else if (shape instanceof PhysicSphere) {
+				} else if (shape instanceof PhysicSphere shape222) {
 					
-				} else if (shape instanceof PhysicMapVoxel) {
-					
-				} else {
-					Log.error("Not manage collision model... " + shape);
-				}
-			}
-		} else if (shapeCurrent instanceof PhysicSphere) {
-			for (PhysicShape shape : shapes) {
-				if (shape instanceof PhysicBox) {
-					
-				} else if (shape instanceof PhysicSphere) {
-					
-				} else if (shape instanceof PhysicMapVoxel) {
+				} else if (shape instanceof PhysicMapVoxel shape222) {
 					
 				} else {
 					Log.error("Not manage collision model... " + shape);
 				}
 			}
-		} else if (shapeCurrent instanceof PhysicMapVoxel) {
-			for (PhysicShape shape : shapes) {
-				if (shape instanceof PhysicBox) {
+		} else if (shapeCurrent instanceof PhysicSphere shape111) {
+			for (PhysicShape shape : this.shapes) {
+				if (shape instanceof PhysicHeightMapChunk shape222) {
+					// detect collision from sphere on height-map !!!
+					if (ToolCollisionSphereWithHeightMapChunk.testCollide(shape111, shape222)) {
+						return true;
+					}
 					
-				} else if (shape instanceof PhysicSphere) {
+				} else if (shape instanceof PhysicTriangle shape222) {
+					// detect collision from sphere on height-map !!!
+					if (ToolCollisionSphereWithTriangle.testCollide(shape111, shape222)) {
+						return true;
+					}
 					
-				} else if (shape instanceof PhysicMapVoxel) {
+				} else if (shape instanceof PhysicBox shape222) {
+					// detect collision from sphere on cube !!!
+					
+				} else if (shape instanceof PhysicSphere shape222) {
+					// detect collision from sphere on sphere !!!
+					if (ToolCollisionSphereWithSphere.testCollide(shape111, shape222)) {
+						return true;
+					}
+					
+				} else if (shape instanceof PhysicMapVoxel shape222) {
+					
+				} else {
+					Log.error("Not manage collision model... " + shape);
+				}
+			}
+		} else if (shapeCurrent instanceof PhysicMapVoxel shape111) {
+			for (PhysicShape shape : this.shapes) {
+				if (shape instanceof PhysicBox shape222) {
+					
+				} else if (shape instanceof PhysicSphere shape222) {
+					
+				} else if (shape instanceof PhysicMapVoxel shape222) {
 					
 				} else {
 					Log.error("Not manage collision model... " + shape);
@@ -183,152 +173,204 @@ public class ComponentPhysicsPerso extends Component {
 		}
 		return false;
 	}
-	private void getCollidePoints(PhysicShape shapeCurrent, boolean isStatic) {
-		if (shapeCurrent instanceof PhysicBox) {
-			PhysicBox shape111 = (PhysicBox)shapeCurrent;
-			for (PhysicShape shape : this.shapes) {
-				if (shape instanceof PhysicBox) {
-					PhysicBox shape222 = (PhysicBox)shape;
-					ToolCollisionOBBWithOBB.getCollidePoints(shape111, isStatic, shape222, this.staticObject);
-				} else if (shape instanceof PhysicSphere) {
-					
-				} else if (shape instanceof PhysicMapVoxel) {
-					
-				} else {
-					Log.error("Not manage collision model... " + shape);
-				}
-			}
-		} else if (shapeCurrent instanceof PhysicSphere) {
-			for (PhysicShape shape : this.shapes) {
-				if (shape instanceof PhysicBox) {
-					
-				} else if (shape instanceof PhysicSphere) {
-					
-				} else if (shape instanceof PhysicMapVoxel) {
-					
-				} else {
-					Log.error("Not manage collision model... " + shape);
-				}
-			}
-		} else if (shapeCurrent instanceof PhysicMapVoxel) {
-			for (PhysicShape shape : this.shapes) {
-				if (shape instanceof PhysicBox) {
-					
-				} else if (shape instanceof PhysicSphere) {
-					
-				} else if (shape instanceof PhysicMapVoxel) {
-					
-				} else {
-					Log.error("Not manage collision model... " + shape);
-				}
-			}
-		} else {
-			Log.error("Not manage collision model... " + shapeCurrent);
+	
+	public boolean checkNarrowCollision() {
+		if (this.staticObject) {
+			return false;
 		}
-		return;
+		for (ComponentPhysicsPerso elem : this.aabbIntersection) {
+			boolean collide = false;
+			for (PhysicShape shapeCurrent : this.shapes) {
+				if (elem.checkCollide(shapeCurrent)) {
+					collide = true;
+					break;
+				}
+			}
+			if (collide) {
+				this.narrowIntersection.add(elem);
+				elem.narrowIntersection.add(this);
+			}
+		}
+		return isNarrowCollide();
 	}
-
-	public void applyForces(float timeStep, EngineGravity gravity) {
-		// get the gravity at the specific position...
-		Vector3f gravityForce;
-		if (manageGravity == true) {
-			gravityForce = gravity.getGravityAtPosition(position.getTransform().getPosition()).multiply(timeStep);
+	
+	public void clearAABBIntersection() {
+		this.aabbIntersection.clear();
+	}
+	
+	public void clearPreviousCollision() {
+		this.collisionPoints.clear();
+		this.aabbIntersection.clear();
+		this.narrowIntersection.clear();
+	}
+	
+	public void clearShape() {
+		this.shapes.clear();
+	}
+	
+	public AABB getAABB() {
+		return this.aabb;
+	}
+	
+	public List<ComponentPhysicsPerso> getAabbIntersection() {
+		return this.aabbIntersection;
+	}
+	
+	public PhysicBodyType getBodyType() {
+		return this.bodyType;
+	}
+	
+	private List<ColisionPoint> getCollidePoints(PhysicShape shapeRemote) {
+		List<ColisionPoint> out = new ArrayList<>();
+		if (shapeRemote instanceof PhysicSphere remoteShere) {
+			for (PhysicShape shape : this.shapes) {
+				if (shape instanceof PhysicSphere localShape) {
+					ColisionPoint point = ToolCollisionSphereWithSphere.getCollisionPoint(remoteShere, localShape);
+					if (point != null) {
+						out.add(point);
+					}
+				} else if (shape instanceof PhysicTriangle localShape) {
+					ColisionPoint point = ToolCollisionSphereWithTriangle.getCollisionPoint(remoteShere, localShape);
+					if (point != null) {
+						out.add(point);
+					}
+					
+				}
+			}
+		} else if (shapeRemote instanceof PhysicTriangle) {
+			// nothing can happens ...
 		} else {
-			gravityForce = new Vector3f(0,0,0);
+			Log.error("Not manage collision model... " + shapeRemote);
 		}
-		// apply this force on the Object
-		Log.info("apply gravity: " + gravityForce);
-		// relative to the object
-		Vector3f staticForce = this.staticForce.multiply(timeStep);
-		float globalMass = 0;
-		for (PhysicShape shape : shapes) {
-			globalMass += shape.getMass();
+		return out;
+	}
+	
+	public float getMaxSpeed() {
+		return this.maxSpeed;
+	}
+	
+	@Override
+	public String getType() {
+		return EnginePhysicsPerso.ENGINE_NAME;
+	}
+	
+	public boolean isManageGravity() {
+		return this.manageGravity;
+	}
+	
+	public boolean isNarrowCollide() {
+		if (this.narrowIntersection.size() == 0) {
+			return false;
 		}
-		// note the acceleration is not real, it depend on the current delta time...
-		this.acceleration = gravityForce.add(this.position.getTransform().getOrientation().multiply(staticForce)).add(this.position.getTransform().getOrientation().multiply(dynamicForce)).multiply(globalMass);
-		this.dynamicForce = new Vector3f(0,0,0);
-		this.speed.add(this.acceleration);
-		limitWithMaxSpeed();
-		Log.info("apply acceleration: " + this.acceleration);
-		Log.info("apply speed: " + this.speed);
-		this.position.getTransform().getPosition().add(this.speed.multiply(timeStep));
+		return true;
+	}
+	
+	public boolean isStaticObject() {
+		return this.staticObject;
+	}
+	
+	private void limitWithMaxSpeed() {
+		if (this.speed.length2() > this.maxSpeed * this.maxSpeed) {
+			this.speed = this.speed.safeNormalize().multiply(this.maxSpeed);
+		}
+	}
+	
+	public void narrowCollisionCreateContactAndForce() {
+		
+		if (this.staticObject) {
+			return;
+		}
+		if (this.narrowIntersection.size() == 0) {
+			return;
+		}
+		for (ComponentPhysicsPerso elem : this.narrowIntersection) {
+			for (PhysicShape shapeCurrent : this.shapes) {
+				//TODO Do a better method we do this many times ...
+				/*
+				if (!elem.checkCollide(shapeCurrent)) {
+					continue;
+				}
+				*/
+				List<ColisionPoint> points = elem.getCollidePoints(shapeCurrent);
+				this.collisionPoints.addAll(points);
+			}
+		}
+	}
+	
+	@Override
+	public void removeFriendComponent(Component component) {
+		// nothing to do.
 	}
 	
 	public void renderDebug(ResourceColored3DObject debugDrawProperty) {
 		Color displayColor;
+		displayColor = new Color(1.0f, 0.0f, 0.0f, 1.0f);
+		for (ColisionPoint impact : this.collisionPoints) {
+			debugDrawProperty.drawSquare(new Vector3f(0.02f, 0.02f, 0.02f), Matrix4f.createMatrixTranslate(impact.position), displayColor);
+		}
 		if (this.aabbIntersection.size() == 0) {
-			displayColor = new Color(1,1,1,1);
+			displayColor = new Color(1.0f, 1.0f, 1.0f, 1.0f);
 		} else {
 			if (this.narrowIntersection.size() == 0) {
-				displayColor = new Color(1,1,0,1);
+				displayColor = new Color(0.0f, 1.0f, 0.0f, 1.0f);
 			} else {
-				displayColor = new Color(1,0,0,1);
+				displayColor = new Color(1.0f, 0.0f, 0.0f, 1.0f);
 			}
 		}
-		if (aabb != null) {
-			debugDrawProperty.drawCubeLine(aabb.getMin(), aabb.getMax(), displayColor, Matrix4f.IDENTITY, true, true);
+		if (this.aabb != null) {
+			debugDrawProperty.drawCubeLine(this.aabb.getMin(), this.aabb.getMax(), displayColor, Matrix4f.IDENTITY, true, true);
 			//debugDrawProperty.drawCubeLine(new Vector3f(0,0,0), new Vector3f(32,32,32), new Color(1,0,1,1), Matrix4f.identity(), true, true);
 		} else {
 			Log.error("no AABB");
 		}
-		for (PhysicShape shape : shapes) {
-			shape.renderDebug(position.getTransform(), debugDrawProperty);
+		
+		for (PhysicShape shape : this.shapes) {
+			shape.renderDebug(this.position.getTransform(), debugDrawProperty);
 		}
+		
 	}
-	public void addShape(PhysicShape shape) {
-		shapes.add(shape);
+	
+	public void setBodyType(PhysicBodyType bodyType) {
+		this.bodyType = bodyType;
 	}
-	public void clearShape() {
-		shapes.clear();
-	}
-	public boolean isManageGravity() {
-		return manageGravity;
-	}
+	
 	public void setManageGravity(boolean manageGravity) {
 		this.manageGravity = manageGravity;
 	}
-	private void limitWithMaxSpeed() {
-		if (this.speed.length2() > this.maxSpeed*this.maxSpeed) {
-			this.speed.safeNormalize().multiply(this.maxSpeed);
-		}
-	}
-	public float getMaxSpeed() {
-		return maxSpeed;
-	}
-
+	
 	public void setMaxSpeed(float maxSpeed) {
 		this.maxSpeed = maxSpeed;
 	}
-
-	public void clearAABBIntersection() {
-		this.aabbIntersection.clear();
-	}
-	public void addIntersection(ComponentPhysicsPerso component) {
-		// do not add multiple times
-		for (ComponentPhysicsPerso elem : this.aabbIntersection) {
-			if (elem == component) {
-				return;
-			}
-		}
-		this.aabbIntersection.add(component);
-	}
-	public List<ComponentPhysicsPerso> getAabbIntersection() {
-		return aabbIntersection;
-	}
-
-	public boolean isStaticObject() {
-		return staticObject;
-	}
-
+	
 	public void setStaticObject(boolean staticObject) {
 		this.staticObject = staticObject;
 	}
-
-	public PhysicBodyType getBodyType() {
-		return bodyType;
+	
+	public void updateAABB() {
+		
+		if (this.position == null) {
+			Log.info("No position in Entity ");
+			return;
+		}
+		// TODO Add a flag to check if it is needed to update the AABB...
+		AABB aabbNew = AABB.createInvertedEmpty();
+		for (PhysicShape shape : this.shapes) {
+			shape.updateAABB(this.position.getTransform(), aabbNew);
+		}
+		this.aabb = aabbNew;
 	}
-
-	public void setBodyType(PhysicBodyType bodyType) {
-		this.bodyType = bodyType;
+	
+	public void updateForNarrowCollision() {
+		this.narrowIntersection.clear();
+		if (this.aabbIntersection.size() == 0) {
+			return;
+		}
+		if (this.position == null) {
+			Log.info("No position in Entity ");
+			return;
+		}
+		for (PhysicShape shape : this.shapes) {
+			shape.updateForNarrowCollision(this.position.getTransform());
+		}
 	}
 }

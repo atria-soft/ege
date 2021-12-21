@@ -9,9 +9,11 @@ open module org.atriasoft.ege {
 	exports org.atriasoft.ege.engines;
 	exports org.atriasoft.ege.geometry;
 	exports org.atriasoft.ege.map;
-	exports org.atriasoft.ege.physics.shape;
 	exports org.atriasoft.ege.tools;
 	exports org.atriasoft.phyligram;
+	exports org.atriasoft.phyligram.shape;
+	exports org.atriasoft.phyligram.math;
+	exports org.atriasoft.phyligram.tree;
 	exports entities;
 	exports guis;
 	exports models;

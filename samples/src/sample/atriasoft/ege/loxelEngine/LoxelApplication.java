@@ -28,7 +28,6 @@ import org.atriasoft.ege.components.PhysicBodyType;
 import org.atriasoft.ege.engines.EngineLight;
 import org.atriasoft.ege.engines.EnginePhysics;
 import org.atriasoft.ege.map.MapVoxel;
-import org.atriasoft.ege.physics.shape.Box;
 import org.atriasoft.ege.tools.MeshGenerator;
 import org.atriasoft.etk.Color;
 import org.atriasoft.etk.Uri;
@@ -47,6 +46,7 @@ import org.atriasoft.gale.key.KeySpecial;
 import org.atriasoft.gale.key.KeyStatus;
 import org.atriasoft.gale.key.KeyType;
 import org.atriasoft.gale.resource.ResourceColored3DObject;
+import org.atriasoft.phyligram.shape.Box;
 
 public class LoxelApplication extends GaleApplication {
 	public static Vector3f box1HalfSize;

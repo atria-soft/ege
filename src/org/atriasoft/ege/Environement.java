@@ -333,9 +333,13 @@ public class Environement {
 			this.startTime = System.nanoTime();
 			this.lastCallTime = this.startTime;
 		}
-		final long lastUpdate = this.lastCallTime;
+		long lastUpdate = this.lastCallTime;
 		this.lastCallTime = System.nanoTime();
 		Clock currentClock = Clock.systemUTC();
+		// in the simulation, we need to limit the delta...
+		if (this.lastCallTime - lastUpdate > 1000000000) {
+			lastUpdate = this.lastCallTime - 5100000;
+		}
 		final EventTime event = new EventTime(currentClock, this.startClock, this.lastCallTime, this.startTime, Duration.ofNanos(this.lastCallTime - lastUpdate),
 				Duration.ofNanos(this.lastCallTime - lastUpdate));
 		for (final ControlInterface elem : this.controls) {

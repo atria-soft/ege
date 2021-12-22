@@ -1,7 +1,10 @@
 package org.atriasoft.ege.components;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
+import java.util.Map.Entry;
 
 import org.atriasoft.ege.Component;
 import org.atriasoft.ege.Environement;
@@ -29,11 +32,10 @@ public class ComponentPhysicsPerso extends Component {
 	public static float globalMaxSpeed = Float.MAX_VALUE;
 	private AABB aabb;
 	private List<ComponentPhysicsPerso> aabbIntersection = new ArrayList<>();
-	private List<ComponentPhysicsPerso> narrowIntersection = new ArrayList<>();
-	List<ColisionPoint> collisionPoints = new ArrayList<>();
+	private Map<ComponentPhysicsPerso, List<ColisionPoint>> narrowIntersection = new HashMap<>();
+	//List<ColisionPoint> collisionPoints = new ArrayList<>();
 	private List<PhysicShape> shapes = new ArrayList<>();
 	private ComponentPosition position;
-	private boolean staticObject = false;
 	private boolean manageGravity = true;
 	private float maxSpeed = globalMaxSpeed;
 	// current speed of the object
@@ -44,6 +46,8 @@ public class ComponentPhysicsPerso extends Component {
 	private Vector3f staticForce = new Vector3f(0, 0, 0);
 	// Apply dynamic force on it
 	private Vector3f dynamicForce = new Vector3f(0, 0, 0);
+	// Apply dynamic force on it
+	private Vector3f dynamicForceGlobal = new Vector3f(0, 0, 0);
 	private EnginePhysicsPerso engine;
 	private PhysicBodyType bodyType;
 	
@@ -75,37 +79,51 @@ public class ComponentPhysicsPerso extends Component {
 	}
 	
 	public void applyColisionForce() {
-		for (ColisionPoint impact : this.collisionPoints) {
-			this.position.applyForce(impact.force);
+		Vector3f globalForce = Vector3f.ZERO;
+		for (Entry<ComponentPhysicsPerso, List<ColisionPoint>> elem : this.narrowIntersection.entrySet()) {
+			for (ColisionPoint impact : elem.getValue()) {
+				globalForce = globalForce.add(impact.force);
+			}
 		}
-		
+		// this force is not depending on the mass...
+		this.speed = this.speed.add(globalForce);
+		this.position.applyForce(globalForce);
 	}
 	
 	public void applyForces(float timeStep, EngineGravity gravity) {
 		// get the gravity at the specific position...
-		Vector3f gravityForce;
+		Vector3f gravityAcceleration;
 		if (this.manageGravity) {
-			gravityForce = gravity.getGravityAtPosition(this.position.getTransform().getPosition()).multiply(timeStep);
+			gravityAcceleration = gravity.getGravityAtPosition(this.position.getTransform().getPosition());
 		} else {
-			gravityForce = new Vector3f(0, 0, 0);
+			gravityAcceleration = new Vector3f(0, 0, 0);
 		}
 		// apply this force on the Object
-		Log.info("apply gravity: " + gravityForce);
+		Log.info("apply gravity: " + gravityAcceleration);
 		// relative to the object
-		Vector3f staticForce = this.staticForce.multiply(timeStep);
+		Vector3f staticForce = this.staticForce;
 		float globalMass = 0;
 		for (PhysicShape shape : this.shapes) {
 			globalMass += shape.getMass();
 		}
 		// note the acceleration is not real, it depend on the current delta time...
-		this.acceleration = gravityForce.add(this.position.getTransform().getOrientation().multiply(staticForce)).add(this.position.getTransform().getOrientation().multiply(this.dynamicForce))
-				.multiply(globalMass);
-		this.dynamicForce = new Vector3f(0, 0, 0);
-		this.speed = this.speed.add(this.acceleration);
+		Vector3f staticforceOriented = this.position.getTransform().getOrientation().multiply(staticForce);
+		Vector3f dynamicforceOriented = this.position.getTransform().getOrientation().multiply(this.dynamicForce);
+		Vector3f globalForce = staticforceOriented.add(dynamicforceOriented);
+		if (globalMass > 0.0) {
+			globalForce = globalForce.divide(globalMass);
+		} else {
+			gravityAcceleration = Vector3f.ZERO;
+		}
+		if (this.bodyType != PhysicBodyType.BODY_DYNAMIC) {
+			gravityAcceleration = Vector3f.ZERO;
+		}
+		this.acceleration = gravityAcceleration.add(globalForce);
+		this.speed = this.speed.add(this.acceleration.multiply(timeStep));
 		limitWithMaxSpeed();
 		Log.info("apply acceleration: " + this.acceleration);
 		Log.info("apply speed: " + this.speed);
-		this.position.setTransform(this.position.getTransform().withPosition(this.position.getTransform().getPosition().add(this.speed.multiply(timeStep))));
+		this.position.setTransform(this.position.getTransform().withPosition(this.position.getTransform().getPosition().add(this.speed)));
 	}
 	
 	private boolean checkCollide(PhysicShape shapeCurrent) {
@@ -175,7 +193,7 @@ public class ComponentPhysicsPerso extends Component {
 	}
 	
 	public boolean checkNarrowCollision() {
-		if (this.staticObject) {
+		if (this.bodyType != PhysicBodyType.BODY_DYNAMIC) {
 			return false;
 		}
 		for (ComponentPhysicsPerso elem : this.aabbIntersection) {
@@ -187,8 +205,12 @@ public class ComponentPhysicsPerso extends Component {
 				}
 			}
 			if (collide) {
-				this.narrowIntersection.add(elem);
-				elem.narrowIntersection.add(this);
+				if (!this.narrowIntersection.containsKey(elem)) {
+					this.narrowIntersection.put(elem, new ArrayList<>());
+				}
+				if (!elem.narrowIntersection.containsKey(this)) {
+					elem.narrowIntersection.put(this, new ArrayList<>());
+				}
 			}
 		}
 		return isNarrowCollide();
@@ -199,7 +221,6 @@ public class ComponentPhysicsPerso extends Component {
 	}
 	
 	public void clearPreviousCollision() {
-		this.collisionPoints.clear();
 		this.aabbIntersection.clear();
 		this.narrowIntersection.clear();
 	}
@@ -259,14 +280,10 @@ public class ComponentPhysicsPerso extends Component {
 	}
 	
 	public boolean isNarrowCollide() {
-		if (this.narrowIntersection.size() == 0) {
+		if (this.narrowIntersection.isEmpty()) {
 			return false;
 		}
 		return true;
-	}
-	
-	public boolean isStaticObject() {
-		return this.staticObject;
 	}
 	
 	private void limitWithMaxSpeed() {
@@ -276,14 +293,13 @@ public class ComponentPhysicsPerso extends Component {
 	}
 	
 	public void narrowCollisionCreateContactAndForce() {
-		
-		if (this.staticObject) {
+		if (this.bodyType != PhysicBodyType.BODY_DYNAMIC) {
 			return;
 		}
 		if (this.narrowIntersection.size() == 0) {
 			return;
 		}
-		for (ComponentPhysicsPerso elem : this.narrowIntersection) {
+		for (Entry<ComponentPhysicsPerso, List<ColisionPoint>> elem : this.narrowIntersection.entrySet()) {
 			for (PhysicShape shapeCurrent : this.shapes) {
 				//TODO Do a better method we do this many times ...
 				/*
@@ -291,8 +307,8 @@ public class ComponentPhysicsPerso extends Component {
 					continue;
 				}
 				*/
-				List<ColisionPoint> points = elem.getCollidePoints(shapeCurrent);
-				this.collisionPoints.addAll(points);
+				List<ColisionPoint> points = elem.getKey().getCollidePoints(shapeCurrent);
+				elem.getValue().addAll(points);
 			}
 		}
 	}
@@ -305,8 +321,10 @@ public class ComponentPhysicsPerso extends Component {
 	public void renderDebug(ResourceColored3DObject debugDrawProperty) {
 		Color displayColor;
 		displayColor = new Color(1.0f, 0.0f, 0.0f, 1.0f);
-		for (ColisionPoint impact : this.collisionPoints) {
-			debugDrawProperty.drawSquare(new Vector3f(0.02f, 0.02f, 0.02f), Matrix4f.createMatrixTranslate(impact.position), displayColor);
+		for (Entry<ComponentPhysicsPerso, List<ColisionPoint>> elem : this.narrowIntersection.entrySet()) {
+			for (ColisionPoint impact : elem.getValue()) {
+				debugDrawProperty.drawSquare(new Vector3f(0.02f, 0.02f, 0.02f), Matrix4f.createMatrixTranslate(impact.position), displayColor);
+			}
 		}
 		if (this.aabbIntersection.size() == 0) {
 			displayColor = new Color(1.0f, 1.0f, 1.0f, 1.0f);
@@ -340,10 +358,6 @@ public class ComponentPhysicsPerso extends Component {
 	
 	public void setMaxSpeed(float maxSpeed) {
 		this.maxSpeed = maxSpeed;
-	}
-	
-	public void setStaticObject(boolean staticObject) {
-		this.staticObject = staticObject;
 	}
 	
 	public void updateAABB() {

@@ -7,6 +7,7 @@ import org.atriasoft.ege.Engine;
 import org.atriasoft.ege.Environement;
 import org.atriasoft.ege.camera.Camera;
 import org.atriasoft.ege.components.ComponentPhysicsPerso;
+import org.atriasoft.ege.components.PhysicBodyType;
 import org.atriasoft.ege.internal.Log;
 import org.atriasoft.gale.resource.ResourceColored3DObject;
 import org.atriasoft.phyligram.DebugDisplay;
@@ -149,6 +150,9 @@ public class EnginePhysicsPerso extends Engine {
 			AABB currentAABB = current.getAABB();
 			for (int jjj = iii + 1; jjj < this.components.size(); jjj++) {
 				ComponentPhysicsPerso remote = this.components.get(jjj);
+				if (current.getBodyType() != PhysicBodyType.BODY_DYNAMIC && remote.getBodyType() != PhysicBodyType.BODY_DYNAMIC) {
+					continue;
+				}
 				// prefer checking the collision, this a time-constant operation, check if collision already exist is a unpredictable time.
 				if (currentAABB.intersect(this.components.get(jjj).getAABB()) == true) {
 					current.addIntersection(remote);

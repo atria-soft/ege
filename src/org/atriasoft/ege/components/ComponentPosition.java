@@ -10,12 +10,14 @@ import org.atriasoft.etk.math.Vector3f;
 public class ComponentPosition extends Component implements PositionningInterface {
 	public final Signal<Transform3D> signalPosition = new Signal<>();
 	protected Transform3D transform;
+	//protected Vector3f speed;
 	
 	/**
 	 * Create a basic position component (no orientation and position (0,0,0))
 	 */
 	public ComponentPosition() {
 		this.transform = Transform3D.IDENTITY;
+		//this.speed = Vector3f.ZERO;
 	}
 	
 	/**
@@ -37,6 +39,10 @@ public class ComponentPosition extends Component implements PositionningInterfac
 		this.transform = this.transform.withPosition(this.transform.getPosition().add(force));
 	}
 	
+	//public Vector3f getSpeed() {
+	//	return this.speed;
+	//}
+	
 	/**
 	 * set a new transformation
 	 * @return Transformation of the position
@@ -50,6 +56,10 @@ public class ComponentPosition extends Component implements PositionningInterfac
 	public String getType() {
 		return "position";
 	}
+	
+	//public void setSpeed(Vector3f speed) {
+	//	this.speed = speed;
+	//}
 	
 	/**
 	 * set a new transformation

@@ -15,13 +15,16 @@ public class ToolCollisionSphereWithSphere {
 		Vector3f impact = force.multiply(shapeReference.getSize());
 		force = force.multiply(distance);
 		force = force.multiply(sphere1.getSize() + distance);
-		return new ColisionPoint(impact, force);
+		// set relative impact position:
+		//return new ColisionPoint(impact, force);
+		// set global position
+		return new ColisionPoint(shapeReference.narrowPhaseGlobalPos.add(impact), force);
 	}
 	
 	// Note sphere 2 is the reference ...
 	public static boolean testCollide(PhysicSphere sphere1, PhysicSphere shapeReference) {
 		float distance1 = sphere1.narrowPhaseGlobalPos.distance2(shapeReference.narrowPhaseGlobalPos);
-		float distance2 = sphere1.getSize() * shapeReference.getSize();
+		float distance2 = sphere1.getSize() + shapeReference.getSize();
 		distance2 = distance2 * distance2;
 		return distance1 <= distance2;
 	}

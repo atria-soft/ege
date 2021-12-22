@@ -55,7 +55,7 @@ public class ToolCollisionSphereWithTriangle {
 			if (distance < 0) {
 				force = force.multiply(-(sphere1.getSize() + distance));
 			} else {
-				force = force.multiply(-(sphere1.getSize() + distance));
+				force = force.multiply(sphere1.getSize() - distance);
 			}
 			return new ColisionPoint(impact, force);
 		}

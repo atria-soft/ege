@@ -1,8 +1,11 @@
-package org.atriasoft.phyligram;
+package org.atriasoft.phyligram.math;
 
 import org.atriasoft.ege.geometry.Plane;
 import org.atriasoft.etk.math.FMath;
 import org.atriasoft.etk.math.Vector3f;
+import org.atriasoft.phyligram.ColisionPoint;
+import org.atriasoft.phyligram.PhysicSphere;
+import org.atriasoft.phyligram.PhysicTriangle;
 
 // https://realtimecollisiondetection.net/blog/?p=103
 public class ToolCollisionSphereWithTriangle {

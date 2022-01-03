@@ -1,4 +1,4 @@
-package sample.atriasoft.ege.loxelEnginePerso;
+package sample.atriasoft.ege.loxelEngine;
 
 import org.atriasoft.ege.Ege;
 import org.atriasoft.etk.Uri;

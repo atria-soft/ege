@@ -19,12 +19,10 @@ import org.atriasoft.ege.components.ComponentPlayer;
 import org.atriasoft.ege.components.ComponentPosition;
 import org.atriasoft.ege.components.ComponentPositionPlayer;
 import org.atriasoft.ege.components.ComponentRenderColoredStaticMesh;
-import org.atriasoft.ege.components.ComponentRenderTexturedMaterialsStaticMesh;
 import org.atriasoft.ege.components.ComponentRenderTexturedStaticMesh;
 import org.atriasoft.ege.components.ComponentStaticMesh;
 import org.atriasoft.ege.components.ComponentTexture;
 import org.atriasoft.ege.components.PhysicBodyType;
-import org.atriasoft.ege.engines.EngineLight;
 import org.atriasoft.ege.engines.EnginePhysics;
 import org.atriasoft.ege.map.MapVoxel;
 import org.atriasoft.ege.tools.MeshGenerator;
@@ -35,8 +33,8 @@ import org.atriasoft.etk.math.Quaternion;
 import org.atriasoft.etk.math.Transform3D;
 import org.atriasoft.etk.math.Vector2f;
 import org.atriasoft.etk.math.Vector3f;
-import org.atriasoft.gale.GaleApplication;
 import org.atriasoft.gale.Gale;
+import org.atriasoft.gale.GaleApplication;
 import org.atriasoft.gale.backend3d.OpenGL;
 import org.atriasoft.gale.backend3d.OpenGL.Flag;
 import org.atriasoft.gale.context.GaleContext;
@@ -45,7 +43,7 @@ import org.atriasoft.gale.key.KeySpecial;
 import org.atriasoft.gale.key.KeyStatus;
 import org.atriasoft.gale.key.KeyType;
 import org.atriasoft.gale.resource.ResourceColored3DObject;
-import org.atriasoft.phyligram.shape.Box;
+import org.atriasoft.phyligram.PhysicBox;
 
 public class CollisionTestApplication extends GaleApplication {
 	public static Vector3f box1HalfSize;
@@ -112,19 +110,15 @@ public class CollisionTestApplication extends GaleApplication {
 			localBox.addComponent(new ComponentStaticMesh(new Uri("RES", "cube-one.obj")));
 			localBox.addComponent(new ComponentTexture(new Uri("DATA", "blocks/dirt.png", "loxelEngine")));
 			localBox.addComponent(new ComponentRenderTexturedStaticMesh(new Uri("DATA", "basic.vert", "loxelEngine"), new Uri("DATA", "basic.frag", "loxelEngine")));
-			if (false) {
-				final ComponentPhysics physics2 = new ComponentPhysics(this.env);
-				physics2.setBodyType(PhysicBodyType.BODY_STATIC);
-				physics2.setTransform(new Transform3D(Vector3f.ZERO, orientation));
-				final Box box2 = new Box();
-				box2.setSize(new Vector3f(5.0f, 5.0f, 0.5f));
-				box2.setOrigin(Vector3f.ZERO);
-				box2.setMass(0);
-				physics2.addShape(box2);
-				localBox.addComponent(physics2);
-			} else {
-				localBox.addComponent(new ComponentPosition(new Transform3D(new Vector3f(0, 0, 0))));
-			}
+			localBox.addComponent(new ComponentPosition(new Transform3D(Vector3f.ZERO, orientation)));
+			final ComponentPhysics physics2 = new ComponentPhysics(this.env);
+			physics2.setBodyType(PhysicBodyType.BODY_STATIC);
+			final PhysicBox box2 = new PhysicBox();
+			box2.setSize(new Vector3f(5.0f, 5.0f, 0.5f));
+			box2.setOrigin(Vector3f.ZERO);
+			box2.setMass(0);
+			physics2.addShape(box2);
+			localBox.addComponent(physics2);
 			this.env.addEntity(localBox);
 		}
 		/*
@@ -158,40 +152,17 @@ public class CollisionTestApplication extends GaleApplication {
 		this.env.addEntity(gird);
 		
 		final Entity player = new Entity(this.env);
-		if (false) {
-			final Transform3D playerTransform = new Transform3D(new Vector3f(0, -5, 13));
-			//this.objectPosition = new ComponentPositionPlayer();
-			//player.addComponent(this.objectPosition);
-			this.objectPlayer = new ComponentPlayer();
-			player.addComponent(this.objectPlayer);
-			player.addComponent(new ComponentMaterial(new Material()));
-			//player.addComponent(new ComponentStaticMesh(new Uri("RES", "person.obj")));
-			player.addComponent(new ComponentStaticMesh(new Uri("RES", "person_-yfw_zup.obj")));
-			player.addComponent(new ComponentTexture(new Uri("RES", "playerTexture.png")));
-			player.addComponent(new ComponentRenderTexturedMaterialsStaticMesh(new Uri("DATA", "basicMaterial.vert", "loxelEngine"), new Uri("DATA", "basicMaterial.frag", "loxelEngine"),
-					(EngineLight) this.env.getEngine(EngineLight.ENGINE_NAME)));
-			final ComponentPhysics physics = new ComponentPhysics(this.env, playerTransform);
-			physics.setBodyType(PhysicBodyType.BODY_DYNAMIC);
-			final Box box = new Box();
-			box.setSize(new Vector3f(0.3f, 0.3f, 0.9f));
-			box.setOrigin(new Vector3f(0, 0, 0.9f));
-			box.setMass(100);
-			physics.addShape(box);
-			player.addComponent(physics);
-			this.env.addEntity(player);
-		} else {
-			final Transform3D playerTransform = new Transform3D(new Vector3f(0, -5, 0));
-			this.objectPosition = new ComponentPositionPlayer();
-			player.addComponent(this.objectPosition);
-			this.objectPlayer = new ComponentPlayer();
-			player.addComponent(this.objectPlayer);
-			player.addComponent(new ComponentMaterial(new Material()));
-			//player.addComponent(new ComponentStaticMesh(new Uri("RES", "person.obj")));
-			player.addComponent(new ComponentStaticMesh(new Uri("RES", "person_-yfw_zup.obj")));
-			player.addComponent(new ComponentTexture(new Uri("RES", "playerTexture.png")));
-			//player.addComponent(new ComponentRenderTexturedMaterialsStaticMesh(new Uri("DATA", "basicMaterial.vert", "loxelEngine"), new Uri("DATA", "basicMaterial.frag", "loxelEngine"), (EngineLight) this.env.getEngine(EngineLight.ENGINE_NAME)));
-			this.env.addEntity(player);
-		}
+		final Transform3D playerTransform = new Transform3D(new Vector3f(0, -5, 0));
+		this.objectPosition = new ComponentPositionPlayer();
+		player.addComponent(this.objectPosition);
+		this.objectPlayer = new ComponentPlayer();
+		player.addComponent(this.objectPlayer);
+		player.addComponent(new ComponentMaterial(new Material()));
+		//player.addComponent(new ComponentStaticMesh(new Uri("RES", "person.obj")));
+		player.addComponent(new ComponentStaticMesh(new Uri("RES", "person_-yfw_zup.obj")));
+		player.addComponent(new ComponentTexture(new Uri("RES", "playerTexture.png")));
+		//player.addComponent(new ComponentRenderTexturedMaterialsStaticMesh(new Uri("DATA", "basicMaterial.vert", "loxelEngine"), new Uri("DATA", "basicMaterial.frag", "loxelEngine"), (EngineLight) this.env.getEngine(EngineLight.ENGINE_NAME)));
+		this.env.addEntity(player);
 		final Camera mainView = new Camera();
 		this.env.addCamera("default", mainView);
 		mainView.setPitch((float) Math.PI * -0.25f);
@@ -209,9 +180,9 @@ public class CollisionTestApplication extends GaleApplication {
 		final Engine tmpEngine = this.env.getEngine("physics");
 		if (tmpEngine != null) {
 			final EnginePhysics physicsEngine = (EnginePhysics) tmpEngine;
-			//Disable gravity for test ... 
+			//Disable gravity for test ...
 			//physicsEngine.setGravity(new Vector3f(0.0f, 0.0f, -1.0f));
-			physicsEngine.setGravity(new Vector3f(0.0f, 0.0f, -10.0f));
+			//physicsEngine.setGravity(new Vector3f(0.0f, 0.0f, -10.0f));
 		}
 		
 		// ready to let Gale & Ege manage the display

@@ -1,7 +1,9 @@
-package org.atriasoft.phyligram;
+package org.atriasoft.phyligram.math;
 
 import org.atriasoft.ege.geometry.Triangle;
 import org.atriasoft.etk.math.Vector3f;
+import org.atriasoft.phyligram.PhysicHeightMapChunk;
+import org.atriasoft.phyligram.PhysicSphere;
 
 public class ToolCollisionSphereWithHeightMapChunk {
 	//intersection entre 2 droite (en 2d avec estimation en 3D

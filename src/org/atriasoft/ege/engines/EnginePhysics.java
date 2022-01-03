@@ -6,24 +6,24 @@ import org.atriasoft.ege.Component;
 import org.atriasoft.ege.Engine;
 import org.atriasoft.ege.Environement;
 import org.atriasoft.ege.camera.Camera;
-import org.atriasoft.ege.components.ComponentPhysicsPerso;
+import org.atriasoft.ege.components.ComponentPhysics;
 import org.atriasoft.ege.components.PhysicBodyType;
 import org.atriasoft.ege.internal.Log;
 import org.atriasoft.gale.resource.ResourceColored3DObject;
 import org.atriasoft.phyligram.DebugDisplay;
 import org.atriasoft.phyligram.shape.AABB;
 
-public class EnginePhysicsPerso extends Engine {
-	public static final String ENGINE_NAME = "physicsPerso";
+public class EnginePhysics extends Engine {
+	public static final String ENGINE_NAME = "physics";
 	private static final float TIME_STEP = 0.005f;
 	private float accumulator = 0;
 	private EngineGravity gravity;
-	protected EnginePhysicsPerso engine;
-	private Vector<ComponentPhysicsPerso> components = new Vector<>();
-	private Vector<ComponentPhysicsPerso> componentsWithCollision = new Vector<>();
+	protected EnginePhysics engine;
+	private Vector<ComponentPhysics> components = new Vector<>();
+	private Vector<ComponentPhysics> componentsWithCollision = new Vector<>();
 	private ResourceColored3DObject debugDrawProperty = ResourceColored3DObject.create();
 	
-	public EnginePhysicsPerso(Environement env) {
+	public EnginePhysics(Environement env) {
 		super(env);
 		this.gravity = (EngineGravity) env.getEngine("gravity");
 		if (this.gravity == null) {
@@ -31,7 +31,7 @@ public class EnginePhysicsPerso extends Engine {
 		}
 	}
 	
-	private void addIncomponentWithCollision(ComponentPhysicsPerso elem) {
+	private void addIncomponentWithCollision(ComponentPhysics elem) {
 		if (this.componentsWithCollision.contains(elem)) {
 			return;
 		}
@@ -39,8 +39,8 @@ public class EnginePhysicsPerso extends Engine {
 	}
 	
 	private void applyForces(float timeStep) {
-		for (ComponentPhysicsPerso it : this.components) {
-			it.applyForces(TIME_STEP, this.gravity);
+		for (ComponentPhysics it : this.components) {
+			it.applyForces(timeStep, this.gravity);
 		}
 	}
 	
@@ -48,17 +48,17 @@ public class EnginePhysicsPerso extends Engine {
 	 *  Clear the previous data of collision.
 	 */
 	private void clearPreviousCycle() {
-		for (ComponentPhysicsPerso it : this.components) {
+		for (ComponentPhysics it : this.components) {
 			it.clearPreviousCollision();
 		}
 	}
 	
 	@Override
 	public void componentAdd(Component ref) {
-		if (ref instanceof ComponentPhysicsPerso == false) {
+		if (ref instanceof ComponentPhysics == false) {
 			return;
 		}
-		this.components.add((ComponentPhysicsPerso) ref);
+		this.components.add((ComponentPhysics) ref);
 	}
 	
 	@Override
@@ -71,8 +71,8 @@ public class EnginePhysicsPerso extends Engine {
 	 * @param timeStep
 	 */
 	private void generateResultCollisionsForces(float timeStep) {
-		for (ComponentPhysicsPerso it : this.componentsWithCollision) {
-			it.applyColisionForce();
+		for (ComponentPhysics it : this.componentsWithCollision) {
+			it.applyColisionForce(timeStep);
 		}
 	}
 	
@@ -85,7 +85,7 @@ public class EnginePhysicsPerso extends Engine {
 	@Override
 	public void render(long deltaMili, Camera camera) {
 		// TODO Auto-generated method stub
-		for (ComponentPhysicsPerso it : this.components) {
+		for (ComponentPhysics it : this.components) {
 			//Log.info("Render " + it);
 			it.renderDebug(this.debugDrawProperty);
 		}
@@ -128,7 +128,7 @@ public class EnginePhysicsPerso extends Engine {
 	 * @param timeStep Delta time since the last check
 	 */
 	private void updateAABB(float timeStep) {
-		for (ComponentPhysicsPerso it : this.components) {
+		for (ComponentPhysics it : this.components) {
 			it.updateAABB();
 		}
 	}
@@ -141,15 +141,15 @@ public class EnginePhysicsPerso extends Engine {
 	private void updateCollisionsAABB(float timeStep) {
 		this.componentsWithCollision.clear();
 		// clear all object intersection
-		for (ComponentPhysicsPerso it : this.components) {
+		for (ComponentPhysics it : this.components) {
 			it.clearAABBIntersection();
 		}
 		// update the current object intersection...
 		for (int iii = 0; iii < this.components.size(); iii++) {
-			ComponentPhysicsPerso current = this.components.get(iii);
+			ComponentPhysics current = this.components.get(iii);
 			AABB currentAABB = current.getAABB();
 			for (int jjj = iii + 1; jjj < this.components.size(); jjj++) {
-				ComponentPhysicsPerso remote = this.components.get(jjj);
+				ComponentPhysics remote = this.components.get(jjj);
 				if (current.getBodyType() != PhysicBodyType.BODY_DYNAMIC && remote.getBodyType() != PhysicBodyType.BODY_DYNAMIC) {
 					continue;
 				}
@@ -170,18 +170,18 @@ public class EnginePhysicsPerso extends Engine {
 	 */
 	private void updateCollisionsNarrowPhase(float timeStep) {
 		// clear all object intersection
-		for (ComponentPhysicsPerso it : this.componentsWithCollision) {
+		for (ComponentPhysics it : this.componentsWithCollision) {
 			it.updateForNarrowCollision();
 		}
 		// check for every component if the narrow collision is available.
 		for (int iii = 0; iii < this.componentsWithCollision.size(); iii++) {
-			ComponentPhysicsPerso current = this.componentsWithCollision.get(iii);
+			ComponentPhysics current = this.componentsWithCollision.get(iii);
 			boolean collide = current.checkNarrowCollision();
 			
 		}
 		// update the force of collision available.
 		for (int iii = 0; iii < this.components.size(); iii++) {
-			ComponentPhysicsPerso current = this.components.get(iii);
+			ComponentPhysics current = this.components.get(iii);
 			current.narrowCollisionCreateContactAndForce();
 		}
 	}

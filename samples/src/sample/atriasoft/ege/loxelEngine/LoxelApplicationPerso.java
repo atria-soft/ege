@@ -1,4 +1,4 @@
-package sample.atriasoft.ege.loxelEnginePerso;
+package sample.atriasoft.ege.loxelEngine;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -14,7 +14,7 @@ import org.atriasoft.ege.components.ComponentGravityStatic;
 import org.atriasoft.ege.components.ComponentLight;
 import org.atriasoft.ege.components.ComponentLightSun;
 import org.atriasoft.ege.components.ComponentMaterial;
-import org.atriasoft.ege.components.ComponentPhysicsPerso;
+import org.atriasoft.ege.components.ComponentPhysics;
 import org.atriasoft.ege.components.ComponentPlayer;
 import org.atriasoft.ege.components.ComponentPosition;
 import org.atriasoft.ege.components.ComponentPositionPlayer;
@@ -116,7 +116,7 @@ public class LoxelApplicationPerso extends GaleApplication {
 			localBox.addComponent(new ComponentLight(new Light(new Color(0.0f, 1.0f, 0.0f), new Vector3f(0, 0, 0), new Vector3f(0.8f, 0.03f, 0.002f))));
 			localBox.addComponent(new ComponentRenderTexturedStaticMesh(new Uri("DATA", "basic.vert", "loxelEngine"), new Uri("DATA", "basic.frag", "loxelEngine")));
 			localBox.addComponent(new ComponentPosition(new Transform3D(new Vector3f(0, 0, 5))));
-			final ComponentPhysicsPerso physics2 = new ComponentPhysicsPerso(this.env);
+			final ComponentPhysics physics2 = new ComponentPhysics(this.env);
 			final PhysicBox box2 = new PhysicBox();
 			box2.setSize(new Vector3f(1.001f, 1.001f, 1.001f));
 			box2.setOrigin(new Vector3f(0, 0, 0));
@@ -133,7 +133,7 @@ public class LoxelApplicationPerso extends GaleApplication {
 			localBox.addComponent(new ComponentLight(new Light(new Color(0.0f, 1.0f, 0.0f), new Vector3f(0, 0, 0), new Vector3f(0.8f, 0.03f, 0.002f))));
 			localBox.addComponent(new ComponentRenderTexturedStaticMesh(new Uri("DATA", "basic.vert", "loxelEngine"), new Uri("DATA", "basic.frag", "loxelEngine")));
 			localBox.addComponent(new ComponentPosition(new Transform3D(new Vector3f(0, 4, 2.5f))));
-			final ComponentPhysicsPerso physics2 = new ComponentPhysicsPerso(this.env);
+			final ComponentPhysics physics2 = new ComponentPhysics(this.env);
 			final PhysicBox box2 = new PhysicBox();
 			box2.setSize(new Vector3f(2.0f, 2.0f, 2.0f));
 			box2.setOrigin(new Vector3f(0, 0, 0));
@@ -149,7 +149,7 @@ public class LoxelApplicationPerso extends GaleApplication {
 			localBox.addComponent(new ComponentTexture(new Uri("DATA", "blocks/clay.png", "loxelEngine")));
 			localBox.addComponent(new ComponentRenderTexturedStaticMesh(new Uri("DATA", "basic.vert", "loxelEngine"), new Uri("DATA", "basic.frag", "loxelEngine")));
 			localBox.addComponent(new ComponentPosition(new Transform3D(new Vector3f(-2, 2, 1.5f))));
-			final ComponentPhysicsPerso physics2 = new ComponentPhysicsPerso(this.env);
+			final ComponentPhysics physics2 = new ComponentPhysics(this.env);
 			final PhysicBox box2 = new PhysicBox();
 			box2.setSize(new Vector3f(3.0f, 3.0f, 3.0f));
 			box2.setOrigin(new Vector3f(0, 0, 0));
@@ -166,7 +166,7 @@ public class LoxelApplicationPerso extends GaleApplication {
 			localBox.addComponent(new ComponentTexture(new Uri("DATA", "blocks/clay.png", "loxelEngine")));
 			localBox.addComponent(new ComponentRenderTexturedStaticMesh(new Uri("DATA", "basic.vert", "loxelEngine"), new Uri("DATA", "basic.frag", "loxelEngine")));
 			localBox.addComponent(new ComponentPosition(new Transform3D(new Vector3f(-5, -5, 0))));
-			final ComponentPhysicsPerso physics2 = new ComponentPhysicsPerso(this.env);
+			final ComponentPhysics physics2 = new ComponentPhysics(this.env);
 			final PhysicBox box2 = new PhysicBox();
 			box2.setSize(new Vector3f(2, 2, 2));
 			box2.setOrigin(new Vector3f(0, 0, 0));
@@ -184,7 +184,7 @@ public class LoxelApplicationPerso extends GaleApplication {
 			localBox.addComponent(new ComponentTexture(new Uri("DATA", "blocks/clay.png", "loxelEngine")));
 			localBox.addComponent(new ComponentRenderTexturedStaticMesh(new Uri("DATA", "basic.vert", "loxelEngine"), new Uri("DATA", "basic.frag", "loxelEngine")));
 			localBox.addComponent(new ComponentPosition(new Transform3D(new Vector3f(15, 15, 0), orientation)));
-			final ComponentPhysicsPerso physics2 = new ComponentPhysicsPerso(this.env);
+			final ComponentPhysics physics2 = new ComponentPhysics(this.env);
 			final PhysicBox box2 = new PhysicBox();
 			box2.setSize(new Vector3f(4, 4, 4));
 			box2.setOrigin(new Vector3f(0, 0, 0));
@@ -202,7 +202,7 @@ public class LoxelApplicationPerso extends GaleApplication {
 			localBox.addComponent(new ComponentTexture(new Uri("DATA", "blocks/clay.png", "loxelEngine")));
 			localBox.addComponent(new ComponentRenderTexturedStaticMesh(new Uri("DATA", "basic.vert", "loxelEngine"), new Uri("DATA", "basic.frag", "loxelEngine")));
 			localBox.addComponent(new ComponentPosition(new Transform3D(new Vector3f(2, -2, 0.2f), orientation)));
-			final ComponentPhysicsPerso physics2 = new ComponentPhysicsPerso(this.env);
+			final ComponentPhysics physics2 = new ComponentPhysics(this.env);
 			// TODO: physics2.setAngularReactionEnable(false);
 			final PhysicBox box2 = new PhysicBox();
 			box2.setSize(new Vector3f(0.5f, 0.5f, 0.5f));
@@ -221,7 +221,7 @@ public class LoxelApplicationPerso extends GaleApplication {
 			localBox.addComponent(new ComponentTexture(new Uri("DATA", "blocks/dirt.png", "loxelEngine")));
 			localBox.addComponent(new ComponentRenderTexturedStaticMesh(new Uri("DATA", "basic.vert", "loxelEngine"), new Uri("DATA", "basic.frag", "loxelEngine")));
 			localBox.addComponent(new ComponentPosition(new Transform3D(new Vector3f(0, 0, 0.0f), orientation)));
-			final ComponentPhysicsPerso physics2 = new ComponentPhysicsPerso(this.env);
+			final ComponentPhysics physics2 = new ComponentPhysics(this.env);
 			physics2.setBodyType(PhysicBodyType.BODY_STATIC);
 			final PhysicBox box2 = new PhysicBox();
 			box2.setSize(new Vector3f(20.0f, 20.0f, 0.5f));
@@ -261,7 +261,7 @@ public class LoxelApplicationPerso extends GaleApplication {
 		//					new Uri("DATA", "basic.frag")));
 		//			env.addEntity(localBox);
 		//		}
-		
+		boolean selectCase1 = true;
 		if (!this.disable) {
 			// add a cube to test collision ...
 			final Entity localBox = new Entity(this.env);
@@ -270,22 +270,31 @@ public class LoxelApplicationPerso extends GaleApplication {
 			localBox.addComponent(new ComponentLight(new Light(new Color(0.0f, 1.0f, 0.0f), new Vector3f(0, 0, 0), new Vector3f(0.8f, 0.03f, 0.002f))));
 			localBox.addComponent(new ComponentRenderTexturedStaticMesh(new Uri("DATA", "basic.vert", "loxelEngine"), new Uri("DATA", "basic.frag", "loxelEngine")));
 			localBox.addComponent(new ComponentPosition(new Transform3D(new Vector3f(0, 3, 0))));
-			final ComponentPhysicsPerso physics2 = new ComponentPhysicsPerso(this.env);
+			final ComponentPhysics physics2 = new ComponentPhysics(this.env);
 			physics2.setBodyType(PhysicBodyType.BODY_STATIC);
 			PhysicTriangle box2 = new PhysicTriangle();
-			box2.setPoints(new Vector3f(4, 0, 0), new Vector3f(0, 4, 0), new Vector3f(-2, -2, 1));
-			box2.setOrigin(new Vector3f(0, 0, 0));
-			box2.setMass(0);
-			physics2.addShape(box2);
-			box2 = new PhysicTriangle();
-			box2.setPoints(new Vector3f(4, 0, 0), new Vector3f(0, 4, 0), new Vector3f(6, 6, 0));
-			box2.setOrigin(new Vector3f(0, 0, 0));
-			box2.setMass(0);
+			if (selectCase1) {
+				box2.setPoints(new Vector3f(4, 0, 0), new Vector3f(0, 4, 0), new Vector3f(-2, -2, 1));
+				box2.setOrigin(new Vector3f(0, 0, 0));
+				box2.setMass(0);
+				physics2.addShape(box2);
+				box2 = new PhysicTriangle();
+				box2.setPoints(new Vector3f(4, 0, 0), new Vector3f(0, 4, 0), new Vector3f(600, 600, -100));
+				box2.setOrigin(new Vector3f(0, 0, 0));
+				box2.setMass(0);
+				box2.setFrictionCoefficient(1.0f);
+				box2.setBouncingCoefficient(0.5f);
+			} else {
+				box2.setPoints(new Vector3f(4, 0, 0), new Vector3f(0, 4, 0), new Vector3f(-2, -2, 1));
+				box2.setOrigin(new Vector3f(0, 0, 0));
+				box2.setMass(0);
+				box2.setBouncingCoefficient(0.5f);
+			}
 			physics2.addShape(box2);
 			localBox.addComponent(physics2);
 			this.env.addEntity(localBox);
 		}
-		if (true) {
+		if (selectCase1) {
 			// add a cube to test collision ...
 			final Entity localBox = new Entity(this.env);
 			localBox.addComponent(new ComponentStaticMesh(new Uri("RES", "cube-one.obj")));
@@ -293,12 +302,13 @@ public class LoxelApplicationPerso extends GaleApplication {
 			localBox.addComponent(new ComponentLight(new Light(new Color(0.0f, 1.0f, 0.0f), new Vector3f(0, 0, 0), new Vector3f(0.8f, 0.03f, 0.002f))));
 			localBox.addComponent(new ComponentRenderTexturedStaticMesh(new Uri("DATA", "basic.vert", "loxelEngine"), new Uri("DATA", "basic.frag", "loxelEngine")));
 			localBox.addComponent(new ComponentPosition(new Transform3D(new Vector3f(1.1f, 5.1f, 1.0f), Quaternion.fromEulerAngles(new Vector3f(0.15f, 0.95f, 0.3f)))));
-			final ComponentPhysicsPerso physics2 = new ComponentPhysicsPerso(this.env);
+			final ComponentPhysics physics2 = new ComponentPhysics(this.env);
 			final PhysicSphere box2 = new PhysicSphere();
 			physics2.setBodyType(PhysicBodyType.BODY_STATIC);
 			box2.setSize(1.0f);
 			box2.setOrigin(new Vector3f(0, 0, 0));
 			box2.setMass(0);
+			box2.setBouncingCoefficient(0.5f);
 			physics2.addShape(box2);
 			localBox.addComponent(physics2);
 			this.env.addEntity(localBox);
@@ -310,8 +320,8 @@ public class LoxelApplicationPerso extends GaleApplication {
 			localBox.addComponent(new ComponentTexture(new Uri("DATA", "blocks/clay.png", "loxelEngine")));
 			localBox.addComponent(new ComponentLight(new Light(new Color(0.0f, 1.0f, 0.0f), new Vector3f(0, 0, 0), new Vector3f(0.8f, 0.03f, 0.002f))));
 			localBox.addComponent(new ComponentRenderTexturedStaticMesh(new Uri("DATA", "basic.vert", "loxelEngine"), new Uri("DATA", "basic.frag", "loxelEngine")));
-			localBox.addComponent(new ComponentPosition(new Transform3D(new Vector3f(1, 5, 4), Quaternion.fromEulerAngles(new Vector3f(0.15f, 0.95f, 0.3f)))));
-			final ComponentPhysicsPerso physics2 = new ComponentPhysicsPerso(this.env);
+			localBox.addComponent(new ComponentPosition(new Transform3D(new Vector3f(1.8f, 5.8f, 4), Quaternion.fromEulerAngles(new Vector3f(0.15f, 0.95f, 0.3f)))));
+			final ComponentPhysics physics2 = new ComponentPhysics(this.env);
 			physics2.setBodyType(PhysicBodyType.BODY_DYNAMIC);
 			final PhysicSphere box2 = new PhysicSphere();
 			box2.setSize(1.0f);
@@ -342,7 +352,7 @@ public class LoxelApplicationPerso extends GaleApplication {
 			player.addComponent(new ComponentRenderTexturedMaterialsStaticMesh(new Uri("DATA", "basicMaterial.vert", "loxelEngine"), new Uri("DATA", "basicMaterial.frag", "loxelEngine"),
 					(EngineLight) this.env.getEngine(EngineLight.ENGINE_NAME)));
 			player.addComponent(new ComponentPosition(playerTransform));
-			final ComponentPhysicsPerso physics = new ComponentPhysicsPerso(this.env);
+			final ComponentPhysics physics = new ComponentPhysics(this.env);
 			physics.setBodyType(PhysicBodyType.BODY_DYNAMIC);
 			//physics.setAngularReactionEnable(false);
 			//physics.setSleepingEnable(false);
@@ -365,7 +375,7 @@ public class LoxelApplicationPerso extends GaleApplication {
 			player.addComponent(new ComponentTexture(new Uri("RES", "playerTexture.png")));
 			player.addComponent(new ComponentRenderTexturedMaterialsStaticMesh(new Uri("DATA", "basicMaterial.vert", "loxelEngine"), new Uri("DATA", "basicMaterial.frag", "loxelEngine"),
 					(EngineLight) this.env.getEngine(EngineLight.ENGINE_NAME)));
-			final ComponentPhysicsPerso physics = new ComponentPhysicsPerso(this.env);
+			final ComponentPhysics physics = new ComponentPhysics(this.env);
 			physics.setBodyType(PhysicBodyType.BODY_DYNAMIC);
 			final PhysicBox box = new PhysicBox();
 			box.setSize(new Vector3f(0.6f, 0.6f, 1.8f));

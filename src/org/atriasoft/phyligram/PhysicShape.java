@@ -16,7 +16,9 @@ public abstract class PhysicShape {
 	// protected Vector3f origin;
 	protected Transform3D transform;
 	protected Transform3D transformGlobal;
-	protected float mass = 0;
+	protected float mass = 0.0f;
+	protected float frictionCoefficient = 0.0f;
+	protected float bouncingCoefficient = 0.0f;
 	
 	public PhysicShape() {
 		this.transform = Transform3D.IDENTITY;
@@ -34,6 +36,14 @@ public abstract class PhysicShape {
 	
 	public void addColision(Collision colision) {
 		this.colisionPoints.add(colision);
+	}
+	
+	public float getBouncingCoefficient() {
+		return this.bouncingCoefficient;
+	}
+	
+	public float getFrictionCoefficient() {
+		return this.frictionCoefficient;
 	}
 	
 	public float getMass() {
@@ -61,6 +71,14 @@ public abstract class PhysicShape {
 	}
 	
 	public abstract void renderDebug(Transform3D transform, ResourceColored3DObject debugDrawProperty);
+	
+	public void setBouncingCoefficient(float bouncingCoefficient) {
+		this.bouncingCoefficient = bouncingCoefficient;
+	}
+	
+	public void setFrictionCoefficient(float frictionCoefficient) {
+		this.frictionCoefficient = frictionCoefficient;
+	}
 	
 	public void setMass(float mass) {
 		this.mass = mass;

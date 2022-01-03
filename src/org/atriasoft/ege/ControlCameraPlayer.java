@@ -1,17 +1,16 @@
 package org.atriasoft.ege;
 
 import org.atriasoft.ege.camera.Camera;
-import org.atriasoft.ege.components.ComponentPhysics;
 import org.atriasoft.ege.components.ComponentPlayer;
 import org.atriasoft.ege.components.ComponentPositionPlayer;
 import org.atriasoft.ege.internal.Log;
 import org.atriasoft.etk.math.Transform3D;
 import org.atriasoft.etk.math.Vector2f;
 import org.atriasoft.etk.math.Vector3f;
-import org.atriasoft.gale.Gale;
 import org.atriasoft.ewol.event.EventEntry;
 import org.atriasoft.ewol.event.EventInput;
 import org.atriasoft.ewol.event.EventTime;
+import org.atriasoft.gale.Gale;
 import org.atriasoft.gale.key.KeyKeyboard;
 import org.atriasoft.gale.key.KeyStatus;
 
@@ -21,7 +20,6 @@ public class ControlCameraPlayer implements ControlInterface {
 	private boolean fpsMode = false;
 	private final Entity playerEntity;
 	private ComponentPositionPlayer playerPosition;
-	private ComponentPhysics playerPhysics;
 	private final ComponentPlayer player;
 	private boolean moveUp = false;
 	private boolean moveDown = false;
@@ -34,8 +32,6 @@ public class ControlCameraPlayer implements ControlInterface {
 		this.playerEntity = playerEntity;
 		if (this.playerEntity.exist("position")) {
 			this.playerPosition = (ComponentPositionPlayer) this.playerEntity.getComponent("position");
-		} else if (this.playerEntity.exist("physics")) {
-			this.playerPhysics = (ComponentPhysics) this.playerEntity.getComponent("physics");
 		}
 		this.player = (ComponentPlayer) this.playerEntity.getComponent("player");
 	}
@@ -146,8 +142,6 @@ public class ControlCameraPlayer implements ControlInterface {
 				this.playerPosition.setAngles(new Vector3f(0, 0, tmpAngle));
 				this.camera.setRoll(-playerZAngle);
 				Log.info("Change camera: " + this.camera.getYaw() + " " + this.camera.getPitch());
-			} else if (this.playerPhysics != null) {
-				//this.playerPhysics.applyTorque(new Vector3f(0, 0, (float) Math.toRadians(delta.x * this.player.getTurnSpeed())));
 			}
 		}
 		return false;
@@ -155,9 +149,6 @@ public class ControlCameraPlayer implements ControlInterface {
 	
 	@Override
 	public void periodicCall(final EventTime event) {
-		if (this.playerPhysics != null) {
-			//this.camera.setRoll(-this.playerPhysics.getAngles().z);
-		}
 		float speed = 0;
 		float walkFactor = 1;
 		if (this.walk) {
@@ -177,9 +168,6 @@ public class ControlCameraPlayer implements ControlInterface {
 		if (this.playerPosition != null) {
 			playerZAngle = this.playerPosition.getAngles().z();
 			playerTransform = this.playerPosition.getTransform();
-		} else if (this.playerPhysics != null) {
-			playerZAngle = 0; // TODO ...
-			playerTransform = this.playerPhysics.getTransform();
 		}
 		final float dx = -(float) (distance * Math.sin(playerZAngle));
 		final float dy = (float) (distance * Math.cos(playerZAngle));
@@ -200,8 +188,6 @@ public class ControlCameraPlayer implements ControlInterface {
 		playerTransform = playerTransform.withPosition(tmpPos);
 		if (this.playerPosition != null) {
 			this.playerPosition.setTransform(playerTransform);
-		} else if (this.playerPhysics != null) {
-			this.playerPhysics.setTransform(playerTransform);
 		}
 		// here the camera is behind the player, we need to move the camera ...
 		//Log.info(" pitch: " + Math.toDegrees(this.camera.getPitch()) + "  " + Math.toDegrees(playerZAngle));

@@ -1,8 +1,11 @@
-package org.atriasoft.phyligram;
+package org.atriasoft.phyligram.math;
 
 import org.atriasoft.etk.math.Quaternion;
 import org.atriasoft.etk.math.Vector3f;
-import org.atriasoft.phyligram.internal.Log;
+import org.atriasoft.phyligram.ColisionPoint;
+import org.atriasoft.phyligram.Collision;
+import org.atriasoft.phyligram.DebugDisplay;
+import org.atriasoft.phyligram.PhysicBox;
 
 // set the relevant elements of our oriented bounding box
 class OBB {
@@ -11,101 +14,17 @@ class OBB {
 	public Vector3f axisY;
 	public Vector3f axisZ;
 	public Vector3f halfSize;
-
+	
 	public OBB() {
-		position = Vector3f.ZERO;
-		axisX = Vector3f.ZERO;
-		axisY = Vector3f.ZERO;
-		axisZ = Vector3f.ZERO;
-		halfSize = Vector3f.ZERO;
+		this.position = Vector3f.ZERO;
+		this.axisX = Vector3f.ZERO;
+		this.axisY = Vector3f.ZERO;
+		this.axisZ = Vector3f.ZERO;
+		this.halfSize = Vector3f.ZERO;
 	}
-};
+}
 
 public class ToolCollisionOBBWithOBB {
-	private ToolCollisionOBBWithOBB() {}
-
-	// check if there's a separating plane in between the selected axes
-	private static boolean getSeparatingPlane(Vector3f rPos, Vector3f plane, OBB box1, OBB box2) {
-		return (Math.abs(rPos.dot(plane)) > (Math.abs(box1.axisX.multiply(box1.halfSize.x()).dot(plane)) + Math.abs(box1.axisY.multiply(box1.halfSize.y()).dot(plane))
-				+ Math.abs(box1.axisZ.multiply(box1.halfSize.z()).dot(plane)) + Math.abs(box2.axisX.multiply(box2.halfSize.x()).dot(plane))
-				+ Math.abs(box2.axisY.multiply(box2.halfSize.y()).dot(plane)) + Math.abs(box2.axisZ.multiply(box2.halfSize.z()).dot(plane))));
-	}
-
-	// test for separating planes in all 15 axes
-	public static boolean getCollision(OBB box1, OBB box2) {
-		Vector3f rPos = box2.position.less(box1.position);
-		boolean ret = getSeparatingPlane(rPos, box1.axisX, box1, box2) || getSeparatingPlane(rPos, box1.axisY, box1, box2) || getSeparatingPlane(rPos, box1.axisZ, box1, box2)
-				|| getSeparatingPlane(rPos, box2.axisX, box1, box2) || getSeparatingPlane(rPos, box2.axisY, box1, box2) || getSeparatingPlane(rPos, box2.axisZ, box1, box2)
-				|| getSeparatingPlane(rPos, box1.axisX.cross(box2.axisX), box1, box2) || getSeparatingPlane(rPos, box1.axisX.cross(box2.axisY), box1, box2)
-				|| getSeparatingPlane(rPos, box1.axisX.cross(box2.axisZ), box1, box2) || getSeparatingPlane(rPos, box1.axisY.cross(box2.axisX), box1, box2)
-				|| getSeparatingPlane(rPos, box1.axisY.cross(box2.axisY), box1, box2) || getSeparatingPlane(rPos, box1.axisY.cross(box2.axisZ), box1, box2)
-				|| getSeparatingPlane(rPos, box1.axisZ.cross(box2.axisX), box1, box2) || getSeparatingPlane(rPos, box1.axisZ.cross(box2.axisY), box1, box2)
-				|| getSeparatingPlane(rPos, box1.axisZ.cross(box2.axisZ), box1, box2);
-		return !ret;
-	}
-//
-//	// a quick test to see the code working
-//	public static void main(String[] args) {
-//		// create two obbs
-//		OBB aaa = new OBB();
-//		OBB bbb = new OBB();
-//
-//		// set the first obb's properties
-//		aaa.position = new Vector3f(0.0f, 0.0f, 0.0f); // set its center position
-//
-//		// set the half size
-//		aaa.halfSize = new Vector3f(10.0f, 1.0f, 1.0f);
-//
-//		// set the axes orientation
-//		aaa.axisX = new Vector3f(1.0f, 0.0f, 0.0f);
-//		aaa.axisY = new Vector3f(0.0f, 1.0f, 0.0f);
-//		aaa.axisZ = new Vector3f(0.0f, 0.0f, 1.0f);
-//
-//		// set the second obb's properties
-//		bbb.position = new Vector3f(20.0f, 0.0f, 0.0f); // set its center position
-//
-//		// set the half size
-//		bbb.halfSize = new Vector3f(10.0f, 1.0f, 1.0f);
-//
-//		// set the axes orientation
-//		bbb.axisX = new Vector3f(1.0f, 0.0f, 0.0f);
-//		bbb.axisY = new Vector3f(0.0f, 1.0f, 0.0f);
-//		bbb.axisZ = new Vector3f(0.0f, 0.0f, 1.0f);
-//
-//		// run the code and get the result as a message
-//		if (getCollision(aaa, bbb)) {
-//			Log.info("Collision!!!");
-//		} else {
-//			Log.info("NO Collision!!!");
-//		}
-//	}
-
-	// check if there's a separating plane in between the selected axes
-	private static boolean getSeparatingPlane222(Vector3f rPos, Vector3f plane, PhysicBox box1, PhysicBox box2) {
-		return (Math.abs(rPos.dot(plane)) > (Math.abs(box1.narrowPhaseAxisX.multiply(box1.narrowPhaseHalfSize.x()).dot(plane))
-				+ Math.abs(box1.narrowPhaseAxisY.multiply(box1.narrowPhaseHalfSize.y()).dot(plane)) + Math.abs(box1.narrowPhaseAxisZ.multiply(box1.narrowPhaseHalfSize.z()).dot(plane))
-				+ Math.abs(box2.narrowPhaseAxisX.multiply(box2.narrowPhaseHalfSize.x()).dot(plane)) + Math.abs(box2.narrowPhaseAxisY.multiply(box2.narrowPhaseHalfSize.y()).dot(plane))
-				+ Math.abs(box2.narrowPhaseAxisZ.multiply(box2.narrowPhaseHalfSize.z()).dot(plane))));
-	}
-
-	public static boolean testCollide(PhysicBox box1, PhysicBox box2) {
-
-		Vector3f rPos = box2.narrowPhaseGlobalPos.less(box1.narrowPhaseGlobalPos);
-		boolean ret = getSeparatingPlane222(rPos, box1.narrowPhaseAxisX, box1, box2) || getSeparatingPlane222(rPos, box1.narrowPhaseAxisY, box1, box2)
-				|| getSeparatingPlane222(rPos, box1.narrowPhaseAxisZ, box1, box2) || getSeparatingPlane222(rPos, box2.narrowPhaseAxisX, box1, box2)
-				|| getSeparatingPlane222(rPos, box2.narrowPhaseAxisY, box1, box2) || getSeparatingPlane222(rPos, box2.narrowPhaseAxisZ, box1, box2)
-				|| getSeparatingPlane222(rPos, box1.narrowPhaseAxisX.cross(box2.narrowPhaseAxisX), box1, box2)
-				|| getSeparatingPlane222(rPos, box1.narrowPhaseAxisX.cross(box2.narrowPhaseAxisY), box1, box2)
-				|| getSeparatingPlane222(rPos, box1.narrowPhaseAxisX.cross(box2.narrowPhaseAxisZ), box1, box2)
-				|| getSeparatingPlane222(rPos, box1.narrowPhaseAxisY.cross(box2.narrowPhaseAxisX), box1, box2)
-				|| getSeparatingPlane222(rPos, box1.narrowPhaseAxisY.cross(box2.narrowPhaseAxisY), box1, box2)
-				|| getSeparatingPlane222(rPos, box1.narrowPhaseAxisY.cross(box2.narrowPhaseAxisZ), box1, box2)
-				|| getSeparatingPlane222(rPos, box1.narrowPhaseAxisZ.cross(box2.narrowPhaseAxisX), box1, box2)
-				|| getSeparatingPlane222(rPos, box1.narrowPhaseAxisZ.cross(box2.narrowPhaseAxisY), box1, box2)
-				|| getSeparatingPlane222(rPos, box1.narrowPhaseAxisZ.cross(box2.narrowPhaseAxisZ), box1, box2);
-		return !ret;
-	}
-
 	public static void getCollidePoints(PhysicBox box1, boolean isStatic1, PhysicBox box2, boolean isStatic2) {
 		// Log.info("Try to calculare reverse force ........");
 		Vector3f rPos1 = box1.narrowPhaseGlobalPos.less(box2.narrowPhaseGlobalPos);
@@ -116,7 +35,7 @@ public class ToolCollisionOBBWithOBB {
 		Quaternion quatTransfer1 = Quaternion.diff(quat1, quat2);
 		Quaternion quatTransfer2 = Quaternion.diff(quat2, quat1);
 		// quatTransfer.normalize();
-
+		
 		// DebugDisplay.relativeTest = quatTransfer;
 		// Vector3f tmp = rPos.addNew(new Vector3f(0,0,14));
 		// DebugDisplay.relativeTestPos.getTransform().setPosition(tmp);
@@ -133,7 +52,7 @@ public class ToolCollisionOBBWithOBB {
 		DebugDisplay.testQTransfert = quatTransfer2;
 		DebugDisplay.box1HalfSize = box2.narrowPhaseHalfSize;
 		DebugDisplay.box2HalfSize = box1.narrowPhaseHalfSize;
-
+		
 		// DebugDisplay.relativeTestPos.getTransform().setPosition(tmp);
 		// DebugDisplay.relativeTestPos.getTransform().setOrientation(quatTransfer);
 		// DebugDisplay.boxTest.setSize(box1.getSize());
@@ -150,7 +69,7 @@ public class ToolCollisionOBBWithOBB {
 			}
 		}
 		/* res = trensfert in generic plan the new res ... */
-
+		
 		DebugDisplay.testRpos = quat1.inverse().getMatrix4().multiply(rPos2);
 		DebugDisplay.testQTransfert = quatTransfer1;
 		DebugDisplay.box1HalfSize = box1.narrowPhaseHalfSize;
@@ -171,11 +90,11 @@ public class ToolCollisionOBBWithOBB {
 			Collision colision = new Collision(collide2, box1, collide1, isStatic1);
 			box2.addColision(colision);
 		}
-
+		
 	}
-
+	
 	public static ColisionPoint[] getCollidePointsAABBCenteredWithOBB(Vector3f box1HalfSize, Vector3f box2HalfSize, Quaternion box2Orientation, Vector3f box2Position) {
-
+		
 		// point in AABB
 		Vector3f topBackRight = box2Orientation.multiply(new Vector3f(+box2HalfSize.x(), +box2HalfSize.y(), +box2HalfSize.z())).add(box2Position);
 		Vector3f topBackLeft = box2Orientation.multiply(new Vector3f(-box2HalfSize.x(), +box2HalfSize.y(), +box2HalfSize.z())).add(box2Position);
@@ -288,18 +207,75 @@ public class ToolCollisionOBBWithOBB {
 			return out;
 		}
 		// line in AABB
-		// TODO: 
+		// TODO:
 		// Log.info("Need to detect line inside ..."); // pas tot a fait... si ca colisione déja avec un point de l'autre ...
 		return null;
 	}
-
-	public static boolean pointInAABB(Vector3f halfSize, Vector3f point) {
-		if (point.x() > -halfSize.x() && point.x() < halfSize.x() && point.y() > -halfSize.y() && point.y() < halfSize.y() && point.z() > -halfSize.z() && point.z() < halfSize.z()) {
-			return true;
-		}
-		return false;
+	
+	// test for separating planes in all 15 axes
+	public static boolean getCollision(OBB box1, OBB box2) {
+		Vector3f rPos = box2.position.less(box1.position);
+		boolean ret = getSeparatingPlane(rPos, box1.axisX, box1, box2) || getSeparatingPlane(rPos, box1.axisY, box1, box2) || getSeparatingPlane(rPos, box1.axisZ, box1, box2)
+				|| getSeparatingPlane(rPos, box2.axisX, box1, box2) || getSeparatingPlane(rPos, box2.axisY, box1, box2) || getSeparatingPlane(rPos, box2.axisZ, box1, box2)
+				|| getSeparatingPlane(rPos, box1.axisX.cross(box2.axisX), box1, box2) || getSeparatingPlane(rPos, box1.axisX.cross(box2.axisY), box1, box2)
+				|| getSeparatingPlane(rPos, box1.axisX.cross(box2.axisZ), box1, box2) || getSeparatingPlane(rPos, box1.axisY.cross(box2.axisX), box1, box2)
+				|| getSeparatingPlane(rPos, box1.axisY.cross(box2.axisY), box1, box2) || getSeparatingPlane(rPos, box1.axisY.cross(box2.axisZ), box1, box2)
+				|| getSeparatingPlane(rPos, box1.axisZ.cross(box2.axisX), box1, box2) || getSeparatingPlane(rPos, box1.axisZ.cross(box2.axisY), box1, box2)
+				|| getSeparatingPlane(rPos, box1.axisZ.cross(box2.axisZ), box1, box2);
+		return !ret;
 	}
-
+	//
+	//	// a quick test to see the code working
+	//	public static void main(String[] args) {
+	//		// create two obbs
+	//		OBB aaa = new OBB();
+	//		OBB bbb = new OBB();
+	//
+	//		// set the first obb's properties
+	//		aaa.position = new Vector3f(0.0f, 0.0f, 0.0f); // set its center position
+	//
+	//		// set the half size
+	//		aaa.halfSize = new Vector3f(10.0f, 1.0f, 1.0f);
+	//
+	//		// set the axes orientation
+	//		aaa.axisX = new Vector3f(1.0f, 0.0f, 0.0f);
+	//		aaa.axisY = new Vector3f(0.0f, 1.0f, 0.0f);
+	//		aaa.axisZ = new Vector3f(0.0f, 0.0f, 1.0f);
+	//
+	//		// set the second obb's properties
+	//		bbb.position = new Vector3f(20.0f, 0.0f, 0.0f); // set its center position
+	//
+	//		// set the half size
+	//		bbb.halfSize = new Vector3f(10.0f, 1.0f, 1.0f);
+	//
+	//		// set the axes orientation
+	//		bbb.axisX = new Vector3f(1.0f, 0.0f, 0.0f);
+	//		bbb.axisY = new Vector3f(0.0f, 1.0f, 0.0f);
+	//		bbb.axisZ = new Vector3f(0.0f, 0.0f, 1.0f);
+	//
+	//		// run the code and get the result as a message
+	//		if (getCollision(aaa, bbb)) {
+	//			Log.info("Collision!!!");
+	//		} else {
+	//			Log.info("NO Collision!!!");
+	//		}
+	//	}
+	
+	// check if there's a separating plane in between the selected axes
+	private static boolean getSeparatingPlane(Vector3f rPos, Vector3f plane, OBB box1, OBB box2) {
+		return (Math.abs(rPos.dot(plane)) > (Math.abs(box1.axisX.multiply(box1.halfSize.x()).dot(plane)) + Math.abs(box1.axisY.multiply(box1.halfSize.y()).dot(plane))
+				+ Math.abs(box1.axisZ.multiply(box1.halfSize.z()).dot(plane)) + Math.abs(box2.axisX.multiply(box2.halfSize.x()).dot(plane))
+				+ Math.abs(box2.axisY.multiply(box2.halfSize.y()).dot(plane)) + Math.abs(box2.axisZ.multiply(box2.halfSize.z()).dot(plane))));
+	}
+	
+	// check if there's a separating plane in between the selected axes
+	private static boolean getSeparatingPlane222(Vector3f rPos, Vector3f plane, PhysicBox box1, PhysicBox box2) {
+		return (Math.abs(rPos.dot(plane)) > (Math.abs(box1.narrowPhaseAxisX.multiply(box1.narrowPhaseHalfSize.x()).dot(plane))
+				+ Math.abs(box1.narrowPhaseAxisY.multiply(box1.narrowPhaseHalfSize.y()).dot(plane)) + Math.abs(box1.narrowPhaseAxisZ.multiply(box1.narrowPhaseHalfSize.z()).dot(plane))
+				+ Math.abs(box2.narrowPhaseAxisX.multiply(box2.narrowPhaseHalfSize.x()).dot(plane)) + Math.abs(box2.narrowPhaseAxisY.multiply(box2.narrowPhaseHalfSize.y()).dot(plane))
+				+ Math.abs(box2.narrowPhaseAxisZ.multiply(box2.narrowPhaseHalfSize.z()).dot(plane))));
+	}
+	
 	public static Vector3f pointDistanceInAABB(Vector3f halfSize, Vector3f point) {
 		float outX = 0;
 		float outY = 0;
@@ -375,4 +351,31 @@ public class ToolCollisionOBBWithOBB {
 		outY = 0;
 		return new Vector3f(outX, outY, outZ);
 	}
+	
+	public static boolean pointInAABB(Vector3f halfSize, Vector3f point) {
+		if (point.x() > -halfSize.x() && point.x() < halfSize.x() && point.y() > -halfSize.y() && point.y() < halfSize.y() && point.z() > -halfSize.z() && point.z() < halfSize.z()) {
+			return true;
+		}
+		return false;
+	}
+	
+	public static boolean testCollide(PhysicBox box1, PhysicBox box2) {
+		
+		Vector3f rPos = box2.narrowPhaseGlobalPos.less(box1.narrowPhaseGlobalPos);
+		boolean ret = getSeparatingPlane222(rPos, box1.narrowPhaseAxisX, box1, box2) || getSeparatingPlane222(rPos, box1.narrowPhaseAxisY, box1, box2)
+				|| getSeparatingPlane222(rPos, box1.narrowPhaseAxisZ, box1, box2) || getSeparatingPlane222(rPos, box2.narrowPhaseAxisX, box1, box2)
+				|| getSeparatingPlane222(rPos, box2.narrowPhaseAxisY, box1, box2) || getSeparatingPlane222(rPos, box2.narrowPhaseAxisZ, box1, box2)
+				|| getSeparatingPlane222(rPos, box1.narrowPhaseAxisX.cross(box2.narrowPhaseAxisX), box1, box2)
+				|| getSeparatingPlane222(rPos, box1.narrowPhaseAxisX.cross(box2.narrowPhaseAxisY), box1, box2)
+				|| getSeparatingPlane222(rPos, box1.narrowPhaseAxisX.cross(box2.narrowPhaseAxisZ), box1, box2)
+				|| getSeparatingPlane222(rPos, box1.narrowPhaseAxisY.cross(box2.narrowPhaseAxisX), box1, box2)
+				|| getSeparatingPlane222(rPos, box1.narrowPhaseAxisY.cross(box2.narrowPhaseAxisY), box1, box2)
+				|| getSeparatingPlane222(rPos, box1.narrowPhaseAxisY.cross(box2.narrowPhaseAxisZ), box1, box2)
+				|| getSeparatingPlane222(rPos, box1.narrowPhaseAxisZ.cross(box2.narrowPhaseAxisX), box1, box2)
+				|| getSeparatingPlane222(rPos, box1.narrowPhaseAxisZ.cross(box2.narrowPhaseAxisY), box1, box2)
+				|| getSeparatingPlane222(rPos, box1.narrowPhaseAxisZ.cross(box2.narrowPhaseAxisZ), box1, box2);
+		return !ret;
+	}
+	
+	private ToolCollisionOBBWithOBB() {}
 }

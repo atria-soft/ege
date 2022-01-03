@@ -1,6 +1,8 @@
-package org.atriasoft.phyligram;
+package org.atriasoft.phyligram.math;
 
 import org.atriasoft.etk.math.Vector3f;
+import org.atriasoft.phyligram.ColisionPoint;
+import org.atriasoft.phyligram.PhysicSphere;
 import org.atriasoft.phyligram.internal.Log;
 
 public class ToolCollisionSphereWithSphere {

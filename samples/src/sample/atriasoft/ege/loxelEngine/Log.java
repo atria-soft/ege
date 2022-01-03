@@ -1,4 +1,4 @@
-package sample.atriasoft.ege.loxelEnginePerso;
+package sample.atriasoft.ege.loxelEngine;
 
 public class Log {
 	private static final String LIBNAME = "LoxelEnginePerso";

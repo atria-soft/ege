@@ -13,7 +13,7 @@ import org.atriasoft.ege.engines.EngineDynamicMeshs;
 import org.atriasoft.ege.engines.EngineGravity;
 import org.atriasoft.ege.engines.EngineLight;
 import org.atriasoft.ege.engines.EngineParticle;
-import org.atriasoft.ege.engines.EnginePhysicsPerso;
+import org.atriasoft.ege.engines.EnginePhysics;
 import org.atriasoft.ege.engines.EnginePlayer;
 import org.atriasoft.ege.engines.EngineRender;
 import org.atriasoft.ege.internal.Log;
@@ -72,7 +72,7 @@ public class Environement {
 		addEngine(new EngineDynamicMeshs(this));
 		addEngine(new EngineRender(this));
 		//addEngine(new EnginePhysics(this));
-		addEngine(new EnginePhysicsPerso(this));
+		addEngine(new EnginePhysics(this));
 		addEngine(new EngineParticle(this));
 		addEngine(new EngineLight(this));
 		this.startClock = Clock.systemUTC();

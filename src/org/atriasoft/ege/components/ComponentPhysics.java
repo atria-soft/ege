@@ -2,17 +2,21 @@ package org.atriasoft.ege.components;
 
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
+import java.util.Set;
 
 import org.atriasoft.ege.Component;
 import org.atriasoft.ege.Environement;
 import org.atriasoft.ege.engines.EngineGravity;
-import org.atriasoft.ege.engines.EnginePhysicsPerso;
+import org.atriasoft.ege.engines.EnginePhysics;
 import org.atriasoft.ege.internal.Log;
 import org.atriasoft.etk.Color;
+import org.atriasoft.etk.math.FMath;
 import org.atriasoft.etk.math.Matrix4f;
+import org.atriasoft.etk.math.Transform3D;
 import org.atriasoft.etk.math.Vector3f;
 import org.atriasoft.gale.resource.ResourceColored3DObject;
 import org.atriasoft.phyligram.ColisionPoint;
@@ -22,19 +26,24 @@ import org.atriasoft.phyligram.PhysicMapVoxel;
 import org.atriasoft.phyligram.PhysicShape;
 import org.atriasoft.phyligram.PhysicSphere;
 import org.atriasoft.phyligram.PhysicTriangle;
-import org.atriasoft.phyligram.ToolCollisionOBBWithOBB;
-import org.atriasoft.phyligram.ToolCollisionSphereWithHeightMapChunk;
-import org.atriasoft.phyligram.ToolCollisionSphereWithSphere;
-import org.atriasoft.phyligram.ToolCollisionSphereWithTriangle;
+import org.atriasoft.phyligram.math.ToolCollisionOBBWithOBB;
+import org.atriasoft.phyligram.math.ToolCollisionSphereWithHeightMapChunk;
+import org.atriasoft.phyligram.math.ToolCollisionSphereWithSphere;
+import org.atriasoft.phyligram.math.ToolCollisionSphereWithTriangle;
 import org.atriasoft.phyligram.shape.AABB;
 
-public class ComponentPhysicsPerso extends Component {
+public class ComponentPhysics extends Component {
+	public static float MINIMUM_BOUNCING_STOP = 0.0001f;
+	//public static float ANGLE_MAX_BOUNCING = 0.02f;
 	public static float globalMaxSpeed = Float.MAX_VALUE;
 	private AABB aabb;
-	private List<ComponentPhysicsPerso> aabbIntersection = new ArrayList<>();
-	private Map<ComponentPhysicsPerso, List<ColisionPoint>> narrowIntersection = new HashMap<>();
+	private List<ComponentPhysics> aabbIntersection = new ArrayList<>();
+	private Set<ComponentPhysics> collisionPrevious = new HashSet<>();
+	private Map<ComponentPhysics, List<ColisionPoint>> collisionCurrent = new HashMap<>();
 	//List<ColisionPoint> collisionPoints = new ArrayList<>();
 	private List<PhysicShape> shapes = new ArrayList<>();
+	// collision already exist ==> prepare friction:
+	Transform3D previousPosition;
 	private ComponentPosition position;
 	private boolean manageGravity = true;
 	private float maxSpeed = globalMaxSpeed;
@@ -48,11 +57,11 @@ public class ComponentPhysicsPerso extends Component {
 	private Vector3f dynamicForce = new Vector3f(0, 0, 0);
 	// Apply dynamic force on it
 	private Vector3f dynamicForceGlobal = new Vector3f(0, 0, 0);
-	private EnginePhysicsPerso engine;
+	private EnginePhysics engine;
 	private PhysicBodyType bodyType;
 	
-	public ComponentPhysicsPerso(final Environement _env) {
-		this.engine = (EnginePhysicsPerso) _env.getEngine(getType());
+	public ComponentPhysics(final Environement _env) {
+		this.engine = (EnginePhysics) _env.getEngine(getType());
 	}
 	
 	@Override
@@ -66,7 +75,7 @@ public class ComponentPhysicsPerso extends Component {
 		}
 	}
 	
-	public void addIntersection(ComponentPhysicsPerso component) {
+	public void addIntersection(ComponentPhysics component) {
 		// do not add multiple times
 		if (this.aabbIntersection.contains(component)) {
 			return;
@@ -78,16 +87,42 @@ public class ComponentPhysicsPerso extends Component {
 		this.shapes.add(shape);
 	}
 	
-	public void applyColisionForce() {
-		Vector3f globalForce = Vector3f.ZERO;
-		for (Entry<ComponentPhysicsPerso, List<ColisionPoint>> elem : this.narrowIntersection.entrySet()) {
+	public void applyColisionForce(float timeStep) {
+		for (Entry<ComponentPhysics, List<ColisionPoint>> elem : this.collisionCurrent.entrySet()) {
+			Float globalBouncing = null;
+			if (!this.collisionPrevious.contains(elem.getKey())) {
+				globalBouncing = elem.getKey().getBouncingCoefficient();
+			}
+			float globalFriction = elem.getKey().getFrictionCoefficient();
+			Vector3f globalForce = Vector3f.ZERO;
 			for (ColisionPoint impact : elem.getValue()) {
 				globalForce = globalForce.add(impact.force);
 			}
+			// nothing to apply ?
+			if (globalForce == Vector3f.ZERO) {
+				continue;
+			}
+			// when tuch a kinematy force is divide between the two
+			if (elem.getKey().getBodyType() == PhysicBodyType.BODY_DYNAMIC) {
+				globalForce = globalForce.multiply(0.5f);
+			}
+			if (globalBouncing != null) {
+				// detect new collision ==> apply bouncing
+				if (this.speed.length2() < MINIMUM_BOUNCING_STOP) {
+					this.speed = Vector3f.ZERO;
+				} else {
+					// this force is not depending on the mass...
+					this.speed = this.speed.reflect(globalForce.normalize()).multiply(globalBouncing); // apply the bouncing...
+				}
+				this.position.applyForce(globalForce);
+			} else {
+				// second consecutive time off collision ==> friction ...
+				this.position.applyForce(globalForce);
+				this.speed = this.position.getTransform().getPosition().less(this.previousPosition.getPosition());//.divide(timeStep);
+				globalFriction = 1.0f - FMath.avg(0.0f, globalFriction, 1.0f) * timeStep;
+				this.speed = this.speed.multiply(globalFriction);
+			}
 		}
-		// this force is not depending on the mass...
-		this.speed = this.speed.add(globalForce);
-		this.position.applyForce(globalForce);
 	}
 	
 	public void applyForces(float timeStep, EngineGravity gravity) {
@@ -125,6 +160,54 @@ public class ComponentPhysicsPerso extends Component {
 		Log.info("apply speed: " + this.speed);
 		this.position.setTransform(this.position.getTransform().withPosition(this.position.getTransform().getPosition().add(this.speed)));
 	}
+	
+	/*
+	
+	public void applyColisionForce(float timeStep) {
+		Vector3f globalForce = Vector3f.ZERO;
+		float globalBouncing = 1.0f;
+		this.haveBouncing = false;
+		for (Entry<ComponentPhysics, List<ColisionPoint>> elem : this.collisionCurrent.entrySet()) {
+			if (!this.collisionPrevious.contains(elem.getKey())) {
+				this.haveBouncing = true;
+				globalBouncing = FMath.min(globalBouncing, elem.getKey().getBouncingCoefficient());
+			}
+			for (ColisionPoint impact : elem.getValue()) {
+				globalForce = globalForce.add(impact.force);
+			}
+		}
+		if (globalForce == Vector3f.ZERO) {
+			return;
+		}
+		if (this.haveBouncing) {
+			// detect new collision ==> apply bouncing
+			if (this.speed.length2() < MINIMUM_BOUNCING_STOP) {
+				this.speed = Vector3f.ZERO;
+			} else {
+				// this force is not depending on the mass...
+				this.speed = this.speed.reflect(globalForce.normalize()).multiply(globalBouncing); // apply the bouncing...
+			}
+			this.position.applyForce(globalForce);
+		} else {
+			this.position.applyForce(globalForce);
+			this.speed = this.position.getTransform().getPosition().less(this.previousPosition.getPosition());//.divide(timeStep);
+		}
+	}
+	
+	public void applyFriction(float timeStep) {
+		if (this.collisionCurrent.isEmpty()) {
+			return;
+		}
+		float globalFriction = 0.0f;
+		for (Entry<ComponentPhysics, List<ColisionPoint>> elem : this.collisionCurrent.entrySet()) {
+			globalFriction += elem.getKey().getFrictionCoefficient();
+		}
+		globalFriction = 1.0f - FMath.avg(0.0f, globalFriction, 1.0f) * timeStep;
+		if (!this.haveBouncing) {
+			this.speed = this.speed.multiply(globalFriction); // c'est ini qu'il faut mettre en place l'absortion complète
+		}
+	}
+	 */
 	
 	private boolean checkCollide(PhysicShape shapeCurrent) {
 		if (shapeCurrent instanceof PhysicBox shape111) {
@@ -196,7 +279,7 @@ public class ComponentPhysicsPerso extends Component {
 		if (this.bodyType != PhysicBodyType.BODY_DYNAMIC) {
 			return false;
 		}
-		for (ComponentPhysicsPerso elem : this.aabbIntersection) {
+		for (ComponentPhysics elem : this.aabbIntersection) {
 			boolean collide = false;
 			for (PhysicShape shapeCurrent : this.shapes) {
 				if (elem.checkCollide(shapeCurrent)) {
@@ -205,11 +288,11 @@ public class ComponentPhysicsPerso extends Component {
 				}
 			}
 			if (collide) {
-				if (!this.narrowIntersection.containsKey(elem)) {
-					this.narrowIntersection.put(elem, new ArrayList<>());
+				if (!this.collisionCurrent.containsKey(elem)) {
+					this.collisionCurrent.put(elem, new ArrayList<>());
 				}
-				if (!elem.narrowIntersection.containsKey(this)) {
-					elem.narrowIntersection.put(this, new ArrayList<>());
+				if (!elem.collisionCurrent.containsKey(this)) {
+					elem.collisionCurrent.put(this, new ArrayList<>());
 				}
 			}
 		}
@@ -221,8 +304,11 @@ public class ComponentPhysicsPerso extends Component {
 	}
 	
 	public void clearPreviousCollision() {
+		// store the previous list of collide elements
+		this.collisionPrevious = new HashSet<>(this.collisionCurrent.keySet());
+		this.previousPosition = this.position.getTransform();
 		this.aabbIntersection.clear();
-		this.narrowIntersection.clear();
+		this.collisionCurrent.clear();
 	}
 	
 	public void clearShape() {
@@ -233,12 +319,20 @@ public class ComponentPhysicsPerso extends Component {
 		return this.aabb;
 	}
 	
-	public List<ComponentPhysicsPerso> getAabbIntersection() {
+	public List<ComponentPhysics> getAabbIntersection() {
 		return this.aabbIntersection;
 	}
 	
 	public PhysicBodyType getBodyType() {
 		return this.bodyType;
+	}
+	
+	private float getBouncingCoefficient() {
+		float total = 0.0f;
+		for (PhysicShape shape : this.shapes) {
+			total = FMath.max(total, shape.getBouncingCoefficient());
+		}
+		return total;
 	}
 	
 	private List<ColisionPoint> getCollidePoints(PhysicShape shapeRemote) {
@@ -266,13 +360,21 @@ public class ComponentPhysicsPerso extends Component {
 		return out;
 	}
 	
+	public float getFrictionCoefficient() {
+		float total = 0.0f;
+		for (PhysicShape shape : this.shapes) {
+			total = FMath.max(total, shape.getFrictionCoefficient());
+		}
+		return total;
+	}
+	
 	public float getMaxSpeed() {
 		return this.maxSpeed;
 	}
 	
 	@Override
 	public String getType() {
-		return EnginePhysicsPerso.ENGINE_NAME;
+		return EnginePhysics.ENGINE_NAME;
 	}
 	
 	public boolean isManageGravity() {
@@ -280,7 +382,7 @@ public class ComponentPhysicsPerso extends Component {
 	}
 	
 	public boolean isNarrowCollide() {
-		if (this.narrowIntersection.isEmpty()) {
+		if (this.collisionCurrent.isEmpty()) {
 			return false;
 		}
 		return true;
@@ -296,10 +398,10 @@ public class ComponentPhysicsPerso extends Component {
 		if (this.bodyType != PhysicBodyType.BODY_DYNAMIC) {
 			return;
 		}
-		if (this.narrowIntersection.size() == 0) {
+		if (this.collisionCurrent.size() == 0) {
 			return;
 		}
-		for (Entry<ComponentPhysicsPerso, List<ColisionPoint>> elem : this.narrowIntersection.entrySet()) {
+		for (Entry<ComponentPhysics, List<ColisionPoint>> elem : this.collisionCurrent.entrySet()) {
 			for (PhysicShape shapeCurrent : this.shapes) {
 				//TODO Do a better method we do this many times ...
 				/*
@@ -321,7 +423,7 @@ public class ComponentPhysicsPerso extends Component {
 	public void renderDebug(ResourceColored3DObject debugDrawProperty) {
 		Color displayColor;
 		displayColor = new Color(1.0f, 0.0f, 0.0f, 1.0f);
-		for (Entry<ComponentPhysicsPerso, List<ColisionPoint>> elem : this.narrowIntersection.entrySet()) {
+		for (Entry<ComponentPhysics, List<ColisionPoint>> elem : this.collisionCurrent.entrySet()) {
 			for (ColisionPoint impact : elem.getValue()) {
 				debugDrawProperty.drawSquare(new Vector3f(0.02f, 0.02f, 0.02f), Matrix4f.createMatrixTranslate(impact.position), displayColor);
 			}
@@ -329,7 +431,7 @@ public class ComponentPhysicsPerso extends Component {
 		if (this.aabbIntersection.size() == 0) {
 			displayColor = new Color(1.0f, 1.0f, 1.0f, 1.0f);
 		} else {
-			if (this.narrowIntersection.size() == 0) {
+			if (this.collisionCurrent.size() == 0) {
 				displayColor = new Color(0.0f, 1.0f, 0.0f, 1.0f);
 			} else {
 				displayColor = new Color(1.0f, 0.0f, 0.0f, 1.0f);
@@ -375,7 +477,7 @@ public class ComponentPhysicsPerso extends Component {
 	}
 	
 	public void updateForNarrowCollision() {
-		this.narrowIntersection.clear();
+		this.collisionCurrent.clear();
 		if (this.aabbIntersection.size() == 0) {
 			return;
 		}

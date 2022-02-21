@@ -3,6 +3,7 @@ package org.atriasoft.ege.components;
 import org.atriasoft.ege.Component;
 import org.atriasoft.etk.Uri;
 import org.atriasoft.loader3d.resources.ResourceMesh;
+import org.atriasoft.loader3d.resources.ResourceMeshHeightMap;
 import org.atriasoft.loader3d.resources.ResourceStaticMesh;
 
 public class ComponentMesh extends Component {
@@ -12,6 +13,10 @@ public class ComponentMesh extends Component {
 		this.mesh = ResourceMesh.create(objectFileName);
 	}
 	
+	public ComponentMesh(ResourceMeshHeightMap externalMesh) {
+		this.mesh = externalMesh;
+	}
+
 	public void bindForRendering() {
 		if (this.mesh == null) {
 			return;

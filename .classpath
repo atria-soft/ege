@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <classpath>
-	<classpathentry excluding="**/*.java__|**/__*.java" kind="src" path="src">
+	<classpathentry excluding="**/*.java__|**/__*.java|org/atriasoft/arkon/|org/atriasoft/eagle/" kind="src" path="src">
 		<attributes>
 			<attribute name="optional" value="true"/>
 		</attributes>

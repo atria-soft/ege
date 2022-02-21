@@ -108,7 +108,7 @@ public class EnginePhysics extends Engine {
 		this.accumulator += deltaMili * 0.0001f;
 		// While there is enough accumulated time to take one or several physics steps
 		while (this.accumulator >= TIME_STEP) {
-			Log.info("update physic ... " + this.accumulator);
+			Log.verbose("update physic ... " + this.accumulator);
 			clearPreviousCycle();
 			applyForces(TIME_STEP);
 			// update AABB after because in rotation force, the Bounding box change...

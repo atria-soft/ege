@@ -32,6 +32,7 @@ public class ApplScene extends EgeScene {
 		groundEntity
 				.addComponent(new ComponentRenderMeshPalette(new Uri("DATA", "basicPalette.vert"), new Uri("DATA", "basicPalette.frag"), (EngineLight) this.env.getEngine(EngineLight.ENGINE_NAME)));
 		this.env.addEntity(groundEntity);
+		this.ground.updateMesh();
 	}
 	
 }

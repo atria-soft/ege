@@ -54,7 +54,7 @@ public class EgeScene extends Widget {
 		final Camera mainView = new Camera();
 		this.env.addCamera("default", mainView);
 		mainView.setPitch((float) Math.PI * -0.25f);
-		mainView.setPosition(new Vector3f(0, -5, 5));
+		mainView.setPosition(new Vector3f(4, -5, 5));
 		
 	}
 	

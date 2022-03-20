@@ -1,8 +1,16 @@
 package sample.atriasoft.ege.mapFactory;
 
+import java.util.function.BiFunction;
+
+import org.atriasoft.etk.Color;
+import org.atriasoft.etk.math.Transform3D;
+import org.atriasoft.etk.math.Vector3f;
 import org.atriasoft.etk.math.Vector4f;
+import org.atriasoft.gale.resource.ResourceColored3DObject;
 import org.atriasoft.loader3d.model.Material;
 import org.atriasoft.loader3d.resources.ResourceMeshHeightMap;
+
+import toolbox.Maths;
 
 public class Ground {
 	int sizeX = 16;
@@ -30,11 +38,46 @@ public class Ground {
 		}
 	}
 	
+	public void changeHeightOfElement(Vector3f position, float distance, BiFunction<Float, Float, Float> applyer) {
+		for (int yyy = 0; yyy < this.sizeY; yyy++) {
+			for (int xxx = 0; xxx < this.sizeX; xxx++) {
+				float offset = 0.0f;
+				if (xxx % 2 == 1) {
+					offset = 0.5f;
+				}
+				float dist2 = position.less(xxx, yyy + offset, 0).length2();
+				if (dist2 < distance * distance) {
+					this.heightMap[yyy][xxx] = applyer.apply(this.heightMap[yyy][xxx], Maths.sqrt(dist2));
+				}
+			}
+		}
+		updateMesh();
+	}
+	
 	public ResourceMeshHeightMap createMesh() {
 		return this.mesh;
 	}
 	
+	public void drawDynamicElement(ResourceColored3DObject dynamicElement, Vector3f position, float distance) {
+		for (int yyy = 0; yyy < this.sizeY; yyy++) {
+			for (int xxx = 0; xxx < this.sizeX; xxx++) {
+				float dist2 = position.less(xxx, yyy, 0).length2();
+				if (dist2 < distance * distance) {
+					float coneHeight = 0.6f;
+					float offset = 0.0f;
+					if (xxx % 2 == 1) {
+						offset = 0.5f;
+					}
+					Transform3D tmpTransform = new Transform3D(new Vector3f(xxx, yyy + offset, this.heightMap[yyy][xxx] + coneHeight * 0.5f));
+					dynamicElement.drawCone(coneHeight * 0.5f, coneHeight, 10, 3, tmpTransform.getOpenGLMatrix(), Color.RED);
+				}
+			}
+		}
+		
+	}
+	
 	public void updateMesh() {
+		this.mesh.clearData();
 		Material mat = new Material();
 		this.mesh.addMaterial(this.baseNamePalette, mat);
 		mat.setAmbientFactor(new Vector4f(1, 0, 0, 1.0f));

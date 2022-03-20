@@ -3,16 +3,18 @@ package sample.atriasoft.ege.mapFactory;
 import org.atriasoft.ege.Entity;
 import org.atriasoft.ege.Environement;
 import org.atriasoft.ege.camera.Camera;
+import org.atriasoft.ege.camera.ProjectionInterface;
+import org.atriasoft.ege.camera.ProjectionPerspective;
 import org.atriasoft.ege.components.ComponentPosition;
 import org.atriasoft.ege.components.ComponentRenderColoredStaticMesh;
 import org.atriasoft.ege.components.ComponentStaticMesh;
 import org.atriasoft.ege.tools.MeshGenerator;
 import org.atriasoft.esignal.Connection;
 import org.atriasoft.etk.Uri;
-import org.atriasoft.etk.math.Matrix4f;
 import org.atriasoft.etk.math.Transform3D;
 import org.atriasoft.etk.math.Vector2f;
 import org.atriasoft.etk.math.Vector3f;
+import org.atriasoft.ewol.event.EventEntry;
 import org.atriasoft.ewol.event.EventInput;
 import org.atriasoft.ewol.event.EventTime;
 import org.atriasoft.ewol.widget.Widget;
@@ -35,6 +37,11 @@ public class EgeScene extends Widget {
 		self.markToRedraw();
 	}
 	
+	// Widget display camera
+	public Camera mainView;
+	// Widget view mode
+	public ProjectionInterface projection;
+	// Environment model system.
 	protected Environement env;
 	
 	/// Periodic call handle to remove it when needed
@@ -51,10 +58,12 @@ public class EgeScene extends Widget {
 		this.env = new Environement();
 		
 		// default camera....
-		final Camera mainView = new Camera();
-		this.env.addCamera("default", mainView);
-		mainView.setPitch((float) Math.PI * -0.25f);
-		mainView.setPosition(new Vector3f(4, -5, 5));
+		this.mainView = new Camera();
+		this.env.addCamera("default", this.mainView);
+		this.mainView.setPitch((float) Math.PI * -0.25f);
+		this.mainView.setPosition(new Vector3f(4, -5, 5));
+		
+		this.projection = new ProjectionPerspective();
 		
 	}
 	
@@ -77,22 +86,26 @@ public class EgeScene extends Widget {
 		Log.error("min size = " + this.minSize);
 	}
 	
-	private float getAspectRatio() {
+	protected float getAspectRatio() {
 		return this.size.x() / this.size.y();
 	}
 	
 	@Override
+	public void onChangeSize() {
+		super.onChangeSize();
+		// update the projection matrix on the view size;
+		this.projection.updateMatrix(getSize());
+	}
+	
+	@Override
 	protected void onDraw() {
-		//Log.info("==> appl Draw ...");
-		final Vector2f size = getSize();
 		// Store openGl context.
 		OpenGL.push();
 		// set projection matrix:
-		final Matrix4f tmpProjection = Matrix4f.createMatrixPerspective(3.14f * 0.5f, getAspectRatio(), 0.1f, 50000);
-		OpenGL.setMatrix(tmpProjection);
+		OpenGL.setMatrix(this.projection.getMatrix());
 		
 		// set the basic openGL view port: (Draw in all the windows...)
-		OpenGL.setViewPort(new Vector2f(0, 0), size);
+		OpenGL.setViewPort(new Vector2f(0, 0), getSize());
 		
 		// clear background
 		//final Color bgColor = new Color(0.0f, 1.0f, 0.0f, 1.0f);
@@ -102,6 +115,7 @@ public class EgeScene extends Widget {
 		OpenGL.clear(OpenGL.ClearFlag.clearFlag_depthBuffer);
 		OpenGL.enable(Flag.flag_depthTest);
 		this.env.render(20, "default");
+		onDrawScene();
 		OpenGL.disable(Flag.flag_depthTest);
 		OpenGL.clear(OpenGL.ClearFlag.clearFlag_depthBuffer);
 		
@@ -109,11 +123,24 @@ public class EgeScene extends Widget {
 		OpenGL.pop();
 	}
 	
+	protected void onDrawScene() {
+		// nothing to do...
+	}
+	
+	@Override
+	public boolean onEventEntry(final EventEntry event) {
+		this.env.onKeyboard(event.specialKey(), event.type(), event.getChar(), event.status());
+		return true;
+	}
+	
 	@Override
 	public boolean onEventInput(final EventInput event) {
+		keepFocus();
 		Vector2f relPos = relativePosition(event.pos());
-		Log.warning("Event on Input ... " + event + " relPos = " + relPos);
-		return false;
+		//Log.warning("Event on Input ... " + event + " relPos = " + relPos);
+		this.env.onPointer(event.specialKey(), event.type(), event.inputId(), relPos, event.status());
+		
+		return true;
 	}
 	
 	@Override

@@ -6,6 +6,8 @@ import org.atriasoft.ewol.widget.Sizer;
 import org.atriasoft.ewol.widget.Sizer.DisplayMode;
 import org.atriasoft.ewol.widget.Windows;
 
+import sample.atriasoft.ege.mapFactory.tools.ToolMapHeight;
+
 public class MainWindows extends Windows {
 	
 	public static void eventButtonIncrease(final MainWindows self) {
@@ -18,7 +20,20 @@ public class MainWindows extends Windows {
 		}
 	}
 	
+	public static void eventButtonTool(final MainWindows self) {
+		//Vector2b state = self.testWidget.getPropertyFill();
+		//self.testWidget.setPropertyFill(state.withY(!state.y()));
+		if (self.toolButton.getPropertyValue() == "Brush") {
+			self.toolButton.setPropertyValue("Heigher");
+			self.scene.setCurrentTool(new ToolMapHeight());
+		} else {
+			self.toolButton.setPropertyValue("Brush");
+			self.scene.setCurrentTool(null);
+		}
+	}
+	
 	Button heightButton;
+	Button toolButton;
 	ApplScene scene;
 	
 	public MainWindows() {
@@ -40,12 +55,23 @@ public class MainWindows extends Windows {
 		sizerMenu.setPropertyFill(Vector2b.TRUE_TRUE);
 		sizerHoryMain.subWidgetAdd(sizerMenu);
 		
+		this.toolButton = new Button();
+		this.toolButton.setPropertyValue("Heigher");
+		this.toolButton.setPropertyExpand(Vector2b.TRUE_FALSE);
+		this.toolButton.setPropertyFill(Vector2b.TRUE_TRUE);
+		sizerMenu.subWidgetAdd(this.toolButton);
+		this.toolButton.signalClick.connectAuto(this, MainWindows::eventButtonTool);
+		
 		this.heightButton = new Button();
 		this.heightButton.setPropertyValue("Increase");
 		this.heightButton.setPropertyExpand(Vector2b.TRUE_FALSE);
 		this.heightButton.setPropertyFill(Vector2b.TRUE_TRUE);
 		sizerMenu.subWidgetAdd(this.heightButton);
 		this.heightButton.signalClick.connectAuto(this, MainWindows::eventButtonIncrease);
+		
+		// set default tools:
+		this.scene.setCurrentTool(new ToolMapHeight());
+		
 	}
 	
 }

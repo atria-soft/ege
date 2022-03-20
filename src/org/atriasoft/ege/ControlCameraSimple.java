@@ -12,9 +12,6 @@ import org.atriasoft.gale.key.KeyStatus;
 
 public class ControlCameraSimple implements ControlInterface {
 	private final Camera camera;
-	private float distanceFromCenter = 20;
-	private float angleZ = 0;
-	private float pitch = 0;
 	private Vector2f lastMousePosition = null;
 	private boolean moveUp = false;
 	private boolean moveLeft = false;
@@ -44,10 +41,10 @@ public class ControlCameraSimple implements ControlInterface {
 		if (event.type() == KeyKeyboard.LEFT) {
 			this.moveLeft = getState(event.status(), this.moveLeft);
 		}
-		if (!event.specialKey().getCtrl() && event.type() == KeyKeyboard.RIGHT) {
+		if (event.type() == KeyKeyboard.RIGHT) {
 			this.moveRight = getState(event.status(), this.moveRight);
 		}
-		if (!event.specialKey().getCtrl() && event.type() == KeyKeyboard.DOWN) {
+		if (event.type() == KeyKeyboard.DOWN) {
 			this.moveDown = getState(event.status(), this.moveDown);
 		}
 		this.ctrlIsSet = event.specialKey().getCtrl();
@@ -56,17 +53,20 @@ public class ControlCameraSimple implements ControlInterface {
 	
 	@Override
 	public boolean onEventInput(final EventInput event, final Vector2f relativePosition) {
-		Log.info("" + event);
 		// TODO Auto-generated method stub
 		if (event.inputId() == 4) {
+			Vector3f delta = this.camera.getConvertionMatrix().transpose().multiply(new Vector3f(0,0,-1));
 			if (event.status() == KeyStatus.down) {
-				this.distanceFromCenter -= 1;
+				this.camera.setPosition(this.camera.getPosition().add(delta.multiply(1.0f)));
 			}
-		} else if (event.inputId() == 5) {
+		}
+		if (event.inputId() == 5) {
+			Vector3f delta = this.camera.getConvertionMatrix().transpose().multiply(new Vector3f(0,0,-1));
 			if (event.status() == KeyStatus.down) {
-				this.distanceFromCenter += 1;
+				this.camera.setPosition(this.camera.getPosition().add(delta.multiply(-1.0f)));
 			}
-		} else if (event.inputId() == 2) {
+		}
+		if (event.inputId() == 2) {
 			if (event.status() == KeyStatus.down) {
 				this.lastMousePosition = event.pos();
 			} else if (event.status() == KeyStatus.move) {
@@ -83,7 +83,6 @@ public class ControlCameraSimple implements ControlInterface {
 					this.camera.setPitch((float) -Math.PI);
 				}
 				this.camera.setRoll(this.camera.getRoll() + (float) Math.toRadians(delta.x()));
-				Log.info("Change camera: " + this.camera.getYaw() + " " + this.camera.getPitch());
 				if (this.camera.getRoll() > Math.PI) {
 					this.camera.setRoll(this.camera.getRoll() - (float) Math.PI * 2.0f);
 				}
@@ -97,24 +96,26 @@ public class ControlCameraSimple implements ControlInterface {
 	
 	@Override
 	public void periodicCall(final EventTime event) {
+		float roll = this.camera.getRoll();
 		if (this.moveLeft != this.moveRight) {
+			Vector3f orientation = new Vector3f(-(float)Math.cos(roll), (float)Math.sin(roll), 0);
 			if (this.moveRight) {
-				this.camera.setPosition(this.camera.getPosition().add(new Vector3f(0.1f, 0, 0)));
+				this.camera.setPosition(this.camera.getPosition().add(orientation.multiply(-0.1f)));
 			} else {
-				this.camera.setPosition(this.camera.getPosition().add(new Vector3f(-0.1f, 0, 0)));
+				this.camera.setPosition(this.camera.getPosition().add(orientation.multiply(0.1f)));
 			}
 		}
 		if (!this.ctrlIsSet) {
 			if (this.moveUp != this.moveDown) {
+				Vector3f orientation = new Vector3f((float)Math.sin(roll), (float)Math.cos(roll), 0);
 				if (this.moveUp) {
-					this.camera.setPosition(this.camera.getPosition().add(new Vector3f(0, 0.1f, 0)));
+					this.camera.setPosition(this.camera.getPosition().add(orientation.multiply(0.1f)));
 				} else {
-					this.camera.setPosition(this.camera.getPosition().add(new Vector3f(0, -0.1f, 0)));
+					this.camera.setPosition(this.camera.getPosition().add(orientation.multiply(-0.1f)));
 				}
 			}
 		} else if (this.moveUp != this.moveDown) {
 			if (this.moveUp) {
-				
 				this.camera.setPosition(this.camera.getPosition().add(new Vector3f(0, 0, 0.1f)));
 			} else {
 				this.camera.setPosition(this.camera.getPosition().add(new Vector3f(0, 0, -0.1f)));

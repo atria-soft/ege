@@ -11,5 +11,7 @@ open module sample.atriasoft.ege {
 	exports sample.atriasoft.ege.s1_texturedCube;
 	
 	requires org.atriasoft.ege;
-	requires org.atriasoft.ewol; // for map factory
+	requires org.atriasoft.ewol;
+	requires org.atriasoft.etk;
+	requires org.atriasoft.gale; // for map factory
 }

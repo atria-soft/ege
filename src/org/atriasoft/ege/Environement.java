@@ -71,7 +71,6 @@ public class Environement {
 		addEngine(new EngineAI(this));
 		addEngine(new EngineDynamicMeshs(this));
 		addEngine(new EngineRender(this));
-		//addEngine(new EnginePhysics(this));
 		addEngine(new EnginePhysics(this));
 		addEngine(new EngineParticle(this));
 		addEngine(new EngineLight(this));

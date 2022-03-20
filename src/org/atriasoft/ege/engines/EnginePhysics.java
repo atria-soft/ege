@@ -97,7 +97,6 @@ public class EnginePhysics extends Engine {
 	
 	@Override
 	public void renderDebug(long deltaMili, Camera camera) {
-		// TODO Auto-generated method stub
 		DebugDisplay.onDraw();
 		DebugDisplay.clear();
 	}
@@ -113,7 +112,7 @@ public class EnginePhysics extends Engine {
 			applyForces(TIME_STEP);
 			// update AABB after because in rotation force, the Bounding box change...
 			updateAABB(TIME_STEP);
-			// update the colision tree between each object in the room
+			// update the collision tree between each object in the room
 			updateCollisionsAABB(TIME_STEP);
 			updateCollisionsNarrowPhase(TIME_STEP);
 			generateResultCollisionsForces(TIME_STEP);

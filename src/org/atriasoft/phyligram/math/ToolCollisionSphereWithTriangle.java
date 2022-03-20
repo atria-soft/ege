@@ -7,20 +7,10 @@ import org.atriasoft.phyligram.ColisionPoint;
 import org.atriasoft.phyligram.PhysicSphere;
 import org.atriasoft.phyligram.PhysicTriangle;
 
+import toolbox.Maths;
+
 // https://realtimecollisiondetection.net/blog/?p=103
 public class ToolCollisionSphereWithTriangle {
-	public static float clamp(float val, float min, float max) {
-		return Math.max(min, Math.min(max, val));
-	}
-	
-	public static Vector3f getClosestPointOnFiniteLine(Vector3f point, Vector3f lineStart, Vector3f lineEnd) {
-		Vector3f lineDirection = lineEnd.less(lineStart);
-		float lineLength = lineDirection.length();
-		lineDirection = lineDirection.normalize();
-		float position = point.less(lineStart).dot(lineDirection);
-		float ProjectionLength = clamp(position, 0, lineLength);
-		return lineStart.add(lineDirection.multiply(ProjectionLength));
-	}
 	
 	public static ColisionPoint getCollisionPoint(PhysicSphere sphere1, PhysicTriangle shapeReference) {
 		Plane plane = new Plane(shapeReference.getTriangleGlobalPos());
@@ -66,13 +56,13 @@ public class ToolCollisionSphereWithTriangle {
 		System.out.println("Not in center");
 		
 		// now we need to check if we have a collision with the border.
-		Vector3f nearestPointP1 = getClosestPointOnFiniteLine(sphere1.narrowPhaseGlobalPos, shapeReference.getTriangleGlobalPos().p1, shapeReference.getTriangleGlobalPos().p2);
+		Vector3f nearestPointP1 = Maths.getClosestPointOnFiniteLine(sphere1.narrowPhaseGlobalPos, shapeReference.getTriangleGlobalPos().p1, shapeReference.getTriangleGlobalPos().p2);
 		float distanceP1Square = Vector3f.length2(nearestPointP1, sphere1.narrowPhaseGlobalPos);
 		System.out.println("distanceP1Square=" + distanceP1Square);
-		Vector3f nearestPointP2 = getClosestPointOnFiniteLine(sphere1.narrowPhaseGlobalPos, shapeReference.getTriangleGlobalPos().p2, shapeReference.getTriangleGlobalPos().p3);
+		Vector3f nearestPointP2 = Maths.getClosestPointOnFiniteLine(sphere1.narrowPhaseGlobalPos, shapeReference.getTriangleGlobalPos().p2, shapeReference.getTriangleGlobalPos().p3);
 		float distanceP2Square = Vector3f.length2(nearestPointP2, sphere1.narrowPhaseGlobalPos);
 		System.out.println("distanceP2Square=" + distanceP2Square);
-		Vector3f nearestPointP3 = getClosestPointOnFiniteLine(sphere1.narrowPhaseGlobalPos, shapeReference.getTriangleGlobalPos().p3, shapeReference.getTriangleGlobalPos().p1);
+		Vector3f nearestPointP3 = Maths.getClosestPointOnFiniteLine(sphere1.narrowPhaseGlobalPos, shapeReference.getTriangleGlobalPos().p3, shapeReference.getTriangleGlobalPos().p1);
 		float distanceP3Square = Vector3f.length2(nearestPointP3, sphere1.narrowPhaseGlobalPos);
 		System.out.println("distanceP3Square=" + distanceP3Square);
 		float distanceFinal;
@@ -133,19 +123,19 @@ public class ToolCollisionSphereWithTriangle {
 		System.out.println("Not in center");
 		
 		// now we need to check if we have a collision with the border.
-		Vector3f nearestPointP1 = getClosestPointOnFiniteLine(sphere1.narrowPhaseGlobalPos, shapeReference.getTriangleGlobalPos().p1, shapeReference.getTriangleGlobalPos().p2);
+		Vector3f nearestPointP1 = Maths.getClosestPointOnFiniteLine(sphere1.narrowPhaseGlobalPos, shapeReference.getTriangleGlobalPos().p1, shapeReference.getTriangleGlobalPos().p2);
 		float distanceP1Square = Vector3f.length2(nearestPointP1, sphere1.narrowPhaseGlobalPos);
 		System.out.println("distanceP1Square=" + distanceP1Square);
 		if (distanceP1Square < distance2) {
 			return true;
 		}
-		Vector3f nearestPointP2 = getClosestPointOnFiniteLine(sphere1.narrowPhaseGlobalPos, shapeReference.getTriangleGlobalPos().p2, shapeReference.getTriangleGlobalPos().p3);
+		Vector3f nearestPointP2 = Maths.getClosestPointOnFiniteLine(sphere1.narrowPhaseGlobalPos, shapeReference.getTriangleGlobalPos().p2, shapeReference.getTriangleGlobalPos().p3);
 		float distanceP2Square = Vector3f.length2(nearestPointP2, sphere1.narrowPhaseGlobalPos);
 		System.out.println("distanceP2Square=" + distanceP2Square);
 		if (distanceP2Square < distance2) {
 			return true;
 		}
-		Vector3f nearestPointP3 = getClosestPointOnFiniteLine(sphere1.narrowPhaseGlobalPos, shapeReference.getTriangleGlobalPos().p3, shapeReference.getTriangleGlobalPos().p1);
+		Vector3f nearestPointP3 = Maths.getClosestPointOnFiniteLine(sphere1.narrowPhaseGlobalPos, shapeReference.getTriangleGlobalPos().p3, shapeReference.getTriangleGlobalPos().p1);
 		float distanceP3Square = Vector3f.length2(nearestPointP3, sphere1.narrowPhaseGlobalPos);
 		System.out.println("distanceP3Square=" + distanceP3Square);
 		if (distanceP3Square < distance2) {

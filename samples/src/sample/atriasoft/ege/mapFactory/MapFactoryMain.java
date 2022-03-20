@@ -11,10 +11,10 @@ public class MapFactoryMain {
 		Ewol.init();
 		Ege.init();
 		Uri.setGroup("DATA", "data/");
-		Uri.setGroup("RES", "res");
-		//Uri.addLibrary("loxelEngine", MainCollisionTest.class, "testDataLoxelEngine/");
+		//Uri.setGroup("RES", "res");
+		//Uri.addLibrary("loxelEngine", MapFactoryMain.class, "testDataLoxelEngine/");
 		//Uri.addLibrary("plop", Appl.class, "resources/mapFactory/");
-		Uri.setApplication(Appl.class, "lowPoly");//, "resources/mapFactory/");
+		Uri.setApplication(Appl.class, "mapFactory");//, "resources/mapFactory/");
 		Ewol.run(new Appl(), args);
 	}
 	

@@ -49,5 +49,33 @@ public class Maths {
 		matrix = matrix.rotate(new Vector3f(0, 1, 0), camera.getYaw());
 		return matrix;
 	}
+
+	public static float clamp(float val, float min, float max) {
+		return Math.max(min, Math.min(max, val));
+	}
+	public static float avg(float min, float val, float max) {
+		return Math.max(min, Math.min(max, val));
+	}
+
+	public static Vector3f getClosestPointOnFiniteLine(Vector3f point, Vector3f lineStart, Vector3f lineEnd) {
+		Vector3f lineDirection = lineEnd.less(lineStart);
+		float lineLength = lineDirection.length();
+		lineDirection = lineDirection.normalize();
+		float position = point.less(lineStart).dot(lineDirection);
+		float ProjectionLength = clamp(position, 0, lineLength);
+		return lineStart.add(lineDirection.multiply(ProjectionLength));
+	}
+	
+	public static Vector3f getClosestPointOnInfiniteLine(Vector3f point, Vector3f lineStart, Vector3f lineEnd) {
+		Vector3f lineDirection = lineEnd.less(lineStart);
+		lineDirection = lineDirection.normalize();
+		float position = point.less(lineStart).dot(lineDirection);
+		return lineStart.add(lineDirection.multiply(position));
+	}
+
+	public static float sqrt(float dist2) {
+		// TODO Auto-generated method stub
+		return (float)Math.sqrt(dist2);
+	}
 	
 }

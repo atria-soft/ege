@@ -14,6 +14,9 @@ public class ProjectionPerspective implements ProjectionInterface {
 	protected float getAspectRatio(Vector2f size) {
 		return size.x() / size.y();
 	}
+	protected float getAspectRatio(Vector3f size) {
+		return size.x() / size.y();
+	}
 	public void setAngleViewRad(float angle) {
 		this.angleViewRad = angle;
 	}
@@ -26,6 +29,11 @@ public class ProjectionPerspective implements ProjectionInterface {
 	}
 	@Override
 	public Matrix4f updateMatrix(Vector2f diplaySize) {
+		lastMatrix = Matrix4f.createMatrixPerspective(getAngleViewRad(), getAspectRatio(diplaySize), nearView, farView);;
+		return lastMatrix;
+	}
+	@Override
+	public Matrix4f updateMatrix(Vector3f diplaySize) {
 		lastMatrix = Matrix4f.createMatrixPerspective(getAngleViewRad(), getAspectRatio(diplaySize), nearView, farView);;
 		return lastMatrix;
 	}

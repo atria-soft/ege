@@ -71,4 +71,7 @@ public class Camera {
 		ValueLine result = reverseTransform(elem);
 		return Ray.createFromPoint(result.near(), result.far());
 	}
+	public Ray getRayFromScreen(ProjectionInterface projection, Vector3f diplaySize, Vector3f mousePosition) {
+		return getRayFromScreen(projection, new Vector2f(diplaySize.x(), diplaySize.y()), new Vector2f(mousePosition.x(), mousePosition.y()));
+	}
 }

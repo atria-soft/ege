@@ -495,7 +495,7 @@ public class LoxelApplicationPerso extends GaleApplication {
 	
 	@Override
 	public void onPointer(final KeySpecial special, final KeyType type, final int pointerID, final Vector2f pos, final KeyStatus state) {
-		this.env.onPointer(special, type, pointerID, pos, state);
+		this.env.onPointer(special, type, pointerID, new Vector3f(pos.x(), pos.y(), 0), state);
 	}
 	
 	@Override

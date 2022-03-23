@@ -33,6 +33,14 @@ public class ProjectionOrthogonal implements ProjectionInterface {
 				nearView, farView);;
 		return lastMatrix;
 	}
+	@Override
+	public Matrix4f updateMatrix(Vector3f diplaySize) {
+		lastMatrix = Matrix4f.createMatrixOrtho(
+				diplaySize.x() * -0.5f, diplaySize.x() * 0.5f, // width
+				diplaySize.y() * -0.5f, diplaySize.y() * 0.5f, // height 
+				nearView, farView);
+		return lastMatrix;
+	}
 	public float getNear() {
 		return nearView;
 	}

@@ -78,7 +78,7 @@ public class ControlCameraPlayer implements ControlInterface {
 	}
 	
 	@Override
-	public boolean onEventInput(final EventInput event, final Vector2f relativePosition) {
+	public boolean onEventInput(final EventInput event, final Vector3f relativePosition) {
 		// Log.info("" + event);
 		// TODO Auto-generated method stub
 		if (!this.fpsMode) {

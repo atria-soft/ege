@@ -91,10 +91,8 @@ public class LowPolyApplication extends GaleApplication {
 		basicTree.addComponent(new ComponentMesh(new Uri("DATA", "tree1.emf")));
 		basicTree.addComponent(new ComponentTexturePalette(new Uri("DATA", "palette_1.json")));
 		//basicTree.addComponent(new ComponentRenderTexturedStaticMesh(new Uri("DATA", "basic.vert", "loxelEngine"), new Uri("DATA", "basic.frag", "loxelEngine")));
-		basicTree.addComponent(new ComponentRenderMeshPalette(new Uri("DATA", "basicPalette.vert"), new Uri("DATA", "basicPalette.frag"),
-					(EngineLight) this.env.getEngine(EngineLight.ENGINE_NAME)));
+		basicTree.addComponent(new ComponentRenderMeshPalette(new Uri("DATA", "basicPalette.vert"), new Uri("DATA", "basicPalette.frag"), (EngineLight) this.env.getEngine(EngineLight.ENGINE_NAME)));
 		this.env.addEntity(basicTree);
-
 		
 		basicTree = new Entity(this.env);
 		this.objectPosition = new ComponentPosition(new Transform3D(new Vector3f(3, 2, 0)));
@@ -104,22 +102,21 @@ public class LowPolyApplication extends GaleApplication {
 		basicTree.addComponent(new ComponentMesh(new Uri("DATA", "tree2.emf")));
 		basicTree.addComponent(new ComponentTexturePalette(new Uri("DATA", "palette_1.json")));
 		//basicTree.addComponent(new ComponentRenderTexturedStaticMesh(new Uri("DATA", "basic.vert", "loxelEngine"), new Uri("DATA", "basic.frag", "loxelEngine")));
-		basicTree.addComponent(new ComponentRenderMeshPalette(new Uri("DATA", "basicPalette.vert"), new Uri("DATA", "basicPalette.frag"),
-					(EngineLight) this.env.getEngine(EngineLight.ENGINE_NAME)));
+		basicTree.addComponent(new ComponentRenderMeshPalette(new Uri("DATA", "basicPalette.vert"), new Uri("DATA", "basicPalette.frag"), (EngineLight) this.env.getEngine(EngineLight.ENGINE_NAME)));
 		this.env.addEntity(basicTree);
 		
-//		for (int xxx = -10; xxx < 10; xxx++) {
-//			for (int yyy = -10; yyy < 10; yyy++) {
-//				final Entity superGrass = new Entity(this.env);
-//				superGrass.addComponent(new ComponentPosition(new Transform3D(new Vector3f(xxx, yyy, -1))));
-//				superGrass.addComponent(new ComponentMaterial(new Material()));
-//				superGrass.addComponent(new ComponentStaticMesh(new Uri("RES", "cube-one.obj")));
-//				superGrass.addComponent(new ComponentTexture(new Uri("RES", "dirt.png")));
-//				superGrass.addComponent(new ComponentRenderTexturedMaterialsStaticMesh(new Uri("DATA", "basicMaterial.vert", "loxelEngine"), new Uri("DATA", "basicMaterial.frag", "loxelEngine"),
-//						(EngineLight) this.env.getEngine(EngineLight.ENGINE_NAME)));
-//				this.env.addEntity(superGrass);
-//			}
-//		}
+		//		for (int xxx = -10; xxx < 10; xxx++) {
+		//			for (int yyy = -10; yyy < 10; yyy++) {
+		//				final Entity superGrass = new Entity(this.env);
+		//				superGrass.addComponent(new ComponentPosition(new Transform3D(new Vector3f(xxx, yyy, -1))));
+		//				superGrass.addComponent(new ComponentMaterial(new Material()));
+		//				superGrass.addComponent(new ComponentStaticMesh(new Uri("RES", "cube-one.obj")));
+		//				superGrass.addComponent(new ComponentTexture(new Uri("RES", "dirt.png")));
+		//				superGrass.addComponent(new ComponentRenderTexturedMaterialsStaticMesh(new Uri("DATA", "basicMaterial.vert", "loxelEngine"), new Uri("DATA", "basicMaterial.frag", "loxelEngine"),
+		//						(EngineLight) this.env.getEngine(EngineLight.ENGINE_NAME)));
+		//				this.env.addEntity(superGrass);
+		//			}
+		//		}
 		
 		final Camera mainView = new Camera();
 		this.env.addCamera("default", mainView);
@@ -172,7 +169,7 @@ public class LowPolyApplication extends GaleApplication {
 	
 	@Override
 	public void onPointer(final KeySpecial special, final KeyType type, final int pointerID, final Vector2f pos, final KeyStatus state) {
-		this.env.onPointer(special, type, pointerID, pos, state);
+		this.env.onPointer(special, type, pointerID, new Vector3f(pos.x(), pos.y(), 0), state);
 	}
 	
 	@Override

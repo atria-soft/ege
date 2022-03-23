@@ -80,7 +80,7 @@ public class EgeScene extends Widget {
 	public void calculateMinMaxSize() {
 		// call main class
 		super.calculateMinMaxSize();
-		this.minSize = Vector2f.VALUE_128;
+		this.minSize = Vector3f.VALUE_128;
 		// verify the min max of the min size ...
 		checkMinSize();
 		Log.error("min size = " + this.minSize);
@@ -105,7 +105,7 @@ public class EgeScene extends Widget {
 		OpenGL.setMatrix(this.projection.getMatrix());
 		
 		// set the basic openGL view port: (Draw in all the windows...)
-		OpenGL.setViewPort(new Vector2f(0, 0), getSize());
+		OpenGL.setViewPort(new Vector2f(0, 0), new Vector2f(getSize().x(), getSize().y()));
 		
 		// clear background
 		//final Color bgColor = new Color(0.0f, 1.0f, 0.0f, 1.0f);
@@ -136,7 +136,7 @@ public class EgeScene extends Widget {
 	@Override
 	public boolean onEventInput(final EventInput event) {
 		keepFocus();
-		Vector2f relPos = relativePosition(event.pos());
+		Vector3f relPos = relativePosition(new Vector3f(event.pos().x(), event.pos().y(), 0));
 		//Log.warning("Event on Input ... " + event + " relPos = " + relPos);
 		this.env.onPointer(event.specialKey(), event.type(), event.inputId(), relPos, event.status());
 		

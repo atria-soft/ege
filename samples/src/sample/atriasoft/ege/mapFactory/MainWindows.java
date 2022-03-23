@@ -1,6 +1,6 @@
 package sample.atriasoft.ege.mapFactory;
 
-import org.atriasoft.etk.math.Vector2b;
+import org.atriasoft.etk.math.Vector3b;
 import org.atriasoft.ewol.widget.Button;
 import org.atriasoft.ewol.widget.Sizer;
 import org.atriasoft.ewol.widget.Sizer.DisplayMode;
@@ -40,32 +40,32 @@ public class MainWindows extends Windows {
 		setPropertyTitle("Map Factory (create your dream world)");
 		
 		Sizer sizerHoryMain = new Sizer(DisplayMode.modeHori);
-		sizerHoryMain.setPropertyExpand(Vector2b.TRUE_TRUE);
-		sizerHoryMain.setPropertyFill(Vector2b.TRUE_TRUE);
+		sizerHoryMain.setPropertyExpand(Vector3b.TRUE);
+		sizerHoryMain.setPropertyFill(Vector3b.TRUE);
 		setSubWidget(sizerHoryMain);
 		
 		this.scene = new ApplScene();
-		this.scene.setPropertyExpand(Vector2b.TRUE_TRUE);
-		this.scene.setPropertyFill(Vector2b.TRUE_TRUE);
+		this.scene.setPropertyExpand(Vector3b.TRUE);
+		this.scene.setPropertyFill(Vector3b.TRUE);
 		sizerHoryMain.subWidgetAdd(this.scene);
 		
 		Sizer sizerMenu = new Sizer(DisplayMode.modeVert);
-		sizerMenu.setPropertyExpand(Vector2b.FALSE_TRUE);
-		sizerMenu.setPropertyLockExpand(Vector2b.TRUE_TRUE);
-		sizerMenu.setPropertyFill(Vector2b.TRUE_TRUE);
+		sizerMenu.setPropertyExpand(Vector3b.FALSE_TRUE_FALSE);
+		sizerMenu.setPropertyLockExpand(Vector3b.TRUE);
+		sizerMenu.setPropertyFill(Vector3b.TRUE);
 		sizerHoryMain.subWidgetAdd(sizerMenu);
 		
 		this.toolButton = new Button();
 		this.toolButton.setPropertyValue("Heigher");
-		this.toolButton.setPropertyExpand(Vector2b.TRUE_FALSE);
-		this.toolButton.setPropertyFill(Vector2b.TRUE_TRUE);
+		this.toolButton.setPropertyExpand(Vector3b.TRUE_FALSE_FALSE);
+		this.toolButton.setPropertyFill(Vector3b.TRUE);
 		sizerMenu.subWidgetAdd(this.toolButton);
 		this.toolButton.signalClick.connectAuto(this, MainWindows::eventButtonTool);
 		
 		this.heightButton = new Button();
 		this.heightButton.setPropertyValue("Increase");
-		this.heightButton.setPropertyExpand(Vector2b.TRUE_FALSE);
-		this.heightButton.setPropertyFill(Vector2b.TRUE_TRUE);
+		this.heightButton.setPropertyExpand(Vector3b.TRUE_FALSE_FALSE);
+		this.heightButton.setPropertyFill(Vector3b.TRUE);
 		sizerMenu.subWidgetAdd(this.heightButton);
 		this.heightButton.signalClick.connectAuto(this, MainWindows::eventButtonIncrease);
 		

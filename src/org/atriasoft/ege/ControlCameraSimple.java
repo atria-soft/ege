@@ -52,7 +52,7 @@ public class ControlCameraSimple implements ControlInterface {
 	}
 	
 	@Override
-	public boolean onEventInput(final EventInput event, final Vector2f relativePosition) {
+	public boolean onEventInput(final EventInput event, final Vector3f relativePosition) {
 		// TODO Auto-generated method stub
 		if (event.inputId() == 4) {
 			Vector3f delta = this.camera.getConvertionMatrix().transpose().multiply(new Vector3f(0,0,-1));

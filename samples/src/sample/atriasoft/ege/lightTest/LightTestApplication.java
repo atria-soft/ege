@@ -91,7 +91,7 @@ public class LightTestApplication extends GaleApplication {
 		basicTree.addComponent(new ComponentRenderTexturedMaterialsStaticMesh(new Uri("DATA", "basicMaterial.vert", "loxelEngine"), new Uri("DATA", "basicMaterial.frag", "loxelEngine"),
 				(EngineLight) this.env.getEngine(EngineLight.ENGINE_NAME)));
 		this.env.addEntity(basicTree);
-
+		
 		for (int xxx = -10; xxx < 10; xxx++) {
 			for (int yyy = -10; yyy < 10; yyy++) {
 				final Entity superGrass = new Entity(this.env);
@@ -156,7 +156,7 @@ public class LightTestApplication extends GaleApplication {
 	
 	@Override
 	public void onPointer(final KeySpecial special, final KeyType type, final int pointerID, final Vector2f pos, final KeyStatus state) {
-		this.env.onPointer(special, type, pointerID, pos, state);
+		this.env.onPointer(special, type, pointerID, new Vector3f(pos.x(), pos.y(), 0), state);
 	}
 	
 	@Override

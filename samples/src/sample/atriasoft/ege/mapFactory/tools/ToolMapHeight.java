@@ -3,7 +3,6 @@ package sample.atriasoft.ege.mapFactory.tools;
 import org.atriasoft.ege.geometry.Ray;
 import org.atriasoft.etk.Color;
 import org.atriasoft.etk.math.Transform3D;
-import org.atriasoft.etk.math.Vector2f;
 import org.atriasoft.etk.math.Vector3f;
 import org.atriasoft.ewol.event.EventEntry;
 import org.atriasoft.ewol.event.EventInput;
@@ -46,7 +45,8 @@ public class ToolMapHeight implements MapToolInterface {
 	
 	@Override
 	public boolean onEventInput(EventInput event, Map map, EgeScene widget) {
-		Vector2f relPos = widget.relativePosition(event.pos());
+		Vector3f globalPos = new Vector3f(event.pos().x(), event.pos().y(), 0);
+		Vector3f relPos = widget.relativePosition(globalPos);
 		// simple ray-cast on the ground
 		Ray mouseRay = widget.mainView.getRayFromScreen(widget.projection, widget.getSize(), relPos);
 		this.positionRay = mouseRay.intersectPlane(new Vector3f(0.0f, 0.0f, 1.0f), 0.0f);

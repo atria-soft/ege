@@ -25,7 +25,7 @@ public class ComponentDynamicMeshsVoxelMap extends ComponentDynamicMeshs {
 	}
 	
 	private void drawPlane(final Vector3i base, final int xxx, final int yyy, final int zzz, final int type) {
-		//Log.warning("Add plane Z : " + (base.x + xxx) + ", " + (base.y + yyy) + ", " + (base.z + zzz));
+		//Log.warning("Add plane Z : {}, {}, {}", (base.x + xxx), (base.y + yyy), (base.z + zzz));
 		Vector3f v1 = new Vector3f(base.x() + xxx, base.y() + yyy, base.z() + zzz);
 		Vector3f v2 = new Vector3f(base.x() + xxx, base.y() + yyy + 1, base.z() + zzz);
 		Vector3f v3 = new Vector3f(base.x() + xxx + 1, base.y() + yyy + 1, base.z() + zzz);
@@ -47,7 +47,7 @@ public class ComponentDynamicMeshsVoxelMap extends ComponentDynamicMeshs {
 	}
 	
 	private void drawPlane_anti(final Vector3i base, final int xxx, final int yyy, final int zzz, final int type) {
-		//Log.warning("Add plane Z : " + (base.x + xxx) + ", " + (base.y + yyy) + ", " + (base.z + zzz));
+		//Log.warning("Add plane Z : {}, {}, {}", (base.x + xxx), (base.y + yyy), (base.z + zzz));
 		Vector3f v1 = new Vector3f(base.x() + xxx, base.y() + yyy, base.z() + zzz);
 		Vector3f v2 = new Vector3f(base.x() + xxx, base.y() + yyy + 1, base.z() + zzz);
 		Vector3f v3 = new Vector3f(base.x() + xxx + 1, base.y() + yyy + 1, base.z() + zzz);
@@ -69,7 +69,7 @@ public class ComponentDynamicMeshsVoxelMap extends ComponentDynamicMeshs {
 	}
 	
 	private void drawPlaneVerticalX(final Vector3i base, final int xxx, final int yyy, final int zzz, final int type) {
-		//Log.warning("Add plane X : " + (base.x + xxx) + ", " + (base.y + yyy) + ", " + (base.z + zzz));
+		//Log.warning("Add plane X : {}, {}, {}", (base.x + xxx), (base.y + yyy), (base.z + zzz));
 		Vector3f v1 = new Vector3f(base.x() + xxx, base.y() + yyy, base.z() + zzz);
 		Vector3f v2 = new Vector3f(base.x() + xxx, base.y() + yyy, base.z() + zzz + 1);
 		Vector3f v3 = new Vector3f(base.x() + xxx, base.y() + yyy + 1, base.z() + zzz + 1);
@@ -91,7 +91,7 @@ public class ComponentDynamicMeshsVoxelMap extends ComponentDynamicMeshs {
 	}
 	
 	private void drawPlaneVerticalX_anti(final Vector3i base, final int xxx, final int yyy, final int zzz, final int type) {
-		//Log.warning("Add plane X : " + (base.x + xxx) + ", " + (base.y + yyy) + ", " + (base.z + zzz));
+		//Log.warning("Add plane X : {}, {}, {}", (base.x + xxx), (base.y + yyy), (base.z + zzz));
 		Vector3f v1 = new Vector3f(base.x() + xxx, base.y() + yyy, base.z() + zzz);
 		Vector3f v2 = new Vector3f(base.x() + xxx, base.y() + yyy, base.z() + zzz + 1);
 		Vector3f v3 = new Vector3f(base.x() + xxx, base.y() + yyy + 1, base.z() + zzz + 1);
@@ -113,7 +113,7 @@ public class ComponentDynamicMeshsVoxelMap extends ComponentDynamicMeshs {
 	}
 	
 	private void drawPlaneVerticalY(final Vector3i base, final int xxx, final int yyy, final int zzz, final int type) {
-		//Log.warning("Add plane Y : " + (base.x + xxx) + ", " + (base.y + yyy) + ", " + (base.z + zzz));
+		//Log.warning("Add plane Y : {}, {}, {}", (base.x + xxx), (base.y + yyy), (base.z + zzz));
 		Vector3f v1 = new Vector3f(base.x() + xxx, base.y() + yyy, base.z() + zzz);
 		Vector3f v2 = new Vector3f(base.x() + xxx, base.y() + yyy, base.z() + zzz + 1);
 		Vector3f v3 = new Vector3f(base.x() + xxx + 1, base.y() + yyy, base.z() + zzz + 1);
@@ -135,7 +135,7 @@ public class ComponentDynamicMeshsVoxelMap extends ComponentDynamicMeshs {
 	}
 	
 	private void drawPlaneVerticalY_anti(final Vector3i base, final int xxx, final int yyy, final int zzz, final int type) {
-		//Log.warning("Add plane Y : " + (base.x + xxx) + ", " + (base.y + yyy) + ", " + (base.z + zzz));
+		//Log.warning("Add plane Y : {}, {}, {}", (base.x + xxx), (base.y + yyy), (base.z + zzz));
 		Vector3f v1 = new Vector3f(base.x() + xxx, base.y() + yyy, base.z() + zzz);
 		Vector3f v2 = new Vector3f(base.x() + xxx, base.y() + yyy, base.z() + zzz + 1);
 		Vector3f v3 = new Vector3f(base.x() + xxx + 1, base.y() + yyy, base.z() + zzz + 1);
@@ -158,13 +158,13 @@ public class ComponentDynamicMeshsVoxelMap extends ComponentDynamicMeshs {
 	
 	@Override
 	public void render(final String name) {
-		//Log.warning("Render : " + name);
+		//Log.warning("Render : {}", name);
 		super.render(name);
 	}
 	
 	@Override
 	public void update(final float timeStep) {
-		Log.warning("update : " + timeStep);
+		Log.warning("update : {}", timeStep);
 		if (this.chunk.haveChange() == false) {
 			return;
 		}

@@ -457,7 +457,7 @@ public class DynamicAABBTree<INTERNAL_DATA_TYPE> {
 		final Stack<DTree> stack = new Stack<>();
 		// 64 max
 		stack.push(this.rootNode);
-		//Log.error("    add stack: " + this.rootNode);
+		//Log.error("    add stack: {}", this.rootNode);
 		// While there are still nodes to visit
 		while (stack.size() > 0) {
 			// Get the next node ID to visit
@@ -468,7 +468,7 @@ public class DynamicAABBTree<INTERNAL_DATA_TYPE> {
 			}
 			// Get the corresponding node
 			final DTree nodeToVisit = nodeIDToVisit;
-			//Log.error("      check colision: " + nodeIDToVisit);
+			//Log.error("      check collision: {}", nodeIDToVisit);
 			// If the AABB in parameter overlaps with the AABB of the node to visit
 			if (aabb.intersect(nodeToVisit.aabb)) {
 				// If the node is a leaf
@@ -486,8 +486,8 @@ public class DynamicAABBTree<INTERNAL_DATA_TYPE> {
 					// We need to visit its children
 					stack.push(tmp.childrenleft);
 					stack.push(tmp.childrenright);
-					//Log.error("    add stack: " + tmp.childrenleft);
-					//Log.error("    add stack: " + tmp.childrenright);
+					//Log.error("    add stack: {}", tmp.childrenleft);
+					//Log.error("    add stack: {}", tmp.childrenright);
 				}
 			}
 		}
@@ -513,8 +513,8 @@ public class DynamicAABBTree<INTERNAL_DATA_TYPE> {
 	public boolean updateObject(final DTree node, final AABB newAABB, final Vector3f displacement, final boolean forceReinsert) {
 		assert (node.isLeaf());
 		assert (node.height >= 0);
-		//Log.verbose(" compare : " + node.aabb.getMin() + " " + node.aabb.getMax());
-		//Log.verbose("         : " + newAABB.getMin() + " " + newAABB.getMax());
+		//Log.verbose(" compare : {} {}", node.aabb.getMin(), node.aabb.getMax());
+		//Log.verbose("         : {} {}", newAABB.getMin(), newAABB.getMax());
 		// If the new AABB is still inside the fat AABB of the node
 		if (!forceReinsert && node.aabb.contains(newAABB)) {
 			return false;
@@ -546,8 +546,8 @@ public class DynamicAABBTree<INTERNAL_DATA_TYPE> {
 			zmax = node.aabb.getMax().z() + displacement.z();
 		}
 		node.aabb.set(xmin, ymin, zmin, xmax, ymax, zmax);
-		//Log.error(" compare : " + node.aabb.getMin() + " " + node.aabb.getMax());
-		//Log.error("         : " + newAABB.getMin() + " " + newAABB.getMax());
+		//Log.error(" compare : {}  {}", node.aabb.getMin(), node.aabb.getMax());
+		//Log.error("         : {}  {}", newAABB.getMin(), newAABB.getMax());
 		if (!node.aabb.contains(newAABB)) {
 			//Log.critical("ERROR");
 		}

@@ -79,7 +79,7 @@ public class ControlCameraPlayer implements ControlInterface {
 	
 	@Override
 	public boolean onEventInput(final EventInput event, final Vector3f relativePosition) {
-		// Log.info("" + event);
+		// Log.info("{}", event);
 		// TODO Auto-generated method stub
 		if (!this.fpsMode) {
 			if (event.inputId() == 4) {
@@ -120,7 +120,7 @@ public class ControlCameraPlayer implements ControlInterface {
 			}
 			/*
 			this.camera.setRoll(this.camera.getRoll() - (float)Math.toRadians(delta.x * this.player.getTurnSpeed()));
-			Log.info("Change camera: " + this.camera.getYaw() + " " + this.camera.getPitch());
+			Log.info("Change camera: {} {}", this.camera.getYaw(), this.camera.getPitch());
 			if (this.camera.getRoll()>Math.PI) {
 				this.camera.setRoll(this.camera.getRoll()-(float)Math.PI*2.0f);
 			}
@@ -141,7 +141,7 @@ public class ControlCameraPlayer implements ControlInterface {
 				}
 				this.playerPosition.setAngles(new Vector3f(0, 0, tmpAngle));
 				this.camera.setRoll(-playerZAngle);
-				Log.info("Change camera: " + this.camera.getYaw() + " " + this.camera.getPitch());
+				Log.info("Change camera: {} {}", this.camera.getYaw(), this.camera.getPitch());
 			}
 		}
 		return false;
@@ -182,7 +182,7 @@ public class ControlCameraPlayer implements ControlInterface {
 		distance = speed * walkFactor * event.getTimeDeltaCallSecond();
 		final float dxStraf = (float) (distance * Math.sin((float) Math.PI * 0.5f + playerZAngle));
 		final float dyStraf = -(float) (distance * Math.cos((float) Math.PI * 0.5f + playerZAngle));
-		//Log.error("update position ..." + dx + "   " + dy);
+		//Log.error("update position ... {}  {}", dx, dy);
 		Vector3f tmpPos = playerTransform.getPosition();
 		tmpPos = tmpPos.add(new Vector3f(dx + dxStraf, dy + dyStraf, 0));
 		playerTransform = playerTransform.withPosition(tmpPos);
@@ -190,15 +190,15 @@ public class ControlCameraPlayer implements ControlInterface {
 			this.playerPosition.setTransform(playerTransform);
 		}
 		// here the camera is behind the player, we need to move the camera ...
-		//Log.info(" pitch: " + Math.toDegrees(this.camera.getPitch()) + "  " + Math.toDegrees(playerZAngle));
+		//Log.info(" pitch: {}  {}", Math.toDegrees(this.camera.getPitch()), Math.toDegrees(playerZAngle));
 		final float horinzontalDistance = (float) (this.distanceFromCenter * Math.sin(this.camera.getPitch()));
 		final float verticalDistance = (float) (this.distanceFromCenter * Math.cos(this.camera.getPitch()));
-		//Log.info("     distanceFromCenter " + distanceFromCenter);
+		//Log.info("     distanceFromCenter {}", distanceFromCenter);
 		final float tmp = -horinzontalDistance;
 		final float theta = (float) Math.PI + playerZAngle;// - (float)Math.PI*0.5f;
 		final float offsetX = (float) (tmp * Math.sin(-theta));
 		final float offsetY = (float) (tmp * Math.cos(-theta));
-		//Log.info("     res" + offsetX + "  " + offsetY);
+		//Log.info("     res=({},{})", offsetX, offsetY);
 		this.camera.setPosition(new Vector3f(playerTransform.getPosition().x() + offsetX, playerTransform.getPosition().y() + offsetY, playerTransform.getPosition().z() + 1.6f + verticalDistance));
 	}
 	

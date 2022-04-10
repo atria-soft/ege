@@ -134,7 +134,7 @@ public class ComponentPhysics extends Component {
 			gravityAcceleration = new Vector3f(0, 0, 0);
 		}
 		// apply this force on the Object
-		Log.info("apply gravity: " + gravityAcceleration);
+		Log.info("apply gravity: {}", gravityAcceleration);
 		// relative to the object
 		Vector3f staticForce = this.staticForce;
 		float globalMass = 0;
@@ -156,8 +156,8 @@ public class ComponentPhysics extends Component {
 		this.acceleration = gravityAcceleration.add(globalForce);
 		this.speed = this.speed.add(this.acceleration.multiply(timeStep));
 		limitWithMaxSpeed();
-		Log.info("apply acceleration: " + this.acceleration);
-		Log.info("apply speed: " + this.speed);
+		Log.info("apply acceleration: {}", this.acceleration);
+		Log.info("apply speed: {}", this.speed);
 		this.position.setTransform(this.position.getTransform().withPosition(this.position.getTransform().getPosition().add(this.speed)));
 	}
 	
@@ -225,7 +225,7 @@ public class ComponentPhysics extends Component {
 				} else if (shape instanceof PhysicMapVoxel shape222) {
 					
 				} else {
-					Log.error("Not manage collision model... " + shape);
+					Log.error("Not manage collision model... {}", shape);
 				}
 			}
 		} else if (shapeCurrent instanceof PhysicSphere shape111) {
@@ -254,7 +254,7 @@ public class ComponentPhysics extends Component {
 				} else if (shape instanceof PhysicMapVoxel shape222) {
 					
 				} else {
-					Log.error("Not manage collision model... " + shape);
+					Log.error("Not manage collision model... {}", shape);
 				}
 			}
 		} else if (shapeCurrent instanceof PhysicMapVoxel shape111) {
@@ -266,11 +266,11 @@ public class ComponentPhysics extends Component {
 				} else if (shape instanceof PhysicMapVoxel shape222) {
 					
 				} else {
-					Log.error("Not manage collision model... " + shape);
+					Log.error("Not manage collision model... {}", shape);
 				}
 			}
 		} else {
-			Log.error("Not manage collision model... " + shapeCurrent);
+			Log.error("Not manage collision model... {}", shapeCurrent);
 		}
 		return false;
 	}
@@ -355,7 +355,7 @@ public class ComponentPhysics extends Component {
 		} else if (shapeRemote instanceof PhysicTriangle) {
 			// nothing can happens ...
 		} else {
-			Log.error("Not manage collision model... " + shapeRemote);
+			Log.error("Not manage collision model... {}", shapeRemote);
 		}
 		return out;
 	}

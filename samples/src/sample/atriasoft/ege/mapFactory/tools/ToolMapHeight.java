@@ -86,23 +86,23 @@ public class ToolMapHeight implements MapToolInterface {
 		// max brush
 		if (event.inputId() == 4 && event.status() == KeyStatus.down && (event.specialKey() != null && event.specialKey().getAltLeft() && event.specialKey().getCtrlLeft())) {
 			this.maxBrush = Maths.avg(this.minBrush + 0.1f, this.maxBrush + 0.1f, 128.0f);
-			Log.warning(" values: " + this.minBrush + " / " + this.maxBrush);
+			Log.warning(" values: {} / {}", this.minBrush, this.maxBrush);
 			return true;
 		}
 		if (event.inputId() == 5 && event.status() == KeyStatus.down && (event.specialKey() != null && event.specialKey().getAltLeft() && event.specialKey().getCtrlLeft())) {
 			this.maxBrush = Maths.avg(this.minBrush + 0.1f, this.maxBrush - 0.1f, 128.0f);
-			Log.warning(" values: " + this.minBrush + " / " + this.maxBrush);
+			Log.warning(" values: {} / {}", this.minBrush, this.maxBrush);
 			return true;
 		}
 		// min brush
 		if (event.inputId() == 4 && event.status() == KeyStatus.down && (event.specialKey() != null && event.specialKey().getAltLeft())) {
 			this.minBrush = Maths.avg(-128.0f, this.minBrush + 0.1f, this.maxBrush - 0.1f);
-			Log.warning(" values: " + this.minBrush + " / " + this.maxBrush);
+			Log.warning(" values: {} / {}", this.minBrush, this.maxBrush);
 			return true;
 		}
 		if (event.inputId() == 5 && event.status() == KeyStatus.down && (event.specialKey() != null && event.specialKey().getAltLeft())) {
 			this.minBrush = Maths.avg(-128.0f, this.minBrush - 0.1f, this.maxBrush - 0.1f);
-			Log.warning(" values: " + this.minBrush + " / " + this.maxBrush);
+			Log.warning(" values: {} / {}", this.minBrush, this.maxBrush);
 			return true;
 		}
 		// width brush

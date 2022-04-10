@@ -34,13 +34,13 @@ public class EngineDynamicMeshs extends Engine {
 	@Override
 	public void update(long deltaMili) {
 
-		//Log.warning("engine update : " + deltaMili + "   " + accumulator + " >= " + TIME_STEP);
+		//Log.warning("engine update : {}    {} >= {}", deltaMili, accumulator, TIME_STEP);
 		// Add the time difference in the accumulator
 		accumulator += (float)deltaMili*0.0001f;
 		// While there is enough accumulated time to take one or several physics steps
 		while (accumulator >= TIME_STEP) {
-			//Log.warning("Generate for " + accumulator + " / " + TIME_STEP + "  for:" + components.size());
-			// call every object to usdate their constant forces applyed
+			//Log.warning("Generate for {} / {}  for: {}", accumulator, TIME_STEP, components.size());
+			// call every object to update their constant forces applied
 			for (ComponentDynamicMeshs it: components) {
 				it.update(TIME_STEP);
 			}

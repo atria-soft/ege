@@ -59,7 +59,7 @@ public class ControlCameraPlayerFPS implements ControlInterface {
 	
 	@Override
 	public boolean onEventInput(final EventInput event, final Vector3f relativePosition) {
-		// Log.info("" + event);
+		// Log.info("{}", event);
 		// in grabbing mouse only:
 		if (!Gale.getContext().isGrabPointerEvents()) {
 			return false;
@@ -76,7 +76,7 @@ public class ControlCameraPlayerFPS implements ControlInterface {
 				this.camera.setPitch((float) -Math.PI);
 			}
 			this.camera.setRoll(this.camera.getRoll() - (float) Math.toRadians(delta.x() * this.player.getTurnSpeed()));
-			Log.info("Change camera: " + this.camera.getYaw() + " " + this.camera.getPitch());
+			Log.info("Change camera: {} {}", this.camera.getYaw(), this.camera.getPitch());
 			if (this.camera.getRoll() > Math.PI) {
 				this.camera.setRoll(this.camera.getRoll() - (float) Math.PI * 2.0f);
 			}
@@ -112,7 +112,7 @@ public class ControlCameraPlayerFPS implements ControlInterface {
 		distance = speed * event.getTimeDeltaCallSecond();
 		float dxStraf = (float) (distance * Math.sin((float) Math.PI * 0.5f + this.playerPosition.getAngles().z()));
 		float dyStraf = (float) (distance * Math.cos((float) Math.PI * 0.5f + this.playerPosition.getAngles().z()));
-		//Log.error("update position ..." + dx + "   " + dy);
+		//Log.error("update position ... {}   {}", dx, dy);
 		this.playerPosition.setTransform(this.playerPosition.getTransform().withPosition(this.playerPosition.getTransform().getPosition().add(dx + dxStraf, dy + dyStraf, 0)));
 		this.camera.setPosition(this.playerPosition.getTransform().getPosition());
 	}

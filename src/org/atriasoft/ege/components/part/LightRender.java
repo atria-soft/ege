@@ -36,7 +36,7 @@ public class LightRender implements PartRenderInterface {
 		// injection stage
 		for (int iii = 0; iii < LightRender.numberOfLight; iii++) {
 			if (lights[iii] != null) {
-				//Log.warning("Set light : [" + iii + "] " + lights[iii]);
+				//Log.warning("Set light : [{}] {}", iii, lights[iii]);
 				program.uniformVector(this.GLlights[iii].oGLposition, lights[iii].getPositionDelta());
 				program.uniformColorRGB(this.GLlights[iii].oGLcolor, lights[iii].getColor());
 				program.uniformVector(this.GLlights[iii].oGLattenuation, lights[iii].getAttenuation());

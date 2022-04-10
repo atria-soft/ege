@@ -41,7 +41,7 @@ public class ToolCollisionOBBWithOBB {
 		// DebugDisplay.relativeTestPos.getTransform().setPosition(tmp);
 		// DebugDisplay.relativeTestPos.getTransform().setOrientation(quatTransfer);
 		// DebugDisplay.boxTest.setSize(box1.getSize());
-		// Log.info("" + rPos + quatTransfer1);
+		// Log.info("==> {} {}", rPos, quatTransfer1);
 		// /*res = */getCollidePointsAABBCenteredWithOBB(box1.narrowPhaseHalfSize, box2.narrowPhaseHalfSize, quatTransfer, rPos);
 		/* res = transfert in generic plan the new res ... */
 		// test origin AABB with OBB collision

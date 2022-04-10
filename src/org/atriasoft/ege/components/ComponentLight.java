@@ -25,7 +25,7 @@ public class ComponentLight extends Component {
 			if (component instanceof PositionningInterface tmp) {
 				this.position = tmp;
 			} else {
-				Log.error("component: " + component.getClass().getCanonicalName() + " is not an instance of " + PositionningInterface.class.getCanonicalName());
+				Log.error("component: {} is not an instance of {}", component.getClass().getCanonicalName(), PositionningInterface.class.getCanonicalName());
 			}
 		}
 	}

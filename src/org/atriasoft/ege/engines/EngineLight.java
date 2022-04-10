@@ -70,7 +70,7 @@ public class EngineLight extends Engine {
 			}
 			count++;
 		}
-		//Log.warning("Get " + count + "/" + out.length + " lights (SUN) ...");
+		//Log.warning("Get {}/{} lights (SUN) ...", count, out.length);
 		float maxDistance = 50*50;
 		for (ComponentLight elem: this.componentLights) {
 			Vector3f pos = elem.getPosition();
@@ -83,7 +83,7 @@ public class EngineLight extends Engine {
 				count++;
 			}
 		}
-		//Log.warning("Get " + count + "/" + out.length + " lights...");
+		//Log.warning("Get {} / {} lights...", count, out.length,);
 		return out;
 	}
 

@@ -150,7 +150,7 @@ public class Entity {
 	 * @return true, the Entity is corectly initialized.
 	 */
 	public boolean init() {
-		Log.warning("init() not implemented: uId=" + this.uID);
+		Log.warning("init() not implemented: uId={}", this.uID);
 		return false;
 	};
 	
@@ -198,7 +198,7 @@ public class Entity {
 	//	}
 	
 	public boolean init(final Object description) {
-		Log.warning("init(Object) not implemented: uId=" + this.uID);
+		Log.warning("init(Object) not implemented: uId={}", this.uID);
 		return false;
 	}
 	
@@ -256,7 +256,7 @@ public class Entity {
 			}
 		}
 		if (findIt == false) {
-			//Log.error("try to remove an unexisting component type : '" + type + "'");
+			//Log.error("try to remove an unknown component type : '{}'", type);
 			return;
 		}
 		this.env.engineComponentRemove(componentRemoved);
@@ -277,7 +277,7 @@ public class Entity {
 		this.life += power;
 		this.life = Math.min(Math.max(0.0f, this.life), this.lifeMax);
 		if (this.life <= 0) {
-			Log.debug("[" + getUID() + "] Entity is killed ...");
+			Log.debug("[{}] Entity is killed ...", getUID());
 		}
 		if (this.life != previousLife) {
 			onLifeChange();

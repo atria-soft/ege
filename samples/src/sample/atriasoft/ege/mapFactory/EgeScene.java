@@ -27,7 +27,7 @@ public class EgeScene extends Widget {
 	 * @param _event Time generic event
 	 */
 	protected static void periodicCall(final EgeScene self, final EventTime event) {
-		Log.verbose("Periodic call on Entry(" + event + ")");
+		Log.verbose("Periodic call on Entry({});", event);
 		/*
 		if (!self.shape.periodicCall(event)) {
 			//Log.error("end periodic call");
@@ -83,7 +83,7 @@ public class EgeScene extends Widget {
 		this.minSize = Vector3f.VALUE_128;
 		// verify the min max of the min size ...
 		checkMinSize();
-		Log.error("min size = " + this.minSize);
+		Log.error("min size = {}", this.minSize);
 	}
 	
 	protected float getAspectRatio() {
@@ -137,7 +137,7 @@ public class EgeScene extends Widget {
 	public boolean onEventInput(final EventInput event) {
 		keepFocus();
 		Vector3f relPos = relativePosition(new Vector3f(event.pos().x(), event.pos().y(), 0));
-		//Log.warning("Event on Input ... " + event + " relPos = " + relPos);
+		//Log.warning("Event on Input ... {} relPos= {}", event, relPos);
 		this.env.onPointer(event.specialKey(), event.type(), event.inputId(), relPos, event.status());
 		
 		return true;

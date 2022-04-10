@@ -42,9 +42,9 @@ public class Environement {
 			Log.error("Try to add an empty CREATOR ...");
 			return;
 		}
-		Log.debug("Add creator: " + type);
+		Log.debug("Add creator: {}", type);
 		creators.put(type, creator);
-		Log.debug("Add creator: " + type + " (done)");
+		Log.debug("Add creator: {} (done)", type);
 		
 	}
 	
@@ -144,17 +144,17 @@ public class Environement {
 	 */
 	public Entity createEntity(final String type, final Object value, final boolean autoAddEntity) {
 		if (creators.containsKey(type) == false) {
-			Log.error("Request creating of an type that is not known '" + type + "'");
+			Log.error("Request creating of an type that is not known '{}'", type);
 			return null;
 		}
 		final CreatorEntity creatorPointer = creators.get(type);
 		if (creatorPointer == null) {
-			Log.error("null pointer creator  == > internal error... '" + type + "'");
+			Log.error("null pointer creator  == > internal error... '{}'", type);
 			return null;
 		}
 		final Entity tmpEntity = creatorPointer.create(this, value);
 		if (tmpEntity == null) {
-			Log.error("allocation error '" + type + "'");
+			Log.error("allocation error ''{}'", type);
 			return null;
 		}
 		if (autoAddEntity == true) {
@@ -298,7 +298,7 @@ public class Environement {
 				return it;
 			}
 		}
-		Log.error("try to get an unexisting engine type: '" + type + "'");
+		Log.error("try to get an unexisting engine type: ''{}'", type);
 		return null;
 	}
 	
@@ -355,23 +355,23 @@ public class Environement {
 	}
 	
 	public void render(final long deltaMilli, final String cameraName) {
-		//Log.error("Render: " + cameraName + "    time:" + deltaMilli);
+		//Log.error("Render: {}   time: {}", cameraName, deltaMilli);
 		// get the correct camera:
 		final Camera camera = getCamera(cameraName);
 		if (camera == null) {
-			Log.error("Render: Can not get camera named: '" + cameraName + "'");
+			Log.error("Render: Can not get camera named: '{}'", cameraName);
 			return;
 		}
 		OpenGL.setCameraMatrix(camera.getConvertionMatrix());
 		for (final Engine it : this.engines) {
-			//Log.verbose("    render: " + it.getType());
+			//Log.verbose("    render: {}", it.getType());
 			it.render(deltaMilli, camera);
 		}
 		//		for (Engine it: engine) {
 		//			if(it == null) {
 		//				continue;
 		//			}
-		//			Log.verbose("    render: " + it.getType());
+		//			Log.verbose("    render: {}", it.getType());
 		//			it.renderDebug(deltaMilli, camera);
 		//		}
 		

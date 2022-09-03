@@ -1,0 +1,29 @@
+<composer>
+	<Sizer mode="VERTICAL" lock="true" fill="true" expand="true">
+		<Label name="[{ID}]file-chooser:title-label">_T{Change height map}</Label> 
+		<Sizer mode="HORIZONTAL">
+			<Image name="[{ID}]HeighMap:img-radius" src="width.svg" expand="false" size="45,45px"/>
+			<Spacer min-size="2,2mm"/>
+			<Slider name="[{ID}]HeighMap:slider-width"
+				    expand="true,false"
+				    fill="true,false"
+				    onChangeValue="onChangeRadius($1)" />
+		</Sizer>
+		<Sizer mode="HORIZONTAL">
+			<Image name="[{ID}]HeighMap:img-top" src="top.svg" expand="false" size="45,45px"/>
+			<Spacer min-size="2,2mm"/>
+			<Slider name="[{ID}]HeighMap:slider-top"
+				    expand="true,false"
+				    fill="true,false"
+				    onChangeValue="onChangeTop($1)" />
+		</Sizer>
+		<Sizer mode="HORIZONTAL">
+			<Image name="[{ID}]HeighMap:img-bottom" src="bottom.svg" expand="false" size="45,45px"/>
+			<Spacer min-size="2,2mm"/>
+			<Slider name="[{ID}]HeighMap:slider-bottom"
+				    expand="true,false"
+				    fill="true,false"
+				    onChangeValue="onChangeBottom($1)" />
+		</Sizer>
+	</Sizer>
+</composer>

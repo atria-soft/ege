@@ -2,10 +2,14 @@ package sample.atriasoft.ege.mapFactory.tools;
 
 import org.atriasoft.ege.geometry.Ray;
 import org.atriasoft.etk.Color;
+import org.atriasoft.etk.Uri;
 import org.atriasoft.etk.math.Transform3D;
 import org.atriasoft.etk.math.Vector3f;
 import org.atriasoft.ewol.event.EventEntry;
 import org.atriasoft.ewol.event.EventInput;
+import org.atriasoft.ewol.widget.Composer;
+import org.atriasoft.ewol.widget.Slider;
+import org.atriasoft.ewol.widget.Widget;
 import org.atriasoft.gale.key.KeyStatus;
 import org.atriasoft.gale.resource.ResourceColored3DObject;
 
@@ -15,7 +19,24 @@ import sample.atriasoft.ege.mapFactory.model.Map;
 import toolbox.Maths;
 
 public class ToolMapHeight implements MapToolInterface {
+	protected static void onCallbackMaxChange(final ToolMapHeight self, final float value) {
+		Log.warning("get new value {}", value);
+		self.onCallbackMax(value);
+	}
+	
+	protected static void onCallbackMinChange(final ToolMapHeight self, final float value) {
+		Log.warning("get new value {}", value);
+		self.onCallbackMin(value);
+	}
+	
+	protected static void onCallbackWidthChange(final ToolMapHeight self, final float value) {
+		Log.warning("get new value {}", value);
+		self.onCallbackValue(value);
+	}
+	
+	int uniqueID = 555245;
 	Vector3f positionRay = null;
+	
 	float widthBrush = 3.0f;
 	float maxBrush = 10.0f;
 	float minBrush = -10.0f;
@@ -23,6 +44,35 @@ public class ToolMapHeight implements MapToolInterface {
 	
 	public ToolMapHeight() {
 		this.dynamicElement = ResourceColored3DObject.create();
+	}
+	
+	@Override
+	public Widget getWidget() {
+		final Widget data = Composer.composerGenerateFile(new Uri("DATA", "ToolMapHeight.xml"), this.uniqueID);
+		
+		if (data.getSubObjectNamed("[" + Long.toString(this.uniqueID) + "]HeighMap:slider-width") instanceof final Slider tmp) {
+			tmp.signalValue.connectAuto(this, ToolMapHeight::onCallbackWidthChange);
+		}
+		if (data.getSubObjectNamed("[" + Long.toString(this.uniqueID) + "]HeighMap:slider-top") instanceof final Slider tmp) {
+			tmp.signalValue.connectAuto(this, ToolMapHeight::onCallbackMaxChange);
+		}
+		if (data.getSubObjectNamed("[" + Long.toString(this.uniqueID) + "]HeighMap:slider-bottom") instanceof final Slider tmp) {
+			tmp.signalValue.connectAuto(this, ToolMapHeight::onCallbackMinChange);
+		}
+		
+		return data;
+	}
+	
+	protected void onCallbackMax(final float value) {
+		this.maxBrush = value;
+	}
+	
+	protected void onCallbackMin(final float value) {
+		this.minBrush = value;
+	}
+	
+	protected void onCallbackValue(final float value) {
+		this.widthBrush = value;
 	}
 	
 	@Override

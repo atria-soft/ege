@@ -4,21 +4,13 @@ import org.atriasoft.etk.math.Vector3b;
 import org.atriasoft.ewol.widget.Button;
 import org.atriasoft.ewol.widget.Sizer;
 import org.atriasoft.ewol.widget.Sizer.DisplayMode;
+import org.atriasoft.ewol.widget.Widget;
 import org.atriasoft.ewol.widget.Windows;
 
+import sample.atriasoft.ege.mapFactory.tools.MapToolInterface;
 import sample.atriasoft.ege.mapFactory.tools.ToolMapHeight;
 
 public class MainWindows extends Windows {
-	
-	public static void eventButtonIncrease(final MainWindows self, Boolean value) {
-		//Vector2b state = self.testWidget.getPropertyFill();
-		//self.testWidget.setPropertyFill(state.withY(!state.y()));
-		//		if (self.heightButton.getPropertyValue() == "Increase") {
-		//			self.heightButton.setPropertyValue("Decrease");
-		//		} else {
-		//			self.heightButton.setPropertyValue("Increase");
-		//		}
-	}
 	
 	public static void eventButtonTool(final MainWindows self, Boolean value) {
 		//Vector2b state = self.testWidget.getPropertyFill();
@@ -60,15 +52,11 @@ public class MainWindows extends Windows {
 		sizerMenu.subWidgetAdd(this.toolButton);
 		this.toolButton.signalValue.connectAuto(this, MainWindows::eventButtonTool);
 		
-		this.heightButton = Button.createToggleLabelButton("Increase", "Decrease");
-		this.heightButton.setPropertyExpand(Vector3b.TRUE_FALSE_FALSE);
-		this.heightButton.setPropertyFill(Vector3b.TRUE);
-		sizerMenu.subWidgetAdd(this.heightButton);
-		this.heightButton.signalValue.connectAuto(this, MainWindows::eventButtonIncrease);
-		
 		// set default tools:
-		this.scene.setCurrentTool(new ToolMapHeight());
-		
+		MapToolInterface tool = new ToolMapHeight();
+		this.scene.setCurrentTool(tool);
+		Widget toolDisplay = tool.getWidget();
+		sizerMenu.subWidgetAdd(toolDisplay);
 	}
 	
 }

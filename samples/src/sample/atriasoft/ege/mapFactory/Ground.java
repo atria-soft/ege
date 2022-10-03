@@ -13,8 +13,8 @@ import org.atriasoft.loader3d.resources.ResourceMeshHeightMap;
 import toolbox.Maths;
 
 public class Ground {
-	int sizeX = 16;
-	int sizeY = 16;
+	int sizeX = 64;
+	int sizeY = 64;
 	float[][] heightMap = new float[this.sizeY][this.sizeX];
 	String[][] colorMap = new String[this.sizeY][this.sizeX * 2];
 	ResourceMeshHeightMap mesh = new ResourceMeshHeightMap();

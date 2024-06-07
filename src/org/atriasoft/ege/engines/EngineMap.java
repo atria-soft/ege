@@ -37,7 +37,7 @@ public class EngineMap extends Engine {
 		accumulator += (float)deltaMili*0.0001f;
 		// While there is enough accumulated time to take one or several physics steps
 		while (accumulator >= TIME_STEP) {
-			// Log.warning("MAP: Generate for {} / {} for: {}", accumulator, TIME_STEP, components.size());
+			// LOGGER.warn("MAP: Generate for {} / {} for: {}", accumulator, TIME_STEP, components.size());
 			// call every object to update their constant forces applied
 			for (ComponentMap it: components) {
 				it.update(TIME_STEP);

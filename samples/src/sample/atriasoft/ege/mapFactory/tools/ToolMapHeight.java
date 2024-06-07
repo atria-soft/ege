@@ -20,17 +20,17 @@ import toolbox.Maths;
 
 public class ToolMapHeight implements MapToolInterface {
 	protected static void onCallbackMaxChange(final ToolMapHeight self, final float value) {
-		Log.warning("get new value {}", value);
+		LOGGER.warn("get new value {}", value);
 		self.onCallbackMax(value);
 	}
 	
 	protected static void onCallbackMinChange(final ToolMapHeight self, final float value) {
-		Log.warning("get new value {}", value);
+		LOGGER.warn("get new value {}", value);
 		self.onCallbackMin(value);
 	}
 	
 	protected static void onCallbackWidthChange(final ToolMapHeight self, final float value) {
-		Log.warning("get new value {}", value);
+		LOGGER.warn("get new value {}", value);
 		self.onCallbackValue(value);
 	}
 	
@@ -136,23 +136,23 @@ public class ToolMapHeight implements MapToolInterface {
 		// max brush
 		if (event.inputId() == 4 && event.status() == KeyStatus.down && (event.specialKey() != null && event.specialKey().getAltLeft() && event.specialKey().getCtrlLeft())) {
 			this.maxBrush = Maths.avg(this.minBrush + 0.1f, this.maxBrush + 0.1f, 128.0f);
-			Log.warning(" values: {} / {}", this.minBrush, this.maxBrush);
+			LOGGER.warn(" values: {} / {}", this.minBrush, this.maxBrush);
 			return true;
 		}
 		if (event.inputId() == 5 && event.status() == KeyStatus.down && (event.specialKey() != null && event.specialKey().getAltLeft() && event.specialKey().getCtrlLeft())) {
 			this.maxBrush = Maths.avg(this.minBrush + 0.1f, this.maxBrush - 0.1f, 128.0f);
-			Log.warning(" values: {} / {}", this.minBrush, this.maxBrush);
+			LOGGER.warn(" values: {} / {}", this.minBrush, this.maxBrush);
 			return true;
 		}
 		// min brush
 		if (event.inputId() == 4 && event.status() == KeyStatus.down && (event.specialKey() != null && event.specialKey().getAltLeft())) {
 			this.minBrush = Maths.avg(-128.0f, this.minBrush + 0.1f, this.maxBrush - 0.1f);
-			Log.warning(" values: {} / {}", this.minBrush, this.maxBrush);
+			LOGGER.warn(" values: {} / {}", this.minBrush, this.maxBrush);
 			return true;
 		}
 		if (event.inputId() == 5 && event.status() == KeyStatus.down && (event.specialKey() != null && event.specialKey().getAltLeft())) {
 			this.minBrush = Maths.avg(-128.0f, this.minBrush - 0.1f, this.maxBrush - 0.1f);
-			Log.warning(" values: {} / {}", this.minBrush, this.maxBrush);
+			LOGGER.warn(" values: {} / {}", this.minBrush, this.maxBrush);
 			return true;
 		}
 		// width brush

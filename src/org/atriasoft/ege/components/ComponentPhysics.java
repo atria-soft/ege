@@ -70,7 +70,7 @@ public class ComponentPhysics extends Component {
 			if (component instanceof ComponentPosition tmp) {
 				this.position = tmp;
 			} else {
-				Log.error("Not manage position model...");
+				LOGGER.error("Not manage position model...");
 			}
 		}
 	}
@@ -134,7 +134,7 @@ public class ComponentPhysics extends Component {
 			gravityAcceleration = new Vector3f(0, 0, 0);
 		}
 		// apply this force on the Object
-		Log.info("apply gravity: {}", gravityAcceleration);
+		LOGGER.info("apply gravity: {}", gravityAcceleration);
 		// relative to the object
 		Vector3f staticForce = this.staticForce;
 		float globalMass = 0;
@@ -156,8 +156,8 @@ public class ComponentPhysics extends Component {
 		this.acceleration = gravityAcceleration.add(globalForce);
 		this.speed = this.speed.add(this.acceleration.multiply(timeStep));
 		limitWithMaxSpeed();
-		Log.info("apply acceleration: {}", this.acceleration);
-		Log.info("apply speed: {}", this.speed);
+		LOGGER.info("apply acceleration: {}", this.acceleration);
+		LOGGER.info("apply speed: {}", this.speed);
 		this.position.setTransform(this.position.getTransform().withPosition(this.position.getTransform().getPosition().add(this.speed)));
 	}
 	
@@ -225,7 +225,7 @@ public class ComponentPhysics extends Component {
 				} else if (shape instanceof PhysicMapVoxel shape222) {
 					
 				} else {
-					Log.error("Not manage collision model... {}", shape);
+					LOGGER.error("Not manage collision model... {}", shape);
 				}
 			}
 		} else if (shapeCurrent instanceof PhysicSphere shape111) {
@@ -254,7 +254,7 @@ public class ComponentPhysics extends Component {
 				} else if (shape instanceof PhysicMapVoxel shape222) {
 					
 				} else {
-					Log.error("Not manage collision model... {}", shape);
+					LOGGER.error("Not manage collision model... {}", shape);
 				}
 			}
 		} else if (shapeCurrent instanceof PhysicMapVoxel shape111) {
@@ -266,11 +266,11 @@ public class ComponentPhysics extends Component {
 				} else if (shape instanceof PhysicMapVoxel shape222) {
 					
 				} else {
-					Log.error("Not manage collision model... {}", shape);
+					LOGGER.error("Not manage collision model... {}", shape);
 				}
 			}
 		} else {
-			Log.error("Not manage collision model... {}", shapeCurrent);
+			LOGGER.error("Not manage collision model... {}", shapeCurrent);
 		}
 		return false;
 	}
@@ -355,7 +355,7 @@ public class ComponentPhysics extends Component {
 		} else if (shapeRemote instanceof PhysicTriangle) {
 			// nothing can happens ...
 		} else {
-			Log.error("Not manage collision model... {}", shapeRemote);
+			LOGGER.error("Not manage collision model... {}", shapeRemote);
 		}
 		return out;
 	}
@@ -441,7 +441,7 @@ public class ComponentPhysics extends Component {
 			debugDrawProperty.drawCubeLine(this.aabb.getMin(), this.aabb.getMax(), displayColor, Matrix4f.IDENTITY, true, true);
 			//debugDrawProperty.drawCubeLine(new Vector3f(0,0,0), new Vector3f(32,32,32), new Color(1,0,1,1), Matrix4f.identity(), true, true);
 		} else {
-			Log.error("no AABB");
+			LOGGER.error("no AABB");
 		}
 		
 		for (PhysicShape shape : this.shapes) {
@@ -465,7 +465,7 @@ public class ComponentPhysics extends Component {
 	public void updateAABB() {
 		
 		if (this.position == null) {
-			Log.info("No position in Entity ");
+			LOGGER.info("No position in Entity ");
 			return;
 		}
 		// TODO Add a flag to check if it is needed to update the AABB...
@@ -482,7 +482,7 @@ public class ComponentPhysics extends Component {
 			return;
 		}
 		if (this.position == null) {
-			Log.info("No position in Entity ");
+			LOGGER.info("No position in Entity ");
 			return;
 		}
 		for (PhysicShape shape : this.shapes) {

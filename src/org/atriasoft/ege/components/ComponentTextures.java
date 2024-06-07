@@ -29,7 +29,7 @@ public class ComponentTextures extends Component {
 	public void setTexture(String name, Uri textureName) {
 		final ResourceTexture texture = ResourceTexture.createFromPng(textureName);
 		if (texture == null) {
-			Log.error("can not instanciate Texture ...");
+			LOGGER.error("can not instanciate Texture ...");
 			return;
 		}
 		this.textures.put(name, texture);

@@ -26,7 +26,7 @@ class OBB {
 
 public class ToolCollisionOBBWithOBB {
 	public static void getCollidePoints(PhysicBox box1, boolean isStatic1, PhysicBox box2, boolean isStatic2) {
-		// Log.info("Try to calculare reverse force ........");
+		// LOGGER.info("Try to calculare reverse force ........");
 		Vector3f rPos1 = box1.narrowPhaseGlobalPos.less(box2.narrowPhaseGlobalPos);
 		Vector3f rPos2 = box2.narrowPhaseGlobalPos.less(box1.narrowPhaseGlobalPos);
 		Quaternion quat1 = box1.getQuaternionFull();
@@ -41,7 +41,7 @@ public class ToolCollisionOBBWithOBB {
 		// DebugDisplay.relativeTestPos.getTransform().setPosition(tmp);
 		// DebugDisplay.relativeTestPos.getTransform().setOrientation(quatTransfer);
 		// DebugDisplay.boxTest.setSize(box1.getSize());
-		// Log.info("==> {} {}", rPos, quatTransfer1);
+		// LOGGER.info("==> {} {}", rPos, quatTransfer1);
 		// /*res = */getCollidePointsAABBCenteredWithOBB(box1.narrowPhaseHalfSize, box2.narrowPhaseHalfSize, quatTransfer, rPos);
 		/* res = transfert in generic plan the new res ... */
 		// test origin AABB with OBB collision
@@ -201,14 +201,14 @@ public class ToolCollisionOBBWithOBB {
 		if (count != 0) {
 			// Find a point inside the BOX ...
 			/*
-			Log.info("Detect point inside ... " + insideTopBackRight + "  " + insideTopBackLeft + "  " + insideTopFrontRight + "  " + insideTopFrontLeft + "  " + insideBottomBackRight + "  "
+			LOGGER.info("Detect point inside ... " + insideTopBackRight + "  " + insideTopBackLeft + "  " + insideTopFrontRight + "  " + insideTopFrontLeft + "  " + insideBottomBackRight + "  "
 					+ insideBottomBackLeft + "  " + insideBottomFrontRight + "  " + insideBottomFrontLeft);
 			*/
 			return out;
 		}
 		// line in AABB
 		// TODO:
-		// Log.info("Need to detect line inside ..."); // pas tot a fait... si ca colisione déja avec un point de l'autre ...
+		// LOGGER.info("Need to detect line inside ..."); // pas tot a fait... si ca colisione déja avec un point de l'autre ...
 		return null;
 	}
 	
@@ -255,9 +255,9 @@ public class ToolCollisionOBBWithOBB {
 	//
 	//		// run the code and get the result as a message
 	//		if (getCollision(aaa, bbb)) {
-	//			Log.info("Collision!!!");
+	//			LOGGER.info("Collision!!!");
 	//		} else {
-	//			Log.info("NO Collision!!!");
+	//			LOGGER.info("NO Collision!!!");
 	//		}
 	//	}
 	

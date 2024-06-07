@@ -40,7 +40,7 @@ public class S1Application extends GaleApplication {
 	
 	@Override
 	public void onCreate(final GaleContext context) {
-		Log.info("On create .... [BEGIN]");
+		LOGGER.info("On create .... [BEGIN]");
 		this.env = new Environement();
 		setSize(new Vector2f(800, 600));
 		setTitle("Low Poly sample");
@@ -73,14 +73,14 @@ public class S1Application extends GaleApplication {
 		this.basicRotation = Quaternion.fromEulerAngles(new Vector3f(0, 0, 0.01f));
 		this.basicRotation2 = Quaternion.fromEulerAngles(new Vector3f(0.003f, 0.01f, 0.001f));
 		// ready to let Gale & Ege manage the display
-		Log.info("==> Init APPL (END)");
-		Log.info("On create .... [ END ]");
+		LOGGER.info("==> Init APPL (END)");
+		LOGGER.info("On create .... [ END ]");
 	}
 	
 	@Override
 	public void onDraw(final GaleContext context) {
-		Log.info("On draw .... [BEGIN]");
-		//Log.info("==> appl Draw ...");
+		LOGGER.info("On draw .... [BEGIN]");
+		//LOGGER.info("==> appl Draw ...");
 		final Vector2f size = getSize();
 		// Store openGl context.
 		OpenGL.push();
@@ -103,7 +103,7 @@ public class S1Application extends GaleApplication {
 		this.env.render(20, "default");
 		// Restore context of matrix
 		OpenGL.pop();
-		Log.info("On draw .... [ END ]");
+		LOGGER.info("On draw .... [ END ]");
 	}
 	
 	@Override
@@ -118,8 +118,8 @@ public class S1Application extends GaleApplication {
 	
 	@Override
 	public void onRegenerateDisplay(final GaleContext context) {
-		Log.info("On Regenerate Display .... [BEGIN]");
-		//Log.verbose("Regenerate Gale Application");
+		LOGGER.info("On Regenerate Display .... [BEGIN]");
+		//LOGGER.trace("Regenerate Gale Application");
 		
 		//this.mainView.setPitch((float) Math.PI * -0.25f);
 		this.mainView.setPitch(-0.7f);
@@ -143,6 +143,6 @@ public class S1Application extends GaleApplication {
 		this.objectPosition.setTransform(this.objectPosition.getTransform().rotate(this.basicRotation2));
 		this.env.periodicCall();
 		markDrawingIsNeeded();
-		Log.info("On Regenerate Display .... [ END ]");
+		LOGGER.info("On Regenerate Display .... [ END ]");
 	}
 }

@@ -132,12 +132,12 @@ public class LowPolyApplication extends GaleApplication {
 		this.basicRotation = Quaternion.fromEulerAngles(new Vector3f(0.005f, 0.005f, 0.01f));
 		this.basicRotation2 = Quaternion.fromEulerAngles(new Vector3f(0.003f, 0.01f, 0.001f));
 		// ready to let Gale & Ege manage the display
-		Log.info("==> Init APPL (END)");
+		LOGGER.info("==> Init APPL (END)");
 	}
 	
 	@Override
 	public void onDraw(final GaleContext context) {
-		//Log.info("==> appl Draw ...");
+		//LOGGER.info("==> appl Draw ...");
 		final Vector2f size = getSize();
 		// Store openGl context.
 		OpenGL.push();
@@ -174,7 +174,7 @@ public class LowPolyApplication extends GaleApplication {
 	
 	@Override
 	public void onRegenerateDisplay(final GaleContext context) {
-		//Log.verbose("Regenerate Gale Application");
+		//LOGGER.trace("Regenerate Gale Application");
 		//materialCube.setAmbientFactor(new Vector3f(1.0f,1.0f,1.0f));
 		// apply a little rotation to show the element move
 		//objectPosition.getTransform().applyRotation(basicRotation);

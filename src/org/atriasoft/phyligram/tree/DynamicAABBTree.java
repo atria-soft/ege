@@ -325,7 +325,7 @@ public class DynamicAABBTree<INTERNAL_DATA_TYPE> {
 	/// Ray casting method
 	public void raycast(final Ray ray, final CallbackRaycast callback) {
 		if (callback == null) {
-			Log.error("call with null callback");
+			LOGGER.error("call with null callback");
 			return;
 		}
 		float maxFraction = ray.maxFraction;
@@ -449,15 +449,15 @@ public class DynamicAABBTree<INTERNAL_DATA_TYPE> {
 	/// Report all shapes overlapping with the AABB given in parameter.
 	public void reportAllShapesOverlappingWithAABB(final AABB aabb, final CallbackOverlapping callback) {
 		if (callback == null) {
-			Log.error("call with null callback");
+			LOGGER.error("call with null callback");
 			return;
 		}
-		//Log.error("reportAllShapesOverlappingWithAABB");
+		//LOGGER.error("reportAllShapesOverlappingWithAABB");
 		// Create a stack with the nodes to visit
 		final Stack<DTree> stack = new Stack<>();
 		// 64 max
 		stack.push(this.rootNode);
-		//Log.error("    add stack: {}", this.rootNode);
+		//LOGGER.error("    add stack: {}", this.rootNode);
 		// While there are still nodes to visit
 		while (stack.size() > 0) {
 			// Get the next node ID to visit
@@ -468,14 +468,14 @@ public class DynamicAABBTree<INTERNAL_DATA_TYPE> {
 			}
 			// Get the corresponding node
 			final DTree nodeToVisit = nodeIDToVisit;
-			//Log.error("      check collision: {}", nodeIDToVisit);
+			//LOGGER.error("      check collision: {}", nodeIDToVisit);
 			// If the AABB in parameter overlaps with the AABB of the node to visit
 			if (aabb.intersect(nodeToVisit.aabb)) {
 				// If the node is a leaf
 				if (nodeToVisit.isLeaf()) {
 					/*
 					if (aabb != nodeToVisit.aabb) {
-						Log.error("           ======> Real collision ...");
+						LOGGER.error("           ======> Real collision ...");
 					}
 					*/
 					// Notify the broad-phase about a new potential overlapping pair
@@ -486,8 +486,8 @@ public class DynamicAABBTree<INTERNAL_DATA_TYPE> {
 					// We need to visit its children
 					stack.push(tmp.childrenleft);
 					stack.push(tmp.childrenright);
-					//Log.error("    add stack: {}", tmp.childrenleft);
-					//Log.error("    add stack: {}", tmp.childrenright);
+					//LOGGER.error("    add stack: {}", tmp.childrenleft);
+					//LOGGER.error("    add stack: {}", tmp.childrenright);
 				}
 			}
 		}
@@ -513,8 +513,8 @@ public class DynamicAABBTree<INTERNAL_DATA_TYPE> {
 	public boolean updateObject(final DTree node, final AABB newAABB, final Vector3f displacement, final boolean forceReinsert) {
 		assert (node.isLeaf());
 		assert (node.height >= 0);
-		//Log.verbose(" compare : {} {}", node.aabb.getMin(), node.aabb.getMax());
-		//Log.verbose("         : {} {}", newAABB.getMin(), newAABB.getMax());
+		//LOGGER.trace(" compare : {} {}", node.aabb.getMin(), node.aabb.getMax());
+		//LOGGER.trace("         : {} {}", newAABB.getMin(), newAABB.getMax());
 		// If the new AABB is still inside the fat AABB of the node
 		if (!forceReinsert && node.aabb.contains(newAABB)) {
 			return false;
@@ -546,10 +546,10 @@ public class DynamicAABBTree<INTERNAL_DATA_TYPE> {
 			zmax = node.aabb.getMax().z() + displacement.z();
 		}
 		node.aabb.set(xmin, ymin, zmin, xmax, ymax, zmax);
-		//Log.error(" compare : {}  {}", node.aabb.getMin(), node.aabb.getMax());
-		//Log.error("         : {}  {}", newAABB.getMin(), newAABB.getMax());
+		//LOGGER.error(" compare : {}  {}", node.aabb.getMin(), node.aabb.getMax());
+		//LOGGER.error("         : {}  {}", newAABB.getMin(), newAABB.getMax());
 		if (!node.aabb.contains(newAABB)) {
-			//Log.critical("ERROR");
+			//LOGGER.critical("ERROR");
 		}
 		assert (node.aabb.contains(newAABB));
 		// Reinsert the node into the tree

@@ -4,19 +4,19 @@ public class Log {
 	private static final String LIBNAME = "LoxelEngine";
 	
 	public static void critical(String data) {
-		System.out.println("[C] " + Log.LIBNAME + " | " + data);
+		System.out.println("[C] " + LOGGER.LIBNAME + " | " + data);
 	}
 	
 	public static void debug(String data) {
-		System.out.println("[D] " + Log.LIBNAME + " | " + data);
+		System.out.println("[D] " + LOGGER.LIBNAME + " | " + data);
 	}
 	
 	public static void error(String data) {
-		System.out.println("[E] " + Log.LIBNAME + " | " + data);
+		System.out.println("[E] " + LOGGER.LIBNAME + " | " + data);
 	}
 	
 	public static void info(String data) {
-		System.out.println("[I] " + Log.LIBNAME + " | " + data);
+		System.out.println("[I] " + LOGGER.LIBNAME + " | " + data);
 	}
 	
 	public static void print(String data) {
@@ -24,15 +24,15 @@ public class Log {
 	}
 	
 	public static void todo(String data) {
-		System.out.println("[TODO] " + Log.LIBNAME + " | " + data);
+		System.out.println("[TODO] " + LOGGER.LIBNAME + " | " + data);
 	}
 	
 	public static void verbose(String data) {
-		System.out.println("[V] " + Log.LIBNAME + " | " + data);
+		System.out.println("[V] " + LOGGER.LIBNAME + " | " + data);
 	}
 	
 	public static void warning(String data) {
-		System.out.println("[W] " + Log.LIBNAME + " | " + data);
+		System.out.println("[W] " + LOGGER.LIBNAME + " | " + data);
 	}
 	
 	private Log() {}

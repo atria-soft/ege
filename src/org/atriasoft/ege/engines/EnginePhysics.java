@@ -27,7 +27,7 @@ public class EnginePhysics extends Engine {
 		super(env);
 		this.gravity = (EngineGravity) env.getEngine("gravity");
 		if (this.gravity == null) {
-			Log.critical("Must initialyse Gravity before physics...");
+			LOGGER.critical("Must initialyse Gravity before physics...");
 		}
 	}
 	
@@ -86,7 +86,7 @@ public class EnginePhysics extends Engine {
 	public void render(long deltaMili, Camera camera) {
 		// TODO Auto-generated method stub
 		for (ComponentPhysics it : this.components) {
-			//Log.info("Render {}", it);
+			//LOGGER.info("Render {}", it);
 			it.renderDebug(this.debugDrawProperty);
 		}
 		//debugDrawProperty.drawCone(2, 5, 9, 12, Matrix4f.identity(), new Color(1,1,0,1));
@@ -107,7 +107,7 @@ public class EnginePhysics extends Engine {
 		this.accumulator += deltaMili * 0.0001f;
 		// While there is enough accumulated time to take one or several physics steps
 		while (this.accumulator >= TIME_STEP) {
-			Log.verbose("update physic ... {}", this.accumulator);
+			LOGGER.trace("update physic ... {}", this.accumulator);
 			clearPreviousCycle();
 			applyForces(TIME_STEP);
 			// update AABB after because in rotation force, the Bounding box change...

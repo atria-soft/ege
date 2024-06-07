@@ -65,17 +65,17 @@ public class EngineLight extends Engine {
 		for (ComponentLightSun elem: this.componentSuns) {
 			out[count] = new Light(elem.getLight().getColor(), elem.getPosition(), elem.getLight().getAttenuation());
 			if (count>=8) {
-				Log.error("need to update ligth count");
+				LOGGER.error("need to update ligth count");
 				return out;
 			}
 			count++;
 		}
-		//Log.warning("Get {}/{} lights (SUN) ...", count, out.length);
+		//LOGGER.warn("Get {}/{} lights (SUN) ...", count, out.length);
 		float maxDistance = 50*50;
 		for (ComponentLight elem: this.componentLights) {
 			Vector3f pos = elem.getPosition();
 			if (count>=8) {
-				Log.error("need to update ligth count");
+				LOGGER.error("need to update ligth count");
 				return out;
 			}
 			if (pos.distance2(position) < maxDistance) {
@@ -83,7 +83,7 @@ public class EngineLight extends Engine {
 				count++;
 			}
 		}
-		//Log.warning("Get {} / {} lights...", count, out.length,);
+		//LOGGER.warn("Get {} / {} lights...", count, out.length,);
 		return out;
 	}
 

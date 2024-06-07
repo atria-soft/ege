@@ -51,13 +51,13 @@ public class TestBasicLog {
 	@Test
 	@Order(3)
 	public void ccBasicLogCall() {
-		Log.print("Simple print");
-		Log.todo("Simple todo");
-		Log.error("Simple error");
-		Log.warning("Simple warning");
-		Log.info("Simple info");
-		Log.debug("Simple debug");
-		Log.verbose("Simple verbose");
+		LOGGER.print("Simple print");
+		LOGGER.info("[TODO] Simple todo");
+		LOGGER.error("Simple error");
+		LOGGER.warn("Simple warning");
+		LOGGER.info("Simple info");
+		LOGGER.debug("Simple debug");
+		LOGGER.trace("Simple verbose");
 	}
 
 	// TODO REFACTO REMOVE this and set it in the Test of the logger.
@@ -72,20 +72,20 @@ public class TestBasicLog {
 	}
 
 	public static void testLog() {
-		Log.print("test direct [START]");
+		LOGGER.print("test direct [START]");
 		// test de 10 secondes contre 0.0?? second quand le niveau n'est pas assez grand ...
 		long timeStart = System.currentTimeMillis();
 		for (int iii = 0; iii < 100000000; iii++)
 			Log2.debug("test direct");
 		long timeStop = System.currentTimeMillis();
-		Log.print("test direct [END]: {} to {}   ==> delta={}", timeStart, timeStop, (timeStop - timeStart));
-		Log.print("test concat [START]");
+		LOGGER.print("test direct [END]: {} to {}   ==> delta={}", timeStart, timeStop, (timeStop - timeStart));
+		LOGGER.print("test concat [START]");
 		// C'est très long dans les 2 cas ...
 		timeStart = System.currentTimeMillis();
 		for (int iii = 0; iii < 6; iii++)
 			Log2.debug("test concat: non fonctionnel, il applelle le get a chaque log ... " + getAAAAAAA(iii));
 		timeStop = System.currentTimeMillis();
-		Log.print("test concat [END]: {} to {}   ==> delta={}\", timeStart, timeStop, (timeStop - timeStart));
+		LOGGER.print("test concat [END]: {} to {}   ==> delta={}\", timeStart, timeStop, (timeStop - timeStart));
 	}
 
 	@Test

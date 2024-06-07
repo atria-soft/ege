@@ -68,7 +68,7 @@ def configure(target, my_module):
 	    'src/org/atriasoft/ege/engines/EngineRender.java',
 	    'src/org/atriasoft/ege/engines/EngineLight.java',
 	    'src/org/atriasoft/ege/ControlCameraPlayerFPS.java',
-	    'src/org/atriasoft/ege/internal/Log.java',
+	    'src/org/atriasoft/ege/internal/LOGGER.java',
 	    'src/org/atriasoft/ege/geometry/AABB.java',
 	    'src/org/atriasoft/ege/geometry/Sphere.java',
 	    'src/org/atriasoft/ege/geometry/Ray.java',

@@ -39,12 +39,12 @@ public class Environement {
 	 */
 	public static void addCreator(final String type, final CreatorEntity creator) {
 		if (creator == null) {
-			Log.error("Try to add an empty CREATOR ...");
+			LOGGER.error("Try to add an empty CREATOR ...");
 			return;
 		}
-		Log.debug("Add creator: {}", type);
+		LOGGER.debug("Add creator: {}", type);
 		creators.put(type, creator);
-		Log.debug("Add creator: {} (done)", type);
+		LOGGER.debug("Add creator: {} (done)", type);
 		
 	}
 	
@@ -93,7 +93,7 @@ public class Environement {
 	
 	public void addEngine(final Engine ref) {
 		if (ref == null) {
-			Log.error("try to add an empty Engine");
+			LOGGER.error("try to add an empty Engine");
 			return;
 		}
 		// check if not exist
@@ -144,17 +144,17 @@ public class Environement {
 	 */
 	public Entity createEntity(final String type, final Object value, final boolean autoAddEntity) {
 		if (creators.containsKey(type) == false) {
-			Log.error("Request creating of an type that is not known '{}'", type);
+			LOGGER.error("Request creating of an type that is not known '{}'", type);
 			return null;
 		}
 		final CreatorEntity creatorPointer = creators.get(type);
 		if (creatorPointer == null) {
-			Log.error("null pointer creator  == > internal error... '{}'", type);
+			LOGGER.error("null pointer creator  == > internal error... '{}'", type);
 			return null;
 		}
 		final Entity tmpEntity = creatorPointer.create(this, value);
 		if (tmpEntity == null) {
-			Log.error("allocation error ''{}'", type);
+			LOGGER.error("allocation error ''{}'", type);
 			return null;
 		}
 		if (autoAddEntity == true) {
@@ -298,7 +298,7 @@ public class Environement {
 				return it;
 			}
 		}
-		Log.error("try to get an unexisting engine type: ''{}'", type);
+		LOGGER.error("try to get an unexisting engine type: ''{}'", type);
 		return null;
 	}
 	
@@ -355,23 +355,23 @@ public class Environement {
 	}
 	
 	public void render(final long deltaMilli, final String cameraName) {
-		//Log.error("Render: {}   time: {}", cameraName, deltaMilli);
+		//LOGGER.error("Render: {}   time: {}", cameraName, deltaMilli);
 		// get the correct camera:
 		final Camera camera = getCamera(cameraName);
 		if (camera == null) {
-			Log.error("Render: Can not get camera named: '{}'", cameraName);
+			LOGGER.error("Render: Can not get camera named: '{}'", cameraName);
 			return;
 		}
 		OpenGL.setCameraMatrix(camera.getConvertionMatrix());
 		for (final Engine it : this.engines) {
-			//Log.verbose("    render: {}", it.getType());
+			//LOGGER.trace("    render: {}", it.getType());
 			it.render(deltaMilli, camera);
 		}
 		//		for (Engine it: engine) {
 		//			if(it == null) {
 		//				continue;
 		//			}
-		//			Log.verbose("    render: {}", it.getType());
+		//			LOGGER.trace("    render: {}", it.getType());
 		//			it.renderDebug(deltaMilli, camera);
 		//		}
 		

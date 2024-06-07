@@ -47,7 +47,7 @@ public class PhysicBox extends PhysicShape {
 		for (Collision elem : this.colisionPoints) {
 			if (elem != null) {
 				if (elem.colisionPointLocal == null) {
-					Log.error("colision point must be set !!!");
+					LOGGER.error("colision point must be set !!!");
 					continue;
 				}
 				for (int iii = 0; iii < elem.colisionPointLocal.length; iii++) {

@@ -29,19 +29,19 @@ public class Entity {
 	
 	public void addComponent(final Component ref) {
 		if (ref == null) {
-			Log.error("try to add an empty component");
+			LOGGER.error("try to add an empty component");
 			return;
 		}
 		// Remove component with the same name.
 		this.removeComponent(ref.getType());
-		Log.print("Entity: Add New component ... [START]");
+		LOGGER.print("Entity: Add New component ... [START]");
 		this.component.add(ref);
 		this.env.engineComponentAdd(ref);
 		for (final Component it : this.component) {
 			ref.addFriendComponent(it);
 			it.addFriendComponent(ref);
 		}
-		Log.print("Entity: Add New component ... [END]");
+		LOGGER.print("Entity: Add New component ... [END]");
 	}
 	
 	/**
@@ -150,7 +150,7 @@ public class Entity {
 	 * @return true, the Entity is corectly initialized.
 	 */
 	public boolean init() {
-		Log.warning("init() not implemented: uId={}", this.uID);
+		LOGGER.warn("init() not implemented: uId={}", this.uID);
 		return false;
 	};
 	
@@ -198,7 +198,7 @@ public class Entity {
 	//	}
 	
 	public boolean init(final Object description) {
-		Log.warning("init(Object) not implemented: uId={}", this.uID);
+		LOGGER.warn("init(Object) not implemented: uId={}", this.uID);
 		return false;
 	}
 	
@@ -230,11 +230,11 @@ public class Entity {
 	
 	public void removeComponent(final Component ref) {
 		if (ref == null) {
-			Log.error("try to remove an empty component");
+			LOGGER.error("try to remove an empty component");
 			return;
 		}
 		if (this.component.remove(ref) == false) {
-			Log.error("try to remove an unexisting component");
+			LOGGER.error("try to remove an unexisting component");
 			return;
 		}
 		this.env.engineComponentRemove(ref);
@@ -256,7 +256,7 @@ public class Entity {
 			}
 		}
 		if (findIt == false) {
-			//Log.error("try to remove an unknown component type : '{}'", type);
+			//LOGGER.error("try to remove an unknown component type : '{}'", type);
 			return;
 		}
 		this.env.engineComponentRemove(componentRemoved);
@@ -277,7 +277,7 @@ public class Entity {
 		this.life += power;
 		this.life = Math.min(Math.max(0.0f, this.life), this.lifeMax);
 		if (this.life <= 0) {
-			Log.debug("[{}] Entity is killed ...", getUID());
+			LOGGER.debug("[{}] Entity is killed ...", getUID());
 		}
 		if (this.life != previousLife) {
 			onLifeChange();

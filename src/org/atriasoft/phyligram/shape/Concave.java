@@ -24,7 +24,7 @@ public class Concave extends Shape {
 		}
 		*/
 		if (index.size() % 3 != 0) {
-			Log.error("wrong number of faces : {} ==> not a multiple of 3", index.size());
+			LOGGER.error("wrong number of faces : {} ==> not a multiple of 3", index.size());
 			return;
 		}
 		for (final Integer it : index) {

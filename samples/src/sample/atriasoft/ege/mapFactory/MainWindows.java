@@ -15,7 +15,7 @@ public class MainWindows extends Windows {
 	public static void eventButtonTool(final MainWindows self, Boolean value) {
 		//Vector2b state = self.testWidget.getPropertyFill();
 		//self.testWidget.setPropertyFill(state.withY(!state.y()));
-		Log.warning("event elements : {}", value);
+		LOGGER.warn("event elements : {}", value);
 		if (value) {
 			self.scene.setCurrentTool(new ToolMapHeight());
 		} else {

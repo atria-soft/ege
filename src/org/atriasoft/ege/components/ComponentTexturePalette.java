@@ -16,7 +16,7 @@ public class ComponentTexturePalette extends Component {
 		this.palette = ResourcePaletteFile.create(paletteName);
 		this.texture = ResourceTexture2.createNamed("TEXTURE_OF_PALETTE:" + paletteName.toString());
 		if (this.texture == null) {
-			Log.error("can not instanciate Texture ...");
+			LOGGER.error("can not instanciate Texture ...");
 		}
 		// element already called
 		updateFromPalette();
@@ -27,7 +27,7 @@ public class ComponentTexturePalette extends Component {
 	}
 	
 	public void updateFromPalette() {
-		Log.warning("update palet environnement");
+		LOGGER.warn("update palet environnement");
 		final ImageByte img = this.palette.getImageByte();
 		//IOgami.storePNG(new Uri("/home/heero/000000000aaaaplopppp.png"), img);
 		this.texture.set(img);

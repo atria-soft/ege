@@ -9,7 +9,7 @@ public class ToolCollisionSphereWithSphere {
 	// Note sphere 2 is the reference ...
 	public static ColisionPoint getCollisionPoint(PhysicSphere sphere1, PhysicSphere shapeReference) {
 		if (sphere1.getSize() > shapeReference.getSize()) {
-			Log.todo("implement then reference is smaller than moving");
+			LOGGER.info("[TODO] implement then reference is smaller than moving");
 		}
 		Vector3f force = sphere1.narrowPhaseGlobalPos.less(shapeReference.narrowPhaseGlobalPos);
 		float distance = shapeReference.getSize() + sphere1.getSize() - force.length();

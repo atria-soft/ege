@@ -400,12 +400,12 @@ public class LoxelApplicationPerso extends GaleApplication {
 		this.basicRotation2 = Quaternion.fromEulerAngles(new Vector3f(0.003f, 0.01f, 0.001f));
 		
 		// ready to let Gale & Ege manage the display
-		Log.info("==> Init APPL (END)");
+		LOGGER.info("==> Init APPL (END)");
 	}
 	
 	@Override
 	public void onDraw(final GaleContext context) {
-		//Log.info("==> appl Draw ...");
+		//LOGGER.info("==> appl Draw ...");
 		final Vector2f size = getSize();
 		// Store openGl context.
 		OpenGL.push();
@@ -424,7 +424,7 @@ public class LoxelApplicationPerso extends GaleApplication {
 		OpenGL.clear(OpenGL.ClearFlag.clearFlag_depthBuffer);
 		OpenGL.enable(Flag.flag_depthTest);
 		
-		//Log.info("==> appl Draw ...");
+		//LOGGER.info("==> appl Draw ...");
 		this.env.render(20, "default");
 		if (this.debugDrawProperty == null) {
 			this.debugDrawProperty = ResourceColored3DObject.create();
@@ -500,7 +500,7 @@ public class LoxelApplicationPerso extends GaleApplication {
 	
 	@Override
 	public void onRegenerateDisplay(final GaleContext context) {
-		//Log.verbose("Regenerate Gale Application");
+		//LOGGER.trace("Regenerate Gale Application");
 		this.angleLight += 0.01;
 		this.lightPosition.setTransform(this.lightPosition.getTransform()
 				.withPosition(new Vector3f(5 + (float) Math.cos(this.angleLight) * 7.0f, 5 + (float) Math.sin(this.angleLight) * 7.0f, this.lightPosition.getTransform().getPosition().z())));

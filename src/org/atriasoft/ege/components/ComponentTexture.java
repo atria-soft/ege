@@ -12,7 +12,7 @@ public class ComponentTexture extends Component {
 	public ComponentTexture(Uri textureName) {
 		this.texture = ResourceTexture.createFromPng(textureName);
 		if (this.texture == null) {
-			Log.error("can not instanciate Texture ...");
+			LOGGER.error("can not instanciate Texture ...");
 		}
 		
 	}

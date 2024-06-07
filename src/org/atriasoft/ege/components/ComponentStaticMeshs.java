@@ -19,7 +19,7 @@ public class ComponentStaticMeshs extends Component {
 	
 	public ComponentStaticMeshs(Uri meshUrl) {
 		// TODO load Mesh
-		Log.critical("Can not Load the Mesh for now ... {}", meshUrl);
+		LOGGER.critical("Can not Load the Mesh for now ... {}", meshUrl);
 		final ResourceStaticMeshObj mesh = ResourceStaticMeshObj.create(meshUrl);
 		setMesh("default", mesh);
 	}

@@ -56,7 +56,7 @@ public class EngineAI extends Engine {
 		this.accumulator += deltaMili * 0.0001f;
 		// While there is enough accumulated time to take one or several physics steps
 		while (this.accumulator >= TIME_STEP) {
-			//Log.warning("AI: Generate for {} / {}  for: {}", accumulator, TIME_STEP, components.size());
+			//LOGGER.warn("AI: Generate for {} / {}  for: {}", accumulator, TIME_STEP, components.size());
 			// call every object to update their constant forces applied
 			for (ComponentAI it : this.components) {
 				it.update(TIME_STEP);

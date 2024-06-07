@@ -42,15 +42,15 @@ public class EngineRender extends Engine {
 	
 	@Override
 	public void render(final long deltaMili, final Camera camera) {
-		//Log.info("Render ...");
+		//LOGGER.info("Render ...");
 		//Matrix4f tmpMatrix;
 		for (final ComponentRender it : this.components) {
-			//Log.info("Render {}", it);
+			//LOGGER.info("Render {}", it);
 			it.render();
 		}
 		/*
 		getOrderedElementForDisplay(this.displayElementOrdered, camera->getEye(), camera->getViewVector());
-		Log.verbose("DRAW : {} / {} element(s)", this.displayElementOrdered.size(), this.component.size());
+		LOGGER.trace("DRAW : {} / {} element(s)", this.displayElementOrdered.size(), this.component.size());
 		
 		// note :  the first pass is done at the reverse way to prevent multiple display od the same point in the screen 
 		//         (and we remember that the first pass is to display all the non transparent elements)
@@ -69,10 +69,10 @@ public class EngineRender extends Engine {
 	
 	//	@Override
 	//	public void renderDebug(long deltaMili, Camera camera) {
-	//		//Log.debug("Draw (start)");
+	//		//LOGGER.debug("Draw (start)");
 	//		Matrix4f tmpMatrix;
 	//		getOrderedElementForDisplay(this.displayElementOrdered, camera->getEye(), camera->getViewVector());
-	//		Log.verbose("DRAW : {} / {} element(s)", this.displayElementOrdered.size(), this.component.size());
+	//		LOGGER.trace("DRAW : {} / {} element(s)", this.displayElementOrdered.size(), this.component.size());
 	////		if (propertyDebugPhysic.get() == true) {
 	////			// Draw debug ... (Object)
 	////			for (int32t iii=this.displayElementOrdered.size()-1; iii >= 0; iii--) {
@@ -118,7 +118,7 @@ public class EngineRender extends Engine {
 		this.accumulator += deltaMili * 0.0001f;
 		// While there is enough accumulated time to take one or several physics steps
 		while (this.accumulator >= TIME_STEP) {
-			// Log.warning("RENDER: Generate for {} / {}  for: {}", accumulator, TIME_STEP, components.size());
+			// LOGGER.warn("RENDER: Generate for {} / {}  for: {}", accumulator, TIME_STEP, components.size());
 			// call every object to usdate their constant forces applyed
 			for (final ComponentRender it : this.components) {
 				it.update(TIME_STEP);
@@ -154,7 +154,7 @@ public class EngineRender extends Engine {
 //			vec3 angleView = (destPosition - position);
 //			angleView.safeNormalize();
 //			float dotResult = angleView.dot(direction);
-//			//Log.debug("Dot position : {} ==> dot={}", destPosition, dotResult);
+//			//LOGGER.debug("Dot position : {} ==> dot={}", destPosition, dotResult);
 //			/*
 //			if (dotResult <= 0.85f) {
 //				// they are not in the camera angle view ...  == > no need to process display

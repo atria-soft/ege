@@ -3,10 +3,12 @@ package org.atriasoft.ege.components;
 import org.atriasoft.ege.Component;
 import org.atriasoft.ege.Light;
 import org.atriasoft.ege.components.part.PositionningInterface;
-import org.atriasoft.ege.internal.Log;
 import org.atriasoft.etk.math.Vector3f;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public class ComponentLight extends Component {
+	static final Logger LOGGER = LoggerFactory.getLogger(ComponentLight.class);
 	// the material is not a resource, it can change in time... with AI or selection...
 	private final Light light;
 	private PositionningInterface position = null;
@@ -22,10 +24,11 @@ public class ComponentLight extends Component {
 	@Override
 	public void addFriendComponent(final Component component) {
 		if (component.getType().contentEquals("position") || component.getType().contentEquals("physics")) {
-			if (component instanceof PositionningInterface tmp) {
+			if (component instanceof final PositionningInterface tmp) {
 				this.position = tmp;
 			} else {
-				LOGGER.error("component: {} is not an instance of {}", component.getClass().getCanonicalName(), PositionningInterface.class.getCanonicalName());
+				LOGGER.error("component: {} is not an instance of {}", component.getClass().getCanonicalName(),
+						PositionningInterface.class.getCanonicalName());
 			}
 		}
 	}

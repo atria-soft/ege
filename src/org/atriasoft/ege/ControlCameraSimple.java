@@ -1,7 +1,6 @@
 package org.atriasoft.ege;
 
 import org.atriasoft.ege.camera.Camera;
-import org.atriasoft.ege.internal.Log;
 import org.atriasoft.etk.math.Vector2f;
 import org.atriasoft.etk.math.Vector3f;
 import org.atriasoft.ewol.event.EventEntry;
@@ -9,8 +8,11 @@ import org.atriasoft.ewol.event.EventInput;
 import org.atriasoft.ewol.event.EventTime;
 import org.atriasoft.gale.key.KeyKeyboard;
 import org.atriasoft.gale.key.KeyStatus;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public class ControlCameraSimple implements ControlInterface {
+	static final Logger LOGGER = LoggerFactory.getLogger(ControlCameraSimple.class);
 	private final Camera camera;
 	private Vector2f lastMousePosition = null;
 	private boolean moveUp = false;
@@ -18,11 +20,11 @@ public class ControlCameraSimple implements ControlInterface {
 	private boolean moveRight = false;
 	private boolean moveDown = false;
 	private boolean ctrlIsSet = false;
-	
+
 	public ControlCameraSimple(final Camera camera) {
 		this.camera = camera;
 	}
-	
+
 	private boolean getState(final KeyStatus state, final boolean previousState) {
 		if (state == KeyStatus.down) {
 			return true;
@@ -32,7 +34,7 @@ public class ControlCameraSimple implements ControlInterface {
 		}
 		return previousState;
 	}
-	
+
 	@Override
 	public boolean onEventEntry(final EventEntry event) {
 		if (event.type() == KeyKeyboard.UP) {
@@ -50,18 +52,18 @@ public class ControlCameraSimple implements ControlInterface {
 		this.ctrlIsSet = event.specialKey().getCtrl();
 		return false;
 	}
-	
+
 	@Override
 	public boolean onEventInput(final EventInput event, final Vector3f relativePosition) {
 		// TODO Auto-generated method stub
 		if (event.inputId() == 4) {
-			Vector3f delta = this.camera.getConvertionMatrix().transpose().multiply(new Vector3f(0,0,-1));
+			final Vector3f delta = this.camera.getConvertionMatrix().transpose().multiply(new Vector3f(0, 0, -1));
 			if (event.status() == KeyStatus.down) {
 				this.camera.setPosition(this.camera.getPosition().add(delta.multiply(1.0f)));
 			}
 		}
 		if (event.inputId() == 5) {
-			Vector3f delta = this.camera.getConvertionMatrix().transpose().multiply(new Vector3f(0,0,-1));
+			final Vector3f delta = this.camera.getConvertionMatrix().transpose().multiply(new Vector3f(0, 0, -1));
 			if (event.status() == KeyStatus.down) {
 				this.camera.setPosition(this.camera.getPosition().add(delta.multiply(-1.0f)));
 			}
@@ -93,12 +95,12 @@ public class ControlCameraSimple implements ControlInterface {
 		}
 		return false;
 	}
-	
+
 	@Override
 	public void periodicCall(final EventTime event) {
-		float roll = this.camera.getRoll();
+		final float roll = this.camera.getRoll();
 		if (this.moveLeft != this.moveRight) {
-			Vector3f orientation = new Vector3f(-(float)Math.cos(roll), (float)Math.sin(roll), 0);
+			final Vector3f orientation = new Vector3f(-(float) Math.cos(roll), (float) Math.sin(roll), 0);
 			if (this.moveRight) {
 				this.camera.setPosition(this.camera.getPosition().add(orientation.multiply(-0.1f)));
 			} else {
@@ -107,7 +109,7 @@ public class ControlCameraSimple implements ControlInterface {
 		}
 		if (!this.ctrlIsSet) {
 			if (this.moveUp != this.moveDown) {
-				Vector3f orientation = new Vector3f((float)Math.sin(roll), (float)Math.cos(roll), 0);
+				final Vector3f orientation = new Vector3f((float) Math.sin(roll), (float) Math.cos(roll), 0);
 				if (this.moveUp) {
 					this.camera.setPosition(this.camera.getPosition().add(orientation.multiply(0.1f)));
 				} else {
@@ -122,5 +124,5 @@ public class ControlCameraSimple implements ControlInterface {
 			}
 		}
 	}
-	
+
 }

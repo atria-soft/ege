@@ -5,31 +5,33 @@
  */
 package org.atriasoft.phyligram.shape;
 
-import org.atriasoft.ege.internal.Log;
 import org.atriasoft.etk.math.Quaternion;
 import org.atriasoft.etk.math.Vector3f;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public class Shape {
+	static final Logger LOGGER = LoggerFactory.getLogger(Shape.class);
 	private Quaternion orientation = Quaternion.IDENTITY;
 	private float mass = 1; //!< element mass in "g" then 1000 for 1kg
 	private Vector3f origin = Vector3f.ZERO;
-	
+
 	public void display() {
-		
+
 	}
-	
+
 	public float getMass() {
 		return this.mass;
 	}
-	
+
 	public Quaternion getOrientation() {
 		return this.orientation;
 	}
-	
+
 	public Vector3f getOrigin() {
 		return this.origin;
 	}
-	
+
 	public boolean parse(final String _line) {
 		LOGGER.error("dfgdfg");
 		/*
@@ -51,15 +53,15 @@ public class Shape {
 		*/
 		return false;
 	};
-	
+
 	public void setMass(final float mass) {
 		this.mass = mass;
 	};
-	
+
 	public void setOrientation(final Quaternion orientation) {
 		this.orientation = orientation;
 	};
-	
+
 	public void setOrigin(final Vector3f origin) {
 		this.origin = origin;
 	};

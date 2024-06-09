@@ -3,11 +3,12 @@ package org.atriasoft.phyligram.tree;
 import java.lang.ref.WeakReference;
 import java.util.Stack;
 
-import org.atriasoft.phyligram.shape.AABB;
-import org.atriasoft.phyligram.internal.Log;
-import org.atriasoft.phyligram.math.Ray;
 import org.atriasoft.etk.math.FMath;
 import org.atriasoft.etk.math.Vector3f;
+import org.atriasoft.phyligram.math.Ray;
+import org.atriasoft.phyligram.shape.AABB;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  *  It implements a dynamic AABB tree that is used for broad-phase
@@ -17,20 +18,21 @@ import org.atriasoft.etk.math.Vector3f;
  * "Introduction to Game Physics with Box2D" by Ian Parberry.
  */
 public class DynamicAABBTree<INTERNAL_DATA_TYPE> {
+	static final Logger LOGGER = LoggerFactory.getLogger(DynamicAABBTree.class);
 	private DTree rootNode; //!< Pointer to the memory location of the nodes of the tree
-	
+
 	/// Constructor
 	public DynamicAABBTree() {
 		init();
 	}
-	
+
 	/// Add an object into the tree (where node data is a pointer)
 	public DTree addObject(final AABB aabb, final INTERNAL_DATA_TYPE data) {
-		final DTreeLeafData<INTERNAL_DATA_TYPE> node = new DTreeLeafData<INTERNAL_DATA_TYPE>(data);
+		final DTreeLeafData<INTERNAL_DATA_TYPE> node = new DTreeLeafData<>(data);
 		addObjectInternal(aabb, node);
 		return node;
 	}
-	
+
 	/// Internally add an object into the tree
 	private void addObjectInternal(final AABB aabb, final DTree leafNode) {
 		// Create the fat aabb to use in the tree
@@ -41,7 +43,7 @@ public class DynamicAABBTree<INTERNAL_DATA_TYPE> {
 		insertLeafNode(leafNode);
 		assert (leafNode.isLeaf());
 	}
-	
+
 	/// Balance the sub-tree of a given node using left or right rotations.
 	private DTree balanceSubTreeAtNode(final DTree node) {
 		assert (node != null);
@@ -163,12 +165,12 @@ public class DynamicAABBTree<INTERNAL_DATA_TYPE> {
 		// If the sub-tree is balanced, return the current root node
 		return node;
 	}
-	
+
 	/// Compute the height of the tree
 	public int computeHeight() {
 		return computeHeight(this.rootNode);
 	}
-	
+
 	/// Compute the height of a given node in the tree
 	private int computeHeight(final DTree node) {
 		// If the node is a leaf, its height is zero
@@ -176,45 +178,45 @@ public class DynamicAABBTree<INTERNAL_DATA_TYPE> {
 			return 0;
 		}
 		final DTreeNode nodeTree = (DTreeNode) node;
-		
+
 		// Compute the height of the left and right sub-tree
 		final int leftHeight = computeHeight(nodeTree.childrenleft);
 		final int rightHeight = computeHeight(nodeTree.childrenright);
 		// Return the height of the node
 		return 1 + Math.max(leftHeight, rightHeight);
 	}
-	
+
 	/// Return the fat AABB corresponding to a given node ID
 	public AABB getFatAABB(final DTree node) {
 		return node.aabb;
 	}
-	
+
 	public int getNodeDataInt0(final DTree node) {
 		assert (node.isLeaf());
 		return ((DTreeLeafInt) node).dataInt0;
 	}
-	
+
 	public int getNodeDataInt1(final DTree node) {
 		assert (node.isLeaf());
 		return ((DTreeLeafInt) node).dataInt1;
 	}
-	
+
 	/// Return the data pointer of a given leaf node of the tree
 	public Object getNodeDataPointer(final DTree node) {
 		assert (node.isLeaf());
 		return ((DTreeLeafData) node).dataPointer;
 	}
-	
+
 	/// Return the root AABB of the tree
 	public AABB getRootAABB() {
 		return getFatAABB(this.rootNode);
 	}
-	
+
 	/// Initialize the tree
 	private void init() {
 		this.rootNode = null;
 	}
-	
+
 	/// Insert a leaf node in the tree
 	private void insertLeafNode(final DTree inNode) {
 		// If the tree is empty
@@ -294,7 +296,7 @@ public class DynamicAABBTree<INTERNAL_DATA_TYPE> {
 		newParentNode.childrenright = inNode;
 		siblingNode.parent = new WeakReference<>(newParentNode);
 		inNode.parent = new WeakReference<>(newParentNode);
-		
+
 		// Move up in the tree to change the AABBs that have changed
 		currentNode = newParentNode;
 		assert (!currentNode.isLeaf());
@@ -321,7 +323,7 @@ public class DynamicAABBTree<INTERNAL_DATA_TYPE> {
 		}
 		assert (inNode.isLeaf());
 	}
-	
+
 	/// Ray casting method
 	public void raycast(final Ray ray, final CallbackRaycast callback) {
 		if (callback == null) {
@@ -372,14 +374,14 @@ public class DynamicAABBTree<INTERNAL_DATA_TYPE> {
 				stack.push(tmpNode.childrenright);
 			}
 		}
-		
+
 	}
-	
+
 	/// Release a node
 	private void releaseNode(final DTree node) {
 		//this.numberNodes--;
 	}
-	
+
 	/// Remove a leaf node from the tree
 	private void removeLeafNode(final DTree node) {
 		assert (node.isLeaf());
@@ -437,7 +439,7 @@ public class DynamicAABBTree<INTERNAL_DATA_TYPE> {
 			}
 		}
 	}
-	
+
 	/// Remove an object from the tree
 	public void removeObject(final DTree node) {
 		assert (node.isLeaf());
@@ -445,7 +447,7 @@ public class DynamicAABBTree<INTERNAL_DATA_TYPE> {
 		removeLeafNode(node);
 		releaseNode(node);
 	}
-	
+
 	/// Report all shapes overlapping with the AABB given in parameter.
 	public void reportAllShapesOverlappingWithAABB(final AABB aabb, final CallbackOverlapping callback) {
 		if (callback == null) {
@@ -492,13 +494,13 @@ public class DynamicAABBTree<INTERNAL_DATA_TYPE> {
 			}
 		}
 	}
-	
+
 	/// Clear all the nodes and reset the tree
 	public void reset() {
 		// Initialize the tree
 		init();
 	}
-	
+
 	/// Update the dynamic tree after an object has moved.
 	/// If the new AABB of the object that has moved is still inside its fat AABB, then
 	/// nothing is done. Otherwise, the corresponding node is removed and reinserted into the tree.
@@ -509,8 +511,12 @@ public class DynamicAABBTree<INTERNAL_DATA_TYPE> {
 	public boolean updateObject(final DTree node, final AABB newAABB, final Vector3f displacement) {
 		return updateObject(node, newAABB, displacement, false);
 	}
-	
-	public boolean updateObject(final DTree node, final AABB newAABB, final Vector3f displacement, final boolean forceReinsert) {
+
+	public boolean updateObject(
+			final DTree node,
+			final AABB newAABB,
+			final Vector3f displacement,
+			final boolean forceReinsert) {
 		assert (node.isLeaf());
 		assert (node.height >= 0);
 		//LOGGER.trace(" compare : {} {}", node.aabb.getMin(), node.aabb.getMax());
@@ -556,5 +562,5 @@ public class DynamicAABBTree<INTERNAL_DATA_TYPE> {
 		insertLeafNode(node);
 		return true;
 	}
-	
+
 }

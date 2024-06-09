@@ -12,13 +12,16 @@ import org.atriasoft.ewol.widget.Slider;
 import org.atriasoft.ewol.widget.Widget;
 import org.atriasoft.gale.key.KeyStatus;
 import org.atriasoft.gale.resource.ResourceColored3DObject;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import sample.atriasoft.ege.mapFactory.EgeScene;
-import sample.atriasoft.ege.mapFactory.Log;
 import sample.atriasoft.ege.mapFactory.model.Map;
 import toolbox.Maths;
 
 public class ToolMapHeight implements MapToolInterface {
+	final static private Logger LOGGER = LoggerFactory.getLogger(ToolMapHeight.class);
+	
 	protected static void onCallbackMaxChange(final ToolMapHeight self, final float value) {
 		LOGGER.warn("get new value {}", value);
 		self.onCallbackMax(value);
@@ -50,13 +53,16 @@ public class ToolMapHeight implements MapToolInterface {
 	public Widget getWidget() {
 		final Widget data = Composer.composerGenerateFile(new Uri("DATA", "ToolMapHeight.xml"), this.uniqueID);
 		
-		if (data.getSubObjectNamed("[" + Long.toString(this.uniqueID) + "]HeighMap:slider-width") instanceof final Slider tmp) {
+		if (data.getSubObjectNamed(
+				"[" + Long.toString(this.uniqueID) + "]HeighMap:slider-width") instanceof final Slider tmp) {
 			tmp.signalValue.connectAuto(this, ToolMapHeight::onCallbackWidthChange);
 		}
-		if (data.getSubObjectNamed("[" + Long.toString(this.uniqueID) + "]HeighMap:slider-top") instanceof final Slider tmp) {
+		if (data.getSubObjectNamed(
+				"[" + Long.toString(this.uniqueID) + "]HeighMap:slider-top") instanceof final Slider tmp) {
 			tmp.signalValue.connectAuto(this, ToolMapHeight::onCallbackMaxChange);
 		}
-		if (data.getSubObjectNamed("[" + Long.toString(this.uniqueID) + "]HeighMap:slider-bottom") instanceof final Slider tmp) {
+		if (data.getSubObjectNamed(
+				"[" + Long.toString(this.uniqueID) + "]HeighMap:slider-bottom") instanceof final Slider tmp) {
 			tmp.signalValue.connectAuto(this, ToolMapHeight::onCallbackMinChange);
 		}
 		
@@ -81,8 +87,10 @@ public class ToolMapHeight implements MapToolInterface {
 		if (this.positionRay != null) {
 			map.ground.drawDynamicElement(this.dynamicElement, this.positionRay, this.widthBrush);
 			float size = this.maxBrush - this.minBrush;
-			Transform3D tmpTransform = new Transform3D(this.positionRay.add(new Vector3f(0.0f, 0.0f, this.minBrush + size * 0.5f)));
-			this.dynamicElement.drawCylinder(this.widthBrush, size, 10, 22, tmpTransform.getOpenGLMatrix(), Color.AZURE.withA(0.5f), false, true);
+			Transform3D tmpTransform = new Transform3D(
+					this.positionRay.add(new Vector3f(0.0f, 0.0f, this.minBrush + size * 0.5f)));
+			this.dynamicElement.drawCylinder(this.widthBrush, size, 10, 22, tmpTransform.getOpenGLMatrix(),
+					Color.AZURE.withA(0.5f), false, true);
 		}
 		
 	}
@@ -134,33 +142,39 @@ public class ToolMapHeight implements MapToolInterface {
 			return true;
 		}
 		// max brush
-		if (event.inputId() == 4 && event.status() == KeyStatus.down && (event.specialKey() != null && event.specialKey().getAltLeft() && event.specialKey().getCtrlLeft())) {
+		if (event.inputId() == 4 && event.status() == KeyStatus.down && (event.specialKey() != null
+				&& event.specialKey().getAltLeft() && event.specialKey().getCtrlLeft())) {
 			this.maxBrush = Maths.avg(this.minBrush + 0.1f, this.maxBrush + 0.1f, 128.0f);
 			LOGGER.warn(" values: {} / {}", this.minBrush, this.maxBrush);
 			return true;
 		}
-		if (event.inputId() == 5 && event.status() == KeyStatus.down && (event.specialKey() != null && event.specialKey().getAltLeft() && event.specialKey().getCtrlLeft())) {
+		if (event.inputId() == 5 && event.status() == KeyStatus.down && (event.specialKey() != null
+				&& event.specialKey().getAltLeft() && event.specialKey().getCtrlLeft())) {
 			this.maxBrush = Maths.avg(this.minBrush + 0.1f, this.maxBrush - 0.1f, 128.0f);
 			LOGGER.warn(" values: {} / {}", this.minBrush, this.maxBrush);
 			return true;
 		}
 		// min brush
-		if (event.inputId() == 4 && event.status() == KeyStatus.down && (event.specialKey() != null && event.specialKey().getAltLeft())) {
+		if (event.inputId() == 4 && event.status() == KeyStatus.down
+				&& (event.specialKey() != null && event.specialKey().getAltLeft())) {
 			this.minBrush = Maths.avg(-128.0f, this.minBrush + 0.1f, this.maxBrush - 0.1f);
 			LOGGER.warn(" values: {} / {}", this.minBrush, this.maxBrush);
 			return true;
 		}
-		if (event.inputId() == 5 && event.status() == KeyStatus.down && (event.specialKey() != null && event.specialKey().getAltLeft())) {
+		if (event.inputId() == 5 && event.status() == KeyStatus.down
+				&& (event.specialKey() != null && event.specialKey().getAltLeft())) {
 			this.minBrush = Maths.avg(-128.0f, this.minBrush - 0.1f, this.maxBrush - 0.1f);
 			LOGGER.warn(" values: {} / {}", this.minBrush, this.maxBrush);
 			return true;
 		}
 		// width brush
-		if (event.inputId() == 4 && event.status() == KeyStatus.down && (event.specialKey() != null && event.specialKey().getCtrlLeft())) {
+		if (event.inputId() == 4 && event.status() == KeyStatus.down
+				&& (event.specialKey() != null && event.specialKey().getCtrlLeft())) {
 			this.widthBrush = Maths.avg(0.1f, this.widthBrush + 0.1f, 30.0f);
 			return true;
 		}
-		if (event.inputId() == 5 && event.status() == KeyStatus.down && (event.specialKey() != null && event.specialKey().getCtrlLeft())) {
+		if (event.inputId() == 5 && event.status() == KeyStatus.down
+				&& (event.specialKey() != null && event.specialKey().getCtrlLeft())) {
 			this.widthBrush = Maths.avg(0.1f, this.widthBrush - 0.1f, 30.0f);
 			return true;
 		}

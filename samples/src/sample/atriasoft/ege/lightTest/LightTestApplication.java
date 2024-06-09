@@ -33,8 +33,11 @@ import org.atriasoft.gale.key.KeyKeyboard;
 import org.atriasoft.gale.key.KeySpecial;
 import org.atriasoft.gale.key.KeyStatus;
 import org.atriasoft.gale.key.KeyType;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public class LightTestApplication extends GaleApplication {
+	final static private Logger LOGGER = LoggerFactory.getLogger(LightTestApplication.class);
 	private float angleLight = 0;
 	private Quaternion basicRotation = Quaternion.IDENTITY;
 	private Quaternion basicRotation2 = Quaternion.IDENTITY;
@@ -61,7 +64,8 @@ public class LightTestApplication extends GaleApplication {
 		// simple sun to have a global light ...
 		final Entity sun = new Entity(this.env);
 		sun.addComponent(new ComponentPosition(new Transform3D(new Vector3f(1000, 1000, 1000))));
-		sun.addComponent(new ComponentLightSun(new Light(new Color(0.4f, 0.4f, 0.4f), new Vector3f(0, 0, 0), new Vector3f(0.8f, 0, 0))));
+		sun.addComponent(new ComponentLightSun(
+				new Light(new Color(0.4f, 0.4f, 0.4f), new Vector3f(0, 0, 0), new Vector3f(0.8f, 0, 0))));
 		this.env.addEntity(sun);
 		
 		// add a cube to show where in the light ...
@@ -70,14 +74,17 @@ public class LightTestApplication extends GaleApplication {
 		localLight.addComponent(this.lightPosition);
 		localLight.addComponent(new ComponentStaticMesh(new Uri("RES", "cube-one.obj")));
 		localLight.addComponent(new ComponentTexture(new Uri("RES", "grass.png")));
-		localLight.addComponent(new ComponentLight(new Light(new Color(0.0f, 2.0f, 0.0f), new Vector3f(0, 0, 0), new Vector3f(0.8f, 0.01f, 0.002f))));
-		localLight.addComponent(new ComponentRenderTexturedStaticMesh(new Uri("DATA", "basic.vert", "loxelEngine"), new Uri("DATA", "basic.frag", "loxelEngine")));
+		localLight.addComponent(new ComponentLight(
+				new Light(new Color(0.0f, 2.0f, 0.0f), new Vector3f(0, 0, 0), new Vector3f(0.8f, 0.01f, 0.002f))));
+		localLight.addComponent(new ComponentRenderTexturedStaticMesh(new Uri("DATA", "basic.vert", "loxelEngine"),
+				new Uri("DATA", "basic.frag", "loxelEngine")));
 		this.env.addEntity(localLight);
 		
 		final Entity gird = new Entity(this.env);
 		gird.addComponent(new ComponentPosition(new Transform3D(new Vector3f(0, 0, 0))));
 		gird.addComponent(new ComponentStaticMesh(MeshGenerator.createGrid(5)));
-		gird.addComponent(new ComponentRenderColoredStaticMesh(new Uri("DATA", "wireColor.vert", "ege"), new Uri("DATA", "wireColor.frag", "ege")));
+		gird.addComponent(new ComponentRenderColoredStaticMesh(new Uri("DATA", "wireColor.vert", "ege"),
+				new Uri("DATA", "wireColor.frag", "ege")));
 		this.env.addEntity(gird);
 		
 		final Entity basicTree = new Entity(this.env);
@@ -88,8 +95,10 @@ public class LightTestApplication extends GaleApplication {
 		basicTree.addComponent(new ComponentStaticMesh(new Uri("RES", "cube.obj")));
 		basicTree.addComponent(new ComponentTexture(new Uri("RES", "mud.png")));
 		//basicTree.addComponent(new ComponentRenderTexturedStaticMesh(new Uri("DATA", "basic.vert", "loxelEngine"), new Uri("DATA", "basic.frag", "loxelEngine")));
-		basicTree.addComponent(new ComponentRenderTexturedMaterialsStaticMesh(new Uri("DATA", "basicMaterial.vert", "loxelEngine"), new Uri("DATA", "basicMaterial.frag", "loxelEngine"),
-				(EngineLight) this.env.getEngine(EngineLight.ENGINE_NAME)));
+		basicTree.addComponent(
+				new ComponentRenderTexturedMaterialsStaticMesh(new Uri("DATA", "basicMaterial.vert", "loxelEngine"),
+						new Uri("DATA", "basicMaterial.frag", "loxelEngine"),
+						(EngineLight) this.env.getEngine(EngineLight.ENGINE_NAME)));
 		this.env.addEntity(basicTree);
 		
 		for (int xxx = -10; xxx < 10; xxx++) {
@@ -99,7 +108,9 @@ public class LightTestApplication extends GaleApplication {
 				superGrass.addComponent(new ComponentMaterial(new Material()));
 				superGrass.addComponent(new ComponentStaticMesh(new Uri("RES", "cube-one.obj")));
 				superGrass.addComponent(new ComponentTexture(new Uri("RES", "dirt.png")));
-				superGrass.addComponent(new ComponentRenderTexturedMaterialsStaticMesh(new Uri("DATA", "basicMaterial.vert", "loxelEngine"), new Uri("DATA", "basicMaterial.frag", "loxelEngine"),
+				superGrass.addComponent(new ComponentRenderTexturedMaterialsStaticMesh(
+						new Uri("DATA", "basicMaterial.vert", "loxelEngine"),
+						new Uri("DATA", "basicMaterial.frag", "loxelEngine"),
 						(EngineLight) this.env.getEngine(EngineLight.ENGINE_NAME)));
 				this.env.addEntity(superGrass);
 			}
@@ -150,12 +161,21 @@ public class LightTestApplication extends GaleApplication {
 	}
 	
 	@Override
-	public void onKeyboard(final KeySpecial special, final KeyKeyboard type, final Character value, final KeyStatus state) {
+	public void onKeyboard(
+			final KeySpecial special,
+			final KeyKeyboard type,
+			final Character value,
+			final KeyStatus state) {
 		this.env.onKeyboard(special, type, value, state);
 	}
 	
 	@Override
-	public void onPointer(final KeySpecial special, final KeyType type, final int pointerID, final Vector2f pos, final KeyStatus state) {
+	public void onPointer(
+			final KeySpecial special,
+			final KeyType type,
+			final int pointerID,
+			final Vector2f pos,
+			final KeyStatus state) {
 		this.env.onPointer(special, type, pointerID, new Vector3f(pos.x(), pos.y(), 0), state);
 	}
 	
@@ -167,8 +187,9 @@ public class LightTestApplication extends GaleApplication {
 		//objectPosition.getTransform().applyRotation(basicRotation);
 		//objectPosition.getTransform().applyRotation(basicRotation2);
 		this.angleLight += 0.01;
-		this.lightPosition.setTransform(this.lightPosition.getTransform()
-				.withPosition(new Vector3f((float) Math.cos(this.angleLight) * 7.0f, (float) Math.sin(this.angleLight) * 7.0f, this.lightPosition.getTransform().getPosition().z())));
+		this.lightPosition.setTransform(this.lightPosition.getTransform().withPosition(
+				new Vector3f((float) Math.cos(this.angleLight) * 7.0f, (float) Math.sin(this.angleLight) * 7.0f,
+						this.lightPosition.getTransform().getPosition().z())));
 		this.env.periodicCall();
 		markDrawingIsNeeded();
 	}

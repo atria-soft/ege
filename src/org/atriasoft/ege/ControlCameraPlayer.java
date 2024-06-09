@@ -3,7 +3,6 @@ package org.atriasoft.ege;
 import org.atriasoft.ege.camera.Camera;
 import org.atriasoft.ege.components.ComponentPlayer;
 import org.atriasoft.ege.components.ComponentPositionPlayer;
-import org.atriasoft.ege.internal.Log;
 import org.atriasoft.etk.math.Transform3D;
 import org.atriasoft.etk.math.Vector2f;
 import org.atriasoft.etk.math.Vector3f;
@@ -13,8 +12,11 @@ import org.atriasoft.ewol.event.EventTime;
 import org.atriasoft.gale.Gale;
 import org.atriasoft.gale.key.KeyKeyboard;
 import org.atriasoft.gale.key.KeyStatus;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public class ControlCameraPlayer implements ControlInterface {
+	static final Logger LOGGER = LoggerFactory.getLogger(ControlCameraPlayer.class);
 	private final Camera camera;
 	private float distanceFromCenter = 2.5f;
 	private boolean fpsMode = false;
@@ -26,7 +28,7 @@ public class ControlCameraPlayer implements ControlInterface {
 	private boolean moveLeft = false;
 	private boolean moveRight = false;
 	private boolean walk = false;
-	
+
 	public ControlCameraPlayer(final Camera camera, final Entity playerEntity) {
 		this.camera = camera;
 		this.playerEntity = playerEntity;
@@ -35,7 +37,7 @@ public class ControlCameraPlayer implements ControlInterface {
 		}
 		this.player = (ComponentPlayer) this.playerEntity.getComponent("player");
 	}
-	
+
 	private boolean getState(final KeyStatus state, final boolean previousState) {
 		if (state == KeyStatus.down) {
 			return true;
@@ -45,19 +47,23 @@ public class ControlCameraPlayer implements ControlInterface {
 		}
 		return previousState;
 	}
-	
+
 	@Override
 	public boolean onEventEntry(final EventEntry event) {
-		if (event.type() == KeyKeyboard.UP || (event.type() == KeyKeyboard.CHARACTER && (event.getChar() == 'z' || event.getChar() == 'Z'))) {
+		if (event.type() == KeyKeyboard.UP
+				|| (event.type() == KeyKeyboard.CHARACTER && (event.getChar() == 'z' || event.getChar() == 'Z'))) {
 			this.moveUp = getState(event.status(), this.moveUp);
 		}
-		if (event.type() == KeyKeyboard.LEFT || (event.type() == KeyKeyboard.CHARACTER && (event.getChar() == 'q' || event.getChar() == 'Q'))) {
+		if (event.type() == KeyKeyboard.LEFT
+				|| (event.type() == KeyKeyboard.CHARACTER && (event.getChar() == 'q' || event.getChar() == 'Q'))) {
 			this.moveLeft = getState(event.status(), this.moveLeft);
 		}
-		if (event.type() == KeyKeyboard.RIGHT || (event.type() == KeyKeyboard.CHARACTER && (event.getChar() == 'd' || event.getChar() == 'D'))) {
+		if (event.type() == KeyKeyboard.RIGHT
+				|| (event.type() == KeyKeyboard.CHARACTER && (event.getChar() == 'd' || event.getChar() == 'D'))) {
 			this.moveRight = getState(event.status(), this.moveRight);
 		}
-		if (event.type() == KeyKeyboard.DOWN || (event.type() == KeyKeyboard.CHARACTER && (event.getChar() == 's' || event.getChar() == 'S'))) {
+		if (event.type() == KeyKeyboard.DOWN
+				|| (event.type() == KeyKeyboard.CHARACTER && (event.getChar() == 's' || event.getChar() == 'S'))) {
 			this.moveDown = getState(event.status(), this.moveDown);
 		}
 		if (event.type() == KeyKeyboard.SHIFT_LEFT || event.type() == KeyKeyboard.SHIFT_RIGHT) {
@@ -76,7 +82,7 @@ public class ControlCameraPlayer implements ControlInterface {
 		}
 		return false;
 	}
-	
+
 	@Override
 	public boolean onEventInput(final EventInput event, final Vector3f relativePosition) {
 		// LOGGER.info("{}", event);
@@ -111,7 +117,8 @@ public class ControlCameraPlayer implements ControlInterface {
 			final Vector2f delta = event.pos();
 			//angleZ += delta.x;
 			//this.camera.setYaw(this.camera.getYaw() + (float)Math.toRadians(delta.x));
-			this.camera.setPitch(this.camera.getPitch() + (float) Math.toRadians(delta.y() * this.player.getTurnSpeed()));
+			this.camera
+					.setPitch(this.camera.getPitch() + (float) Math.toRadians(delta.y() * this.player.getTurnSpeed()));
 			if (this.camera.getPitch() > 0) {
 				this.camera.setPitch(0);
 			}
@@ -132,7 +139,7 @@ public class ControlCameraPlayer implements ControlInterface {
 			if (this.playerPosition != null) {
 				final float playerZAngle = this.playerPosition.getAngles().z();
 				float tmpAngle = playerZAngle + (float) Math.toRadians(delta.x() * this.player.getTurnSpeed());
-				
+
 				if (tmpAngle > Math.PI) {
 					tmpAngle -= (float) Math.PI * 2.0f;
 				}
@@ -146,7 +153,7 @@ public class ControlCameraPlayer implements ControlInterface {
 		}
 		return false;
 	}
-	
+
 	@Override
 	public void periodicCall(final EventTime event) {
 		float speed = 0;
@@ -199,7 +206,9 @@ public class ControlCameraPlayer implements ControlInterface {
 		final float offsetX = (float) (tmp * Math.sin(-theta));
 		final float offsetY = (float) (tmp * Math.cos(-theta));
 		//LOGGER.info("     res=({},{})", offsetX, offsetY);
-		this.camera.setPosition(new Vector3f(playerTransform.getPosition().x() + offsetX, playerTransform.getPosition().y() + offsetY, playerTransform.getPosition().z() + 1.6f + verticalDistance));
+		this.camera.setPosition(
+				new Vector3f(playerTransform.getPosition().x() + offsetX, playerTransform.getPosition().y() + offsetY,
+						playerTransform.getPosition().z() + 1.6f + verticalDistance));
 	}
-	
+
 }

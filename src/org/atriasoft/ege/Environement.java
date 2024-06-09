@@ -16,7 +16,6 @@ import org.atriasoft.ege.engines.EngineParticle;
 import org.atriasoft.ege.engines.EnginePhysics;
 import org.atriasoft.ege.engines.EnginePlayer;
 import org.atriasoft.ege.engines.EngineRender;
-import org.atriasoft.ege.internal.Log;
 //import org.atriasoft.ege.resource.Mesh;
 import org.atriasoft.etk.math.Vector2f;
 import org.atriasoft.etk.math.Vector3f;
@@ -28,10 +27,13 @@ import org.atriasoft.gale.key.KeyKeyboard;
 import org.atriasoft.gale.key.KeySpecial;
 import org.atriasoft.gale.key.KeyStatus;
 import org.atriasoft.gale.key.KeyType;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public class Environement {
+	static final Logger LOGGER = LoggerFactory.getLogger(Environement.class);
 	private static Map<String, CreatorEntity> creators = new HashMap<>();
-	
+
 	/**
 	 * add a creator entity system
 	 * @param type Type of the entity.
@@ -45,26 +47,26 @@ public class Environement {
 		LOGGER.debug("Add creator: {}", type);
 		creators.put(type, creator);
 		LOGGER.debug("Add creator: {} (done)", type);
-		
+
 	}
-	
+
 	public Signal<Float> signalPlayTimeChange = new Signal<>();
 	private GameStatus propertyStatus = GameStatus.gameStop; // !< the display is running (not in pause)
 	public float propertyRatio = 1.0f; // !< Speed ratio
 	protected List<Engine> engines = new ArrayList<>(); // !< EGE sub engine interface (like physique, rendering,
 	// audio, ...).
 	private final List<Entity> listEntity = new ArrayList<>(); // !< List of all entity added in the Game
-	
+
 	List<ControlInterface> controls = new ArrayList<>();
 	long lastCallTime = 0;
 	// ! list of all camera in the world
 	protected Map<String, Camera> listCamera = new HashMap<>();
-	
+
 	protected long gameTime = 0; // !< time of the game running
-	
+
 	long startTime = 0;
 	Clock startClock = null;
-	
+
 	//protected List<Mesh> listMeshToDrawFirst = new ArrayList<Mesh>();
 	public Environement() {
 		addEngine(new EngineGravity(this));
@@ -77,7 +79,7 @@ public class Environement {
 		addEngine(new EngineLight(this));
 		this.startClock = Clock.systemUTC();
 	}
-	
+
 	/**
 	 * Add a camera in the camera pool.
 	 * @param name Name of the camera.
@@ -86,11 +88,11 @@ public class Environement {
 	public void addCamera(final String name, final Camera camera) {
 		this.listCamera.put(name, camera);
 	}
-	
+
 	public void addControlInterface(final ControlInterface ref) {
 		this.controls.add(ref);
 	}
-	
+
 	public void addEngine(final Engine ref) {
 		if (ref == null) {
 			LOGGER.error("try to add an empty Engine");
@@ -106,7 +108,7 @@ public class Environement {
 		// add it at the end ...
 		this.engines.add(ref);
 	}
-	
+
 	/**
 	 * add an entity on the list availlable.
 	 * @param newEntity Entity to add.
@@ -119,18 +121,18 @@ public class Environement {
 		this.listEntity.add(newEntity);
 		newEntity.dynamicEnable();
 	}
-	
+
 	/**
 	 * Remove all from the current environement
 	 */
 	public void clear() {
 		this.listEntity.clear();
 	}
-	
+
 	public Entity createEntity(final String type, final boolean autoAddEntity) {
 		return this.createEntity(type, null, autoAddEntity);
 	}
-	
+
 	/**
 	 * Create an entity on the curent scene.
 	 * @param type Type of the entity that might be created.
@@ -143,7 +145,7 @@ public class Environement {
 	 * @note Pointer is return in case of setting properties on it...
 	 */
 	public Entity createEntity(final String type, final Object value, final boolean autoAddEntity) {
-		if (creators.containsKey(type) == false) {
+		if (!creators.containsKey(type)) {
 			LOGGER.error("Request creating of an type that is not known '{}'", type);
 			return null;
 		}
@@ -157,13 +159,13 @@ public class Environement {
 			LOGGER.error("allocation error ''{}'", type);
 			return null;
 		}
-		if (autoAddEntity == true) {
+		if (autoAddEntity) {
 			addEntity(tmpEntity);
 		}
 		return tmpEntity;
-		
+
 	}
-	
+
 	public void engineComponentAdd(final Component ref) {
 		for (final Engine it : this.engines) {
 			if (it.getType().contentEquals(ref.getType())) {
@@ -172,7 +174,7 @@ public class Environement {
 			}
 		}
 	}
-	
+
 	public void engineComponentRemove(final Component ref) {
 		for (final Engine it : this.engines) {
 			if (it.getType().contentEquals(ref.getType())) {
@@ -181,7 +183,7 @@ public class Environement {
 			}
 		}
 	}
-	
+
 	/**
 	 * generate an event on all the sub entity of the game == > usefull for
 	 *        explosion, or lazer fire ...
@@ -189,8 +191,8 @@ public class Environement {
 	 */
 	public void generateInteraction(final EntityInteraction event) {
 		// inform the entity that an entity has been removed  ==> this permit to keep pointer on entitys ...
-		for (int iii = 0; iii < this.listEntity.size(); iii++) {
-			event.applyEvent(this.listEntity.get(iii));
+		for (final Entity element : this.listEntity) {
+			event.applyEvent(element);
 			/*
 			Vector3f destPosition = mlistEntity[iii].getPosition();
 			float dist = (sourcePosition - destPosition).length;
@@ -201,7 +203,7 @@ public class Environement {
 			glistEntity[iii].setFireOn(groupIdSource, type, -inpact, sourcePosition);
 			*/
 		}
-		
+
 	}
 	//	private void onCallbackPeriodicCall(ewol::event::Time event) {
 	//	float curentDelta = event.getDeltaCall();
@@ -274,7 +276,7 @@ public class Environement {
 	//	}
 	//	*/
 	//	}
-	
+
 	/**
 	 * Get a specific camera.
 	 * @param name Name of the camera.
@@ -283,7 +285,7 @@ public class Environement {
 	public Camera getCamera(final String name) {
 		return this.listCamera.get(name);
 	}
-	
+
 	/**
 	 * Get List of all camera.
 	 * @return All the camera registerred.
@@ -291,7 +293,7 @@ public class Environement {
 	public Map<String, Camera> getCameraList() {
 		return this.listCamera;
 	}
-	
+
 	public Engine getEngine(final String type) {
 		for (final Engine it : this.engines) {
 			if (it.getType().contains(type)) {
@@ -301,7 +303,7 @@ public class Environement {
 		LOGGER.error("try to get an unexisting engine type: ''{}'", type);
 		return null;
 	}
-	
+
 	/**
 	 * @breif get a reference on the curent list of entity games
 	 * @return all entity list
@@ -309,25 +311,34 @@ public class Environement {
 	public List<Entity> getEntity() {
 		return this.listEntity;
 	}
-	
+
 	public GameStatus getPropertyStatus() {
 		return this.propertyStatus;
 	}
-	
-	public void onKeyboard(final KeySpecial special, final KeyKeyboard type, final Character value, final KeyStatus state) {
+
+	public void onKeyboard(
+			final KeySpecial special,
+			final KeyKeyboard type,
+			final Character value,
+			final KeyStatus state) {
 		final EventEntry event = new EventEntry(special, type, state, value);
 		for (final ControlInterface elem : this.controls) {
 			elem.onEventEntry(event);
 		}
 	}
-	
-	public void onPointer(final KeySpecial special, final KeyType type, final int pointerID, final Vector3f pos, final KeyStatus state) {
+
+	public void onPointer(
+			final KeySpecial special,
+			final KeyType type,
+			final int pointerID,
+			final Vector3f pos,
+			final KeyStatus state) {
 		final EventInput event = new EventInput(type, state, pointerID, new Vector2f(pos.x(), pos.y()), special);
 		for (final ControlInterface elem : this.controls) {
 			elem.onEventInput(event, pos);
 		}
 	}
-	
+
 	public void periodicCall() {
 		if (this.lastCallTime == 0) {
 			this.startTime = System.nanoTime();
@@ -335,13 +346,13 @@ public class Environement {
 		}
 		long lastUpdate = this.lastCallTime;
 		this.lastCallTime = System.nanoTime();
-		Clock currentClock = Clock.systemUTC();
+		final Clock currentClock = Clock.systemUTC();
 		// in the simulation, we need to limit the delta...
 		if (this.lastCallTime - lastUpdate > 1000000000) {
 			lastUpdate = this.lastCallTime - 5100000;
 		}
-		final EventTime event = new EventTime(currentClock, this.startClock, this.lastCallTime, this.startTime, Duration.ofNanos(this.lastCallTime - lastUpdate),
-				Duration.ofNanos(this.lastCallTime - lastUpdate));
+		final EventTime event = new EventTime(currentClock, this.startClock, this.lastCallTime, this.startTime,
+				Duration.ofNanos(this.lastCallTime - lastUpdate), Duration.ofNanos(this.lastCallTime - lastUpdate));
 		for (final ControlInterface elem : this.controls) {
 			elem.periodicCall(event);
 		}
@@ -349,11 +360,11 @@ public class Environement {
 			engine.update((this.lastCallTime - lastUpdate) / 1000000);
 		}
 	}
-	
+
 	public void removeControlInterface(final ControlInterface ref) {
 		this.controls.remove(ref);
 	}
-	
+
 	public void render(final long deltaMilli, final String cameraName) {
 		//LOGGER.error("Render: {}   time: {}", cameraName, deltaMilli);
 		// get the correct camera:
@@ -374,13 +385,13 @@ public class Environement {
 		//			LOGGER.trace("    render: {}", it.getType());
 		//			it.renderDebug(deltaMilli, camera);
 		//		}
-		
+
 	}
-	
+
 	public void rmEngine(final Engine ref) {
 		this.engines.remove(ref);
 	}
-	
+
 	//	public void addStaticMeshToDraw(Mesh mesh) {
 	//		listMeshToDrawFirst.add(mesh);
 	//	}
@@ -388,7 +399,7 @@ public class Environement {
 	//	public List<Mesh> getStaticMeshToDraw() {
 	//		return listMeshToDrawFirst;
 	//	}
-	
+
 	public void rmEngine(final String type) {
 		for (final Engine it : this.engines) {
 			if (it.getType().contains(type)) {
@@ -397,7 +408,7 @@ public class Environement {
 			}
 		}
 	}
-	
+
 	/**
 	 * remove an entity on the list availlable.
 	 * @param removeEntity Entity to remove.
@@ -406,16 +417,16 @@ public class Environement {
 		if (removeEntity == null) {
 			return;
 		}
-		for (int iii = 0; iii < this.listEntity.size(); iii++) {
-			this.listEntity.get(iii).entityIsRemoved(removeEntity);
+		for (final Entity element : this.listEntity) {
+			element.entityIsRemoved(removeEntity);
 		}
-		if (this.listEntity.remove(removeEntity) == true) {
+		if (this.listEntity.remove(removeEntity)) {
 			removeEntity.onDestroy();
 			removeEntity.dynamicDisable();
 			removeEntity.unInit();
 		}
 	}
-	
+
 	public void setPropertyStatus(final GameStatus propertyStatus) {
 		if (this.propertyStatus == propertyStatus) {
 			return;
@@ -441,7 +452,7 @@ public class Environement {
  * destPosition).length(); //EGE.debug("Distance : " + distance + " >? " +
  * distance + " id=" + iii); if (distanceMax>result.dist) {
  * resultList.pushBack(result); } } }
- * 
+ *
  * void Environement::getEntityNearestFixed( Vector3f sourcePosition, float
  * distanceMax, List<Environement::ResultNearestEntity> resultList) {
  * resultList.clear(); Environement::ResultNearestEntity result; result.dist =

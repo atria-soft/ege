@@ -20,8 +20,12 @@ import org.atriasoft.ewol.event.EventTime;
 import org.atriasoft.ewol.widget.Widget;
 import org.atriasoft.gale.backend3d.OpenGL;
 import org.atriasoft.gale.backend3d.OpenGL.Flag;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public class EgeScene extends Widget {
+	final static private Logger LOGGER = LoggerFactory.getLogger(EgeScene.class);
+	
 	/**
 	 * Periodic call to update grapgic display
 	 * @param _event Time generic event
@@ -72,7 +76,8 @@ public class EgeScene extends Widget {
 		final Entity gird = new Entity(this.env);
 		gird.addComponent(new ComponentPosition(new Transform3D(new Vector3f(0, 0, 0))));
 		gird.addComponent(new ComponentStaticMesh(MeshGenerator.createGrid(5)));
-		gird.addComponent(new ComponentRenderColoredStaticMesh(new Uri("DATA", "wireColor.vert", "ege"), new Uri("DATA", "wireColor.frag", "ege")));
+		gird.addComponent(new ComponentRenderColoredStaticMesh(new Uri("DATA", "wireColor.vert", "ege"),
+				new Uri("DATA", "wireColor.frag", "ege")));
 		this.env.addEntity(gird);
 	}
 	

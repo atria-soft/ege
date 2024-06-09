@@ -4,15 +4,18 @@ import org.atriasoft.etk.Configs;
 import org.atriasoft.etk.math.Vector2f;
 import org.atriasoft.ewol.context.EwolApplication;
 import org.atriasoft.ewol.context.EwolContext;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public class Appl implements EwolApplication {
+	final static private Logger LOGGER = LoggerFactory.getLogger(Appl.class);
 	
 	private void localCreate(final EwolContext context) {
 		// parse all the argument of the application
 		for (int iii = 0; iii < context.getCmd().size(); iii++) {
 			String tmpppp = context.getCmd().get(iii);
 			if (tmpppp == "-h" || tmpppp == "--help") {
-				LOGGER.print("  -h/--help display this help");
+				LOGGER.info("  -h/--help display this help");
 				System.exit(0);
 			}
 		}

@@ -6,11 +6,14 @@ import org.atriasoft.ewol.widget.Sizer;
 import org.atriasoft.ewol.widget.Sizer.DisplayMode;
 import org.atriasoft.ewol.widget.Widget;
 import org.atriasoft.ewol.widget.Windows;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import sample.atriasoft.ege.mapFactory.tools.MapToolInterface;
 import sample.atriasoft.ege.mapFactory.tools.ToolMapHeight;
 
 public class MainWindows extends Windows {
+	final static private Logger LOGGER = LoggerFactory.getLogger(MainWindows.class);
 	
 	public static void eventButtonTool(final MainWindows self, Boolean value) {
 		//Vector2b state = self.testWidget.getPropertyFill();

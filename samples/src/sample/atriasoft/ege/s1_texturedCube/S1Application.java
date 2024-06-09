@@ -26,8 +26,12 @@ import org.atriasoft.gale.key.KeyKeyboard;
 import org.atriasoft.gale.key.KeySpecial;
 import org.atriasoft.gale.key.KeyStatus;
 import org.atriasoft.gale.key.KeyType;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public class S1Application extends GaleApplication {
+	final static private Logger LOGGER = LoggerFactory.getLogger(S1Application.class);
+	
 	private Quaternion basicRotation = Quaternion.IDENTITY;
 	private Quaternion basicRotation2 = Quaternion.IDENTITY;
 	private Environement env;
@@ -48,7 +52,8 @@ public class S1Application extends GaleApplication {
 		final Entity gird = new Entity(this.env);
 		gird.addComponent(new ComponentPosition(new Transform3D(new Vector3f(0, 0, 0))));
 		gird.addComponent(new ComponentStaticMesh(MeshGenerator.createGrid(5)));
-		gird.addComponent(new ComponentRenderColoredStaticMesh(new Uri("DATA", "wireColor.vert", "ege"), new Uri("DATA", "wireColor.frag", "ege")));
+		gird.addComponent(new ComponentRenderColoredStaticMesh(new Uri("DATA", "wireColor.vert", "ege"),
+				new Uri("DATA", "wireColor.frag", "ege")));
 		this.env.addEntity(gird);
 		
 		final Entity basicTree = new Entity(this.env);
@@ -56,7 +61,8 @@ public class S1Application extends GaleApplication {
 		basicTree.addComponent(this.objectPosition);
 		basicTree.addComponent(new ComponentStaticMesh(new Uri("RES", "cube.obj")));
 		basicTree.addComponent(new ComponentTexture(new Uri("DATA", "blocks/dirt.png", "loxelEngine")));
-		basicTree.addComponent(new ComponentRenderTexturedStaticMesh(new Uri("DATA", "basic.vert", "sample"), new Uri("DATA", "basic.frag", "sample")));
+		basicTree.addComponent(new ComponentRenderTexturedStaticMesh(new Uri("DATA", "basic.vert", "sample"),
+				new Uri("DATA", "basic.frag", "sample")));
 		this.env.addEntity(basicTree);
 		
 		this.mainView = new Camera();
@@ -107,12 +113,21 @@ public class S1Application extends GaleApplication {
 	}
 	
 	@Override
-	public void onKeyboard(final KeySpecial special, final KeyKeyboard type, final Character value, final KeyStatus state) {
+	public void onKeyboard(
+			final KeySpecial special,
+			final KeyKeyboard type,
+			final Character value,
+			final KeyStatus state) {
 		this.env.onKeyboard(special, type, value, state);
 	}
 	
 	@Override
-	public void onPointer(final KeySpecial special, final KeyType type, final int pointerID, final Vector2f pos, final KeyStatus state) {
+	public void onPointer(
+			final KeySpecial special,
+			final KeyType type,
+			final int pointerID,
+			final Vector2f pos,
+			final KeyStatus state) {
 		this.env.onPointer(special, type, pointerID, new Vector3f(pos.x(), pos.y(), 0), state);
 	}
 	
@@ -128,12 +143,14 @@ public class S1Application extends GaleApplication {
 		
 		//this.objectPosition.setTransform(this.objectPosition.getTransform().withPosition(new Vector3f(2, -1, -5)));
 		if (this.signe == true) {
-			this.objectPosition.setTransform(this.objectPosition.getTransform().withPosition(this.objectPosition.getTransform().getPosition().add(new Vector3f(0, 0, -0.1f))));
+			this.objectPosition.setTransform(this.objectPosition.getTransform()
+					.withPosition(this.objectPosition.getTransform().getPosition().add(new Vector3f(0, 0, -0.1f))));
 			if (this.objectPosition.getTransform().getPosition().z() < -5) {
 				this.signe = false;
 			}
 		} else {
-			this.objectPosition.setTransform(this.objectPosition.getTransform().withPosition(this.objectPosition.getTransform().getPosition().add(new Vector3f(0, 0, 0.1f))));
+			this.objectPosition.setTransform(this.objectPosition.getTransform()
+					.withPosition(this.objectPosition.getTransform().getPosition().add(new Vector3f(0, 0, 0.1f))));
 			if (this.objectPosition.getTransform().getPosition().z() > 5) {
 				this.signe = true;
 			}

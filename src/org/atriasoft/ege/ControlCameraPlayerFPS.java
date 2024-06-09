@@ -3,7 +3,6 @@ package org.atriasoft.ege;
 import org.atriasoft.ege.camera.Camera;
 import org.atriasoft.ege.components.ComponentPlayer;
 import org.atriasoft.ege.components.ComponentPositionPlayer;
-import org.atriasoft.ege.internal.Log;
 import org.atriasoft.etk.math.Vector2f;
 import org.atriasoft.etk.math.Vector3f;
 import org.atriasoft.ewol.event.EventEntry;
@@ -12,24 +11,27 @@ import org.atriasoft.ewol.event.EventTime;
 import org.atriasoft.gale.Gale;
 import org.atriasoft.gale.key.KeyKeyboard;
 import org.atriasoft.gale.key.KeyStatus;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public class ControlCameraPlayerFPS implements ControlInterface {
-	private Camera camera;
-	private Entity playerEntity;
-	private ComponentPositionPlayer playerPosition;
-	private ComponentPlayer player;
+	static final Logger LOGGER = LoggerFactory.getLogger(ControlCameraPlayerFPS.class);
+	private final Camera camera;
+	private final Entity playerEntity;
+	private final ComponentPositionPlayer playerPosition;
+	private final ComponentPlayer player;
 	private boolean moveUp = false;
 	private boolean moveDown = false;
 	private boolean moveLeft = false;
 	private boolean moveRight = false;
-	
+
 	public ControlCameraPlayerFPS(final Camera camera, final Entity playerEntity) {
 		this.camera = camera;
 		this.playerEntity = playerEntity;
 		this.playerPosition = (ComponentPositionPlayer) this.playerEntity.getComponent("position");
 		this.player = (ComponentPlayer) this.playerEntity.getComponent("player");
 	}
-	
+
 	private boolean getState(final KeyStatus state, final boolean previousState) {
 		if (state == KeyStatus.down) {
 			return true;
@@ -39,24 +41,28 @@ public class ControlCameraPlayerFPS implements ControlInterface {
 		}
 		return previousState;
 	}
-	
+
 	@Override
 	public boolean onEventEntry(final EventEntry event) {
-		if (event.type() == KeyKeyboard.UP || (event.type() == KeyKeyboard.CHARACTER && (event.getChar() == 'z' || event.getChar() == 'Z'))) {
+		if (event.type() == KeyKeyboard.UP
+				|| (event.type() == KeyKeyboard.CHARACTER && (event.getChar() == 'z' || event.getChar() == 'Z'))) {
 			this.moveUp = getState(event.status(), this.moveUp);
 		}
-		if (event.type() == KeyKeyboard.LEFT || (event.type() == KeyKeyboard.CHARACTER && (event.getChar() == 'q' || event.getChar() == 'Q'))) {
+		if (event.type() == KeyKeyboard.LEFT
+				|| (event.type() == KeyKeyboard.CHARACTER && (event.getChar() == 'q' || event.getChar() == 'Q'))) {
 			this.moveLeft = getState(event.status(), this.moveLeft);
 		}
-		if (event.type() == KeyKeyboard.RIGHT || (event.type() == KeyKeyboard.CHARACTER && (event.getChar() == 'd' || event.getChar() == 'D'))) {
+		if (event.type() == KeyKeyboard.RIGHT
+				|| (event.type() == KeyKeyboard.CHARACTER && (event.getChar() == 'd' || event.getChar() == 'D'))) {
 			this.moveRight = getState(event.status(), this.moveRight);
 		}
-		if (event.type() == KeyKeyboard.DOWN || (event.type() == KeyKeyboard.CHARACTER && (event.getChar() == 's' || event.getChar() == 'S'))) {
+		if (event.type() == KeyKeyboard.DOWN
+				|| (event.type() == KeyKeyboard.CHARACTER && (event.getChar() == 's' || event.getChar() == 'S'))) {
 			this.moveDown = getState(event.status(), this.moveDown);
 		}
 		return false;
 	}
-	
+
 	@Override
 	public boolean onEventInput(final EventInput event, final Vector3f relativePosition) {
 		// LOGGER.info("{}", event);
@@ -65,10 +71,11 @@ public class ControlCameraPlayerFPS implements ControlInterface {
 			return false;
 		}
 		if (event.status() == KeyStatus.move) {
-			Vector2f delta = event.pos();
+			final Vector2f delta = event.pos();
 			//angleZ += delta.x;
 			//this.camera.setYaw(this.camera.getYaw() + (float)Math.toRadians(delta.x));
-			this.camera.setPitch(this.camera.getPitch() + (float) Math.toRadians(delta.y() * this.player.getTurnSpeed()));
+			this.camera
+					.setPitch(this.camera.getPitch() + (float) Math.toRadians(delta.y() * this.player.getTurnSpeed()));
 			if (this.camera.getPitch() > 0) {
 				this.camera.setPitch(0);
 			}
@@ -87,7 +94,7 @@ public class ControlCameraPlayerFPS implements ControlInterface {
 		}
 		return false;
 	}
-	
+
 	@Override
 	public void periodicCall(final EventTime event) {
 		float speed = 0;
@@ -99,8 +106,8 @@ public class ControlCameraPlayerFPS implements ControlInterface {
 			}
 		}
 		float distance = speed * event.getTimeDeltaCallSecond();
-		float dx = (float) (distance * Math.sin(this.playerPosition.getAngles().z()));
-		float dy = (float) (distance * Math.cos(this.playerPosition.getAngles().z()));
+		final float dx = (float) (distance * Math.sin(this.playerPosition.getAngles().z()));
+		final float dy = (float) (distance * Math.cos(this.playerPosition.getAngles().z()));
 		speed = 0;
 		if (this.moveRight != this.moveLeft) {
 			if (this.moveRight) {
@@ -110,11 +117,14 @@ public class ControlCameraPlayerFPS implements ControlInterface {
 			}
 		}
 		distance = speed * event.getTimeDeltaCallSecond();
-		float dxStraf = (float) (distance * Math.sin((float) Math.PI * 0.5f + this.playerPosition.getAngles().z()));
-		float dyStraf = (float) (distance * Math.cos((float) Math.PI * 0.5f + this.playerPosition.getAngles().z()));
+		final float dxStraf = (float) (distance
+				* Math.sin((float) Math.PI * 0.5f + this.playerPosition.getAngles().z()));
+		final float dyStraf = (float) (distance
+				* Math.cos((float) Math.PI * 0.5f + this.playerPosition.getAngles().z()));
 		//LOGGER.error("update position ... {}   {}", dx, dy);
-		this.playerPosition.setTransform(this.playerPosition.getTransform().withPosition(this.playerPosition.getTransform().getPosition().add(dx + dxStraf, dy + dyStraf, 0)));
+		this.playerPosition.setTransform(this.playerPosition.getTransform()
+				.withPosition(this.playerPosition.getTransform().getPosition().add(dx + dxStraf, dy + dyStraf, 0)));
 		this.camera.setPosition(this.playerPosition.getTransform().getPosition());
 	}
-	
+
 }

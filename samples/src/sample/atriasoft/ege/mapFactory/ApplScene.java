@@ -13,11 +13,14 @@ import org.atriasoft.etk.math.Transform3D;
 import org.atriasoft.etk.math.Vector3f;
 import org.atriasoft.ewol.event.EventEntry;
 import org.atriasoft.ewol.event.EventInput;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import sample.atriasoft.ege.mapFactory.model.Map;
 import sample.atriasoft.ege.mapFactory.tools.MapToolInterface;
 
 public class ApplScene extends EgeScene {
+	final static private Logger LOGGER = LoggerFactory.getLogger(ApplScene.class);
 	//Ground ground = new Ground();
 	Map map = new Map();
 	private ControlInterface simpleControl;
@@ -38,8 +41,8 @@ public class ApplScene extends EgeScene {
 		groundEntity.addComponent(new ComponentMesh(this.map.ground.createMesh()));
 		groundEntity.addComponent(new ComponentTexturePalette(new Uri("DATA", "palette_1.json")));
 		//basicTree.addComponent(new ComponentRenderTexturedStaticMesh(new Uri("DATA", "basic.vert", "loxelEngine"), new Uri("DATA", "basic.frag", "loxelEngine")));
-		groundEntity
-				.addComponent(new ComponentRenderMeshPalette(new Uri("DATA", "basicPalette.vert"), new Uri("DATA", "basicPalette.frag"), (EngineLight) this.env.getEngine(EngineLight.ENGINE_NAME)));
+		groundEntity.addComponent(new ComponentRenderMeshPalette(new Uri("DATA", "basicPalette.vert"),
+				new Uri("DATA", "basicPalette.frag"), (EngineLight) this.env.getEngine(EngineLight.ENGINE_NAME)));
 		this.env.addEntity(groundEntity);
 		
 		this.map.updateMesh();

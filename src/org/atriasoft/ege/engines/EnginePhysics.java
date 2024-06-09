@@ -8,38 +8,41 @@ import org.atriasoft.ege.Environement;
 import org.atriasoft.ege.camera.Camera;
 import org.atriasoft.ege.components.ComponentPhysics;
 import org.atriasoft.ege.components.PhysicBodyType;
-import org.atriasoft.ege.internal.Log;
 import org.atriasoft.gale.resource.ResourceColored3DObject;
 import org.atriasoft.phyligram.DebugDisplay;
 import org.atriasoft.phyligram.shape.AABB;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public class EnginePhysics extends Engine {
+	static final Logger LOGGER = LoggerFactory.getLogger(EnginePhysics.class);
 	public static final String ENGINE_NAME = "physics";
 	private static final float TIME_STEP = 0.005f;
 	private float accumulator = 0;
-	private EngineGravity gravity;
+	private final EngineGravity gravity;
 	protected EnginePhysics engine;
-	private Vector<ComponentPhysics> components = new Vector<>();
-	private Vector<ComponentPhysics> componentsWithCollision = new Vector<>();
-	private ResourceColored3DObject debugDrawProperty = ResourceColored3DObject.create();
+	private final Vector<ComponentPhysics> components = new Vector<>();
+	private final Vector<ComponentPhysics> componentsWithCollision = new Vector<>();
+	private final ResourceColored3DObject debugDrawProperty = ResourceColored3DObject.create();
 	
-	public EnginePhysics(Environement env) {
+	public EnginePhysics(final Environement env) {
 		super(env);
 		this.gravity = (EngineGravity) env.getEngine("gravity");
 		if (this.gravity == null) {
-			LOGGER.critical("Must initialyse Gravity before physics...");
+			LOGGER.error("[CRITICAL] Must initialyse Gravity before physics...");
+			System.exit(-1);
 		}
 	}
 	
-	private void addIncomponentWithCollision(ComponentPhysics elem) {
+	private void addIncomponentWithCollision(final ComponentPhysics elem) {
 		if (this.componentsWithCollision.contains(elem)) {
 			return;
 		}
 		this.componentsWithCollision.add(elem);
 	}
 	
-	private void applyForces(float timeStep) {
-		for (ComponentPhysics it : this.components) {
+	private void applyForces(final float timeStep) {
+		for (final ComponentPhysics it : this.components) {
 			it.applyForces(timeStep, this.gravity);
 		}
 	}
@@ -48,21 +51,21 @@ public class EnginePhysics extends Engine {
 	 *  Clear the previous data of collision.
 	 */
 	private void clearPreviousCycle() {
-		for (ComponentPhysics it : this.components) {
+		for (final ComponentPhysics it : this.components) {
 			it.clearPreviousCollision();
 		}
 	}
 	
 	@Override
-	public void componentAdd(Component ref) {
-		if (ref instanceof ComponentPhysics == false) {
+	public void componentAdd(final Component ref) {
+		if (!(ref instanceof ComponentPhysics)) {
 			return;
 		}
 		this.components.add((ComponentPhysics) ref);
 	}
 	
 	@Override
-	public void componentRemove(Component ref) {
+	public void componentRemove(final Component ref) {
 		this.components.remove(ref);
 	}
 	
@@ -70,8 +73,8 @@ public class EnginePhysics extends Engine {
 	 * Collision Detection STEP 4: apply all calculated forces (with containts)
 	 * @param timeStep
 	 */
-	private void generateResultCollisionsForces(float timeStep) {
-		for (ComponentPhysics it : this.componentsWithCollision) {
+	private void generateResultCollisionsForces(final float timeStep) {
+		for (final ComponentPhysics it : this.componentsWithCollision) {
 			it.applyColisionForce(timeStep);
 		}
 	}
@@ -83,9 +86,9 @@ public class EnginePhysics extends Engine {
 	}
 	
 	@Override
-	public void render(long deltaMili, Camera camera) {
+	public void render(final long deltaMili, final Camera camera) {
 		// TODO Auto-generated method stub
-		for (ComponentPhysics it : this.components) {
+		for (final ComponentPhysics it : this.components) {
 			//LOGGER.info("Render {}", it);
 			it.renderDebug(this.debugDrawProperty);
 		}
@@ -96,13 +99,13 @@ public class EnginePhysics extends Engine {
 	}
 	
 	@Override
-	public void renderDebug(long deltaMili, Camera camera) {
+	public void renderDebug(final long deltaMili, final Camera camera) {
 		DebugDisplay.onDraw();
 		DebugDisplay.clear();
 	}
 	
 	@Override
-	public void update(long deltaMili) {
+	public void update(final long deltaMili) {
 		// Add the time difference in the accumulator
 		this.accumulator += deltaMili * 0.0001f;
 		// While there is enough accumulated time to take one or several physics steps
@@ -126,8 +129,8 @@ public class EnginePhysics extends Engine {
 	 * Collision detection STEP 1: Upadte the AABB positioning of each elements
 	 * @param timeStep Delta time since the last check
 	 */
-	private void updateAABB(float timeStep) {
-		for (ComponentPhysics it : this.components) {
+	private void updateAABB(final float timeStep) {
+		for (final ComponentPhysics it : this.components) {
 			it.updateAABB();
 		}
 	}
@@ -137,23 +140,24 @@ public class EnginePhysics extends Engine {
 	 * @param timeStep Delta time since the last check
 	 */
 	// TODO : generate a B-TREE to manage collision, it is faster, but now, this is not the purpose ...
-	private void updateCollisionsAABB(float timeStep) {
+	private void updateCollisionsAABB(final float timeStep) {
 		this.componentsWithCollision.clear();
 		// clear all object intersection
-		for (ComponentPhysics it : this.components) {
+		for (final ComponentPhysics it : this.components) {
 			it.clearAABBIntersection();
 		}
 		// update the current object intersection...
 		for (int iii = 0; iii < this.components.size(); iii++) {
-			ComponentPhysics current = this.components.get(iii);
-			AABB currentAABB = current.getAABB();
+			final ComponentPhysics current = this.components.get(iii);
+			final AABB currentAABB = current.getAABB();
 			for (int jjj = iii + 1; jjj < this.components.size(); jjj++) {
-				ComponentPhysics remote = this.components.get(jjj);
-				if (current.getBodyType() != PhysicBodyType.BODY_DYNAMIC && remote.getBodyType() != PhysicBodyType.BODY_DYNAMIC) {
+				final ComponentPhysics remote = this.components.get(jjj);
+				if (current.getBodyType() != PhysicBodyType.BODY_DYNAMIC
+						&& remote.getBodyType() != PhysicBodyType.BODY_DYNAMIC) {
 					continue;
 				}
 				// prefer checking the collision, this a time-constant operation, check if collision already exist is a unpredictable time.
-				if (currentAABB.intersect(this.components.get(jjj).getAABB()) == true) {
+				if (currentAABB.intersect(this.components.get(jjj).getAABB())) {
 					current.addIntersection(remote);
 					remote.addIntersection(current);
 					addIncomponentWithCollision(remote);
@@ -167,20 +171,18 @@ public class EnginePhysics extends Engine {
 	 * Collision Detection STEP 3: Narrow phase: process the collision between every OBB boxes (or other..)
 	 * @param timeStep Delta time since the last check
 	 */
-	private void updateCollisionsNarrowPhase(float timeStep) {
+	private void updateCollisionsNarrowPhase(final float timeStep) {
 		// clear all object intersection
-		for (ComponentPhysics it : this.componentsWithCollision) {
+		for (final ComponentPhysics it : this.componentsWithCollision) {
 			it.updateForNarrowCollision();
 		}
 		// check for every component if the narrow collision is available.
-		for (int iii = 0; iii < this.componentsWithCollision.size(); iii++) {
-			ComponentPhysics current = this.componentsWithCollision.get(iii);
-			boolean collide = current.checkNarrowCollision();
+		for (final ComponentPhysics current : this.componentsWithCollision) {
+			final boolean collide = current.checkNarrowCollision();
 			
 		}
 		// update the force of collision available.
-		for (int iii = 0; iii < this.components.size(); iii++) {
-			ComponentPhysics current = this.components.get(iii);
+		for (final ComponentPhysics current : this.components) {
 			current.narrowCollisionCreateContactAndForce();
 		}
 	}

@@ -4,12 +4,14 @@ import java.util.ArrayList;
 import java.util.List;
 
 import org.atriasoft.etk.math.Vector3f;
-import org.atriasoft.ege.internal.Log;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public class Entity {
+	static final Logger LOGGER = LoggerFactory.getLogger(Entity.class);
 	private static int uIDGlobal = 0; //!< This is a reference on a basic Entity ID
 	protected Environement env = null;
-	protected List<Component> component = new ArrayList<Component>();
+	protected List<Component> component = new ArrayList<>();
 	
 	private final int uID = uIDGlobal++; //!< This is a reference on a basic Entity ID
 	protected float life = 100; //!< Current life of the object
@@ -34,14 +36,14 @@ public class Entity {
 		}
 		// Remove component with the same name.
 		this.removeComponent(ref.getType());
-		LOGGER.print("Entity: Add New component ... [START]");
+		LOGGER.info("Entity: Add New component ... [START]");
 		this.component.add(ref);
 		this.env.engineComponentAdd(ref);
 		for (final Component it : this.component) {
 			ref.addFriendComponent(it);
 			it.addFriendComponent(ref);
 		}
-		LOGGER.print("Entity: Add New component ... [END]");
+		LOGGER.info("Entity: Add New component ... [END]");
 	}
 	
 	/**
@@ -84,11 +86,11 @@ public class Entity {
 	public void entityIsRemoved(final Entity removedEntity) {};
 	
 	public boolean exist(final String type) {
-		for (int iii = 0; iii < this.component.size(); ++iii) {
-			if (this.component.get(iii) == null) {
+		for (final Component element : this.component) {
+			if (element == null) {
 				continue;
 			}
-			if (this.component.get(iii).getType().contentEquals(type)) {
+			if (element.getType().contentEquals(type)) {
 				return true;
 			}
 		}
@@ -97,12 +99,12 @@ public class Entity {
 	
 	public Component getComponent(final String type) {
 		// check if not exist
-		for (int iii = 0; iii < this.component.size(); ++iii) {
-			if (this.component.get(iii) == null) {
+		for (final Component element : this.component) {
+			if (element == null) {
 				continue;
 			}
-			if (this.component.get(iii).getType().contentEquals(type)) {
-				return this.component.get(iii);
+			if (element.getType().contentEquals(type)) {
+				return element;
 			}
 		}
 		return null;
@@ -233,7 +235,7 @@ public class Entity {
 			LOGGER.error("try to remove an empty component");
 			return;
 		}
-		if (this.component.remove(ref) == false) {
+		if (!this.component.remove(ref)) {
 			LOGGER.error("try to remove an unexisting component");
 			return;
 		}
@@ -255,7 +257,7 @@ public class Entity {
 				break;
 			}
 		}
-		if (findIt == false) {
+		if (!findIt) {
 			//LOGGER.error("try to remove an unknown component type : '{}'", type);
 			return;
 		}

@@ -10,8 +10,8 @@ public class MainCollisionTest {
 		Ege.init();
 		Uri.setGroup("DATA", "data/");
 		Uri.setGroup("RES", "res");
-		Uri.addLibrary("loxelEngine", MainCollisionTest.class, "testDataLoxelEngine/");
-		Uri.setApplication(MainCollisionTest.class, "");
+		Uri.addLibrary("loxelEngine", MainCollisionTest.class, "resources/testDataLoxelEngine");
+		Uri.setApplication(MainCollisionTest.class, "resources");
 		Gale.run(new CollisionTestApplication(), args);
 	}
 }

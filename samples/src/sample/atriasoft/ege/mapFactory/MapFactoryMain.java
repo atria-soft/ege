@@ -10,13 +10,13 @@ public class MapFactoryMain {
 		Gale.init();
 		Ewol.init();
 		Ege.init();
-		Uri.setGroup("DATA", "data/");
+		Uri.setGroup("DATA", "data");
 		//Uri.setGroup("RES", "res");
-		//Uri.addLibrary("loxelEngine", MapFactoryMain.class, "testDataLoxelEngine/");
-		//Uri.addLibrary("plop", Appl.class, "resources/mapFactory/");
-		Uri.setApplication(Appl.class, "mapFactory");//, "resources/mapFactory/");
+		//Uri.addLibrary("loxelEngine", MapFactoryMain.class, "/resources/testDataLoxelEngine");
+		//Uri.addLibrary("plop", Appl.class, "/resources/mapFactory");
+		Uri.setApplication(Appl.class, "resources/mapFactory");
 		Ewol.run(new Appl(), args);
 	}
-	
+
 	private MapFactoryMain() {}
 }

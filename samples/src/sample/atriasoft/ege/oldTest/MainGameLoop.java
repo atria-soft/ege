@@ -29,7 +29,7 @@ import textures.ModelTexture;
 
 /**
  * This class contains the main method and is used to test the engine.
- * 
+ *
  * @author Karl
  *
  */
@@ -38,48 +38,60 @@ public class MainGameLoop {
 	/**
 	 * Loads up the position data for two triangles (which together make a quad)
 	 * into a VAO. This VAO is then rendered to the screen every frame.
-	 * 
+	 *
 	 * @param args
 	 */
-	public static void main(String[] args) {
+	public static void main(final String[] args) {
 		Gale.init();
 		Ege.init();
-		Uri.setGroup("DATA", "data/");
+		Uri.setGroup("DATA", "data");
 		Uri.setGroup("RES", "res");
-		Uri.addLibrary("loxelEngine", MainGameLoop.class, "testDataLoxelEngine/");
-		Uri.setApplication(MainGameLoop.class, "");
+		Uri.addLibrary("loxelEngine", MainGameLoop.class, "resources/testDataLoxelEngine");
+		Uri.setApplication(MainGameLoop.class, "resources");
 		
 		final DisplayManager manager = new DisplayManager();
 		final Loader loader = new Loader();
 		manager.init();
 		
-		final List<Entity> entities = new ArrayList<Entity>();
+		final List<Entity> entities = new ArrayList<>();
 		final Random random = new Random();
 		
-		final TexturedModel staticModel = new TexturedModel(OBJLoader.loadObjModel(new Uri("RES", "tree.obj", "sample"), loader), new ModelTexture(loader.loadTexture("tree")));
+		final TexturedModel staticModel = new TexturedModel(
+				OBJLoader.loadObjModel(new Uri("RES", "tree.obj", "sample"), loader),
+				new ModelTexture(loader.loadTexture("tree")));
 		//ModelTexture texture = staticModel.getTexture();
 		//texture.setShineDamper(10);
 		//texture.setReflectivity(1);
 		
-		final TexturedModel grassModel = new TexturedModel(OBJLoader.loadObjModel(new Uri("RES", "grassModel.obj", "sample"), loader), new ModelTexture(loader.loadTexture("grassTexture")));
+		final TexturedModel grassModel = new TexturedModel(
+				OBJLoader.loadObjModel(new Uri("RES", "grassModel.obj", "sample"), loader),
+				new ModelTexture(loader.loadTexture("grassTexture")));
 		grassModel.getTexture().setHasTransparency(true);
 		grassModel.getTexture().setUseFakeLighting(true);
 		
-		final TexturedModel flowerModel = new TexturedModel(OBJLoader.loadObjModel(new Uri("RES", "grassModel.obj", "sample"), loader), new ModelTexture(loader.loadTexture("flower")));
+		final TexturedModel flowerModel = new TexturedModel(
+				OBJLoader.loadObjModel(new Uri("RES", "grassModel.obj", "sample"), loader),
+				new ModelTexture(loader.loadTexture("flower")));
 		flowerModel.getTexture().setHasTransparency(true);
 		flowerModel.getTexture().setUseFakeLighting(true);
 		
-		final TexturedModel fernModel = new TexturedModel(OBJLoader.loadObjModel(new Uri("RES", "fern.obj", "sample"), loader), new ModelTexture(loader.loadTexture("fern_atlas")));
+		final TexturedModel fernModel = new TexturedModel(
+				OBJLoader.loadObjModel(new Uri("RES", "fern.obj", "sample"), loader),
+				new ModelTexture(loader.loadTexture("fern_atlas")));
 		fernModel.getTexture().setHasTransparency(true);
 		fernModel.getTexture().setNumberOfRows(2);
 		
-		final TexturedModel lampModel = new TexturedModel(OBJLoader.loadObjModel(new Uri("RES", "lamp.obj", "sample"), loader), new ModelTexture(loader.loadTexture("lamp")));
+		final TexturedModel lampModel = new TexturedModel(
+				OBJLoader.loadObjModel(new Uri("RES", "lamp.obj", "sample"), loader),
+				new ModelTexture(loader.loadTexture("lamp")));
 		//lampModel.getTexture().setHasTransparency(true);
 		lampModel.getTexture().setUseFakeLighting(true); // this permit to the light to glow
 		
-		final TexturedModel pineModel = new TexturedModel(OBJLoader.loadObjModel(new Uri("RES", "pine.obj", "sample"), loader), new ModelTexture(loader.loadTexture("pine")));
+		final TexturedModel pineModel = new TexturedModel(
+				OBJLoader.loadObjModel(new Uri("RES", "pine.obj", "sample"), loader),
+				new ModelTexture(loader.loadTexture("pine")));
 		
-		final List<Light> lights = new ArrayList<Light>();
+		final List<Light> lights = new ArrayList<>();
 		lights.add(new Light(new Vector3f(0, 10000, -7000), new Vector3f(0.4f, 0.4f, 0.4f)));
 		lights.add(new Light(new Vector3f(185, 10, -293), new Vector3f(2, 0, 0), new Vector3f(1, 0.01f, 0.002f)));
 		lights.add(new Light(new Vector3f(370, 17, -300), new Vector3f(0, 2, 2), new Vector3f(1, 0.01f, 0.002f)));
@@ -118,14 +130,18 @@ public class MainGameLoop {
 			entities.add(new Entity(fernModel, random.nextInt(4), new Vector3f(x, y, z), new Vector3f(0, 0, 0), 0.6f));
 		}
 		
-		final TexturedModel playerModel = new TexturedModel(OBJLoader.loadObjModel(new Uri("RES", "person.obj", "sample"), loader), new ModelTexture(loader.loadTexture("playerTexture")));
+		final TexturedModel playerModel = new TexturedModel(
+				OBJLoader.loadObjModel(new Uri("RES", "person.obj", "sample"), loader),
+				new ModelTexture(loader.loadTexture("playerTexture")));
 		
-		final Player player = new Player(playerModel, new Vector3f(180, terrain.getHeightOfTerrain(180, -250), -250), new Vector3f(0, 3.14f, 0), 0.4f);
+		final Player player = new Player(playerModel, new Vector3f(180, terrain.getHeightOfTerrain(180, -250), -250),
+				new Vector3f(0, 3.14f, 0), 0.4f);
 		
 		final Camera camera = new Camera(player);
 		
-		final List<GuiTexture> guis = new ArrayList<GuiTexture>();
-		final GuiTexture gui = new GuiTexture(loader.loadTexture("health"), new Vector2f(-0.75f, 0.9f), new Vector2f(0.25f, 0.25f));
+		final List<GuiTexture> guis = new ArrayList<>();
+		final GuiTexture gui = new GuiTexture(loader.loadTexture("health"), new Vector2f(-0.75f, 0.9f),
+				new Vector2f(0.25f, 0.25f));
 		guis.add(gui);
 		
 		final GuiRenderer guiRenderer = new GuiRenderer(loader);

@@ -41,7 +41,7 @@
     </dependencies>
 
 	<build>
-		<sourceDirectory>src</sourceDirectory>
+		<sourceDirectory>src/main</sourceDirectory>
 		<resources>
 			<resource>
 				<directory>${basedir}/src/resources</directory>

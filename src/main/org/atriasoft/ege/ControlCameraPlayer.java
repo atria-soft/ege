@@ -28,7 +28,7 @@ public class ControlCameraPlayer implements ControlInterface {
 	private boolean moveLeft = false;
 	private boolean moveRight = false;
 	private boolean walk = false;
-
+	
 	public ControlCameraPlayer(final Camera camera, final Entity playerEntity) {
 		this.camera = camera;
 		this.playerEntity = playerEntity;
@@ -37,7 +37,7 @@ public class ControlCameraPlayer implements ControlInterface {
 		}
 		this.player = (ComponentPlayer) this.playerEntity.getComponent("player");
 	}
-
+	
 	private boolean getState(final KeyStatus state, final boolean previousState) {
 		if (state == KeyStatus.down) {
 			return true;
@@ -47,7 +47,7 @@ public class ControlCameraPlayer implements ControlInterface {
 		}
 		return previousState;
 	}
-
+	
 	@Override
 	public boolean onEventEntry(final EventEntry event) {
 		if (event.type() == KeyKeyboard.UP
@@ -82,9 +82,9 @@ public class ControlCameraPlayer implements ControlInterface {
 		}
 		return false;
 	}
-
+	
 	@Override
-	public boolean onEventInput(final EventInput event, final Vector3f relativePosition) {
+	public boolean onEventInput(final EventInput event, final Vector2f relativePosition) {
 		// LOGGER.info("{}", event);
 		// TODO Auto-generated method stub
 		if (!this.fpsMode) {
@@ -139,7 +139,7 @@ public class ControlCameraPlayer implements ControlInterface {
 			if (this.playerPosition != null) {
 				final float playerZAngle = this.playerPosition.getAngles().z();
 				float tmpAngle = playerZAngle + (float) Math.toRadians(delta.x() * this.player.getTurnSpeed());
-
+				
 				if (tmpAngle > Math.PI) {
 					tmpAngle -= (float) Math.PI * 2.0f;
 				}
@@ -153,7 +153,7 @@ public class ControlCameraPlayer implements ControlInterface {
 		}
 		return false;
 	}
-
+	
 	@Override
 	public void periodicCall(final EventTime event) {
 		float speed = 0;
@@ -210,5 +210,5 @@ public class ControlCameraPlayer implements ControlInterface {
 				new Vector3f(playerTransform.getPosition().x() + offsetX, playerTransform.getPosition().y() + offsetY,
 						playerTransform.getPosition().z() + 1.6f + verticalDistance));
 	}
-
+	
 }

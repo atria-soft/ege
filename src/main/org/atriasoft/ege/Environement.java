@@ -18,7 +18,6 @@ import org.atriasoft.ege.engines.EnginePlayer;
 import org.atriasoft.ege.engines.EngineRender;
 //import org.atriasoft.ege.resource.Mesh;
 import org.atriasoft.etk.math.Vector2f;
-import org.atriasoft.etk.math.Vector3f;
 import org.atriasoft.ewol.event.EventEntry;
 import org.atriasoft.ewol.event.EventInput;
 import org.atriasoft.ewol.event.EventTime;
@@ -331,9 +330,9 @@ public class Environement {
 			final KeySpecial special,
 			final KeyType type,
 			final int pointerID,
-			final Vector3f pos,
+			final Vector2f pos,
 			final KeyStatus state) {
-		final EventInput event = new EventInput(type, state, pointerID, new Vector2f(pos.x(), pos.y()), special);
+		final EventInput event = new EventInput(type, state, pointerID, pos, special);
 		for (final ControlInterface elem : this.controls) {
 			elem.onEventInput(event, pos);
 		}

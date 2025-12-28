@@ -20,11 +20,11 @@ public class ControlCameraSimple implements ControlInterface {
 	private boolean moveRight = false;
 	private boolean moveDown = false;
 	private boolean ctrlIsSet = false;
-
+	
 	public ControlCameraSimple(final Camera camera) {
 		this.camera = camera;
 	}
-
+	
 	private boolean getState(final KeyStatus state, final boolean previousState) {
 		if (state == KeyStatus.down) {
 			return true;
@@ -34,7 +34,7 @@ public class ControlCameraSimple implements ControlInterface {
 		}
 		return previousState;
 	}
-
+	
 	@Override
 	public boolean onEventEntry(final EventEntry event) {
 		if (event.type() == KeyKeyboard.UP) {
@@ -52,9 +52,9 @@ public class ControlCameraSimple implements ControlInterface {
 		this.ctrlIsSet = event.specialKey().getCtrl();
 		return false;
 	}
-
+	
 	@Override
-	public boolean onEventInput(final EventInput event, final Vector3f relativePosition) {
+	public boolean onEventInput(final EventInput event, final Vector2f relativePosition) {
 		// TODO Auto-generated method stub
 		if (event.inputId() == 4) {
 			final Vector3f delta = this.camera.getConvertionMatrix().transpose().multiply(new Vector3f(0, 0, -1));
@@ -95,7 +95,7 @@ public class ControlCameraSimple implements ControlInterface {
 		}
 		return false;
 	}
-
+	
 	@Override
 	public void periodicCall(final EventTime event) {
 		final float roll = this.camera.getRoll();
@@ -124,5 +124,5 @@ public class ControlCameraSimple implements ControlInterface {
 			}
 		}
 	}
-
+	
 }

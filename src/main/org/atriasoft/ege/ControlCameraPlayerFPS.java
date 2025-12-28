@@ -64,7 +64,7 @@ public class ControlCameraPlayerFPS implements ControlInterface {
 	}
 
 	@Override
-	public boolean onEventInput(final EventInput event, final Vector3f relativePosition) {
+	public boolean onEventInput(final EventInput event, final Vector2f relativePosition) {
 		// LOGGER.info("{}", event);
 		// in grabbing mouse only:
 		if (!Gale.getContext().isGrabPointerEvents()) {

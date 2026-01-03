@@ -3,12 +3,6 @@
   <groupId>org.atriasoft</groupId>
   <artifactId>ege-sample</artifactId>
   <version>0.1.0</version>
-	<properties>
-		<maven.compiler.version>3.13.0</maven.compiler.version>
-		<maven.compiler.source>21</maven.compiler.source>
-		<maven.compiler.target>21</maven.compiler.target>
-		<maven.dependency.version>3.1.1</maven.dependency.version>
-	</properties>
 
 	<repositories>
 	  <repository>
@@ -51,10 +45,10 @@
 			<plugin>
 				<groupId>org.apache.maven.plugins</groupId>
 				<artifactId>maven-compiler-plugin</artifactId>
-				<version>${maven.compiler.version}</version>
+				<version>3.14.1</version>
 				<configuration>
-					<source>${maven.compiler.source}</source>
-					<target>${maven.compiler.target}</target>
+					<source>25</source>
+					<target>25</target>
 					<!--<encoding>${project.build.sourceEncoding}</encoding>-->
 				</configuration>
 			</plugin>
@@ -62,7 +56,7 @@
 			<plugin>
 				<groupId>org.apache.maven.plugins</groupId>
 				<artifactId>maven-source-plugin</artifactId>
-				<version>3.3.1</version>
+				<version>3.4.0</version>
 				<executions>
 					<execution>
 						<id>attach-sources</id>
@@ -76,7 +70,7 @@
 			<plugin>
 				<groupId>org.apache.maven.plugins</groupId>
 				<artifactId>maven-surefire-plugin</artifactId>
-				<version>3.0.0-M5</version>
+				<version>3.5.4</version>
 			</plugin>
 		    <plugin>
 				<artifactId>maven-assembly-plugin</artifactId>
@@ -95,7 +89,7 @@
 			<plugin>
 				<groupId>org.apache.maven.plugins</groupId>
 				<artifactId>maven-javadoc-plugin</artifactId>
-				<version>3.2.0</version>
+				<version>3.12.0</version>
 				<configuration>
 					<show>private</show>
 					<nohelp>true</nohelp>
@@ -109,7 +103,7 @@
 			<plugin>
 				<groupId>org.apache.maven.plugins</groupId>
 				<artifactId>maven-javadoc-plugin</artifactId>
-				<version>3.2.0</version>
+				<version>3.12.0</version>
 				<configuration>
 					<show>public</show>
 				</configuration>

@@ -15,6 +15,7 @@ import org.atriasoft.ege.engines.EngineLight;
 import org.atriasoft.ege.engines.EngineParticle;
 import org.atriasoft.ege.engines.EnginePhysics;
 import org.atriasoft.ege.engines.EnginePlayer;
+import org.atriasoft.ege.engines.EnginePostProcess;
 import org.atriasoft.ege.engines.EngineRender;
 //import org.atriasoft.ege.resource.Mesh;
 import org.atriasoft.etk.math.Vector2f;
@@ -73,6 +74,7 @@ public class Environement {
 		addEngine(new EngineAI(this));
 		addEngine(new EngineDynamicMeshs(this));
 		addEngine(new EngineRender(this));
+		addEngine(new EnginePostProcess(this));
 		addEngine(new EnginePhysics(this));
 		addEngine(new EngineParticle(this));
 		addEngine(new EngineLight(this));

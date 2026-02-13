@@ -1,9 +1,16 @@
 package sample.atriasoft.ege.mapFactory.tools;
 
+import java.util.List;
+
 import org.atriasoft.ege.Entity;
+import org.atriasoft.ege.components.ComponentMesh;
 import org.atriasoft.ege.components.ComponentPosition;
+import org.atriasoft.ege.components.ComponentPostProcess;
 import org.atriasoft.ege.geometry.Ray;
+import org.atriasoft.ege.postprocess.AdditiveOverlayEffect;
+import org.atriasoft.ege.postprocess.OutlineEffect;
 import org.atriasoft.etk.Color;
+import org.atriasoft.loader3d.resources.ResourceMesh;
 import org.atriasoft.etk.math.Quaternion;
 import org.atriasoft.etk.math.Transform3D;
 import org.atriasoft.etk.math.Vector2f;
@@ -16,7 +23,6 @@ import org.atriasoft.ewol.widget.Slider;
 import org.atriasoft.ewol.widget.Widget;
 import org.atriasoft.gale.key.KeyKeyboard;
 import org.atriasoft.gale.key.KeyStatus;
-import org.atriasoft.gale.resource.ResourceColored3DObject;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -26,16 +32,19 @@ import sample.atriasoft.ege.mapFactory.model.Map;
 public class ToolObjectSelector implements MapToolInterface {
 	final static private Logger LOGGER = LoggerFactory.getLogger(ToolObjectSelector.class);
 
-	private final ResourceColored3DObject dynamicElement;
+	// Highlight configuration (in pixels, screen-space)
+	private static final float SELECTION_OUTLINE_WIDTH = 6.0f;
+	private static final float HOVER_OUTLINE_WIDTH = 3.0f;
+	private static final Color SELECTION_BORDER_COLOR = new Color(0.0f, 0.0f, 0.0f, 1.0f);
+	private static final Color HOVER_BORDER_COLOR = new Color(1.0f, 0.5f, 0.0f, 1.0f);
+	private static final Color SELECTION_ADD = new Color(1.0f, 1.0f, 1.0f, 0.25f);
+	private static final Color HOVER_ADD = new Color(1.0f, 1.0f, 1.0f, 0.15f);
 
 	private EgeScene sceneRef = null;
 	private Entity selectedEntity = null;
 	private ComponentPosition selectedPosition = null;
+	private Entity hoveredEntity = null;
 	private float objectRotation = 0.0f;
-
-	public ToolObjectSelector() {
-		this.dynamicElement = ResourceColored3DObject.create();
-	}
 
 	private static void onRotationChanged(final ToolObjectSelector self, final Float value) {
 		self.objectRotation = value;
@@ -68,13 +77,8 @@ public class ToolObjectSelector implements MapToolInterface {
 
 	@Override
 	public void onDraw(final Map map) {
-		// Draw selection indicator around selected entity
-		if (this.selectedEntity != null && this.selectedPosition != null) {
-			final Vector3f pos = this.selectedPosition.getTransform().position();
-			final Transform3D selTransform = new Transform3D(pos);
-			this.dynamicElement.drawSphere(1.2f, 12, 12,
-					selTransform.getOpenGLMatrix(), Color.YELLOW.withA(0.3f));
-		}
+		// Post-process effects are now handled by EnginePostProcess automatically.
+		// No manual drawing needed.
 	}
 
 	@Override
@@ -88,6 +92,7 @@ public class ToolObjectSelector implements MapToolInterface {
 					map.placedEntities.remove(this.selectedEntity);
 					this.selectedEntity = null;
 					this.selectedPosition = null;
+					this.hoveredEntity = null;
 					LOGGER.info("Deleted selected entity");
 					return true;
 				}
@@ -106,17 +111,13 @@ public class ToolObjectSelector implements MapToolInterface {
 		// Ray-cast
 		final Ray mouseRay = widget.mainView.getRayFromScreen(widget.projection, widget.getSize(), relPos);
 
+		// Update hover on every mouse event
+		final Entity newHovered = findEntityAtRay(mouseRay, map);
+		updateHover(newHovered);
+
 		// Select object on left click
 		if (event.inputId() == 1 && event.status() == KeyStatus.pressSingle) {
-			final Entity found = findEntityAtRay(mouseRay, map);
-			if (found != null) {
-				this.selectedEntity = found;
-				this.selectedPosition = (ComponentPosition) found.getComponent("position");
-				LOGGER.info("Selected entity at {}", this.selectedPosition.getTransform().position());
-			} else {
-				this.selectedEntity = null;
-				this.selectedPosition = null;
-			}
+			selectEntity(newHovered);
 			return true;
 		}
 
@@ -137,21 +138,77 @@ public class ToolObjectSelector implements MapToolInterface {
 		return false;
 	}
 
+	private void updateHover(final Entity newHovered) {
+		if (newHovered == this.hoveredEntity) {
+			return; // no change
+		}
+		// Remove hover highlight from old entity (if it's not selected)
+		if (this.hoveredEntity != null && this.hoveredEntity != this.selectedEntity) {
+			this.hoveredEntity.removeComponent(ComponentPostProcess.COMPONENT_NAME);
+		}
+		this.hoveredEntity = newHovered;
+		// Add hover highlight to new entity (if it's not selected)
+		if (this.hoveredEntity != null && this.hoveredEntity != this.selectedEntity) {
+			this.hoveredEntity.addComponent(new ComponentPostProcess()
+					.addEffect(new OutlineEffect(HOVER_OUTLINE_WIDTH, HOVER_BORDER_COLOR))
+					.addEffect(new AdditiveOverlayEffect(HOVER_ADD)));
+		}
+	}
+
+	private void selectEntity(final Entity entity) {
+		// Remove old selection highlight
+		if (this.selectedEntity != null) {
+			this.selectedEntity.removeComponent(ComponentPostProcess.COMPONENT_NAME);
+		}
+		// Remove hover highlight from the entity we're about to select
+		if (entity != null && entity == this.hoveredEntity && entity != this.selectedEntity) {
+			entity.removeComponent(ComponentPostProcess.COMPONENT_NAME);
+		}
+
+		if (entity != null) {
+			this.selectedEntity = entity;
+			this.selectedPosition = (ComponentPosition) entity.getComponent("position");
+			LOGGER.info("Selected entity at {}", this.selectedPosition.getTransform().position());
+			// Add selection highlight
+			this.selectedEntity.addComponent(new ComponentPostProcess()
+					.addEffect(new OutlineEffect(SELECTION_OUTLINE_WIDTH, SELECTION_BORDER_COLOR))
+					.addEffect(new AdditiveOverlayEffect(SELECTION_ADD)));
+		} else {
+			this.selectedEntity = null;
+			this.selectedPosition = null;
+		}
+	}
+
 	private Entity findEntityAtRay(final Ray ray, final Map map) {
 		Entity nearest = null;
 		float nearestDist = Float.MAX_VALUE;
 
 		for (final Entity entity : map.placedEntities) {
-			final ComponentPosition pos = (ComponentPosition) entity.getComponent("position");
-			if (pos == null) {
+			final ComponentPosition posComp = (ComponentPosition) entity.getComponent("position");
+			final ComponentMesh meshComp = (ComponentMesh) entity.getComponent("mesh");
+			if (posComp == null || meshComp == null) {
 				continue;
 			}
-			final Vector3f entityPos = pos.getTransform().position();
-			if (ray.intersectSphere(entityPos, 1.0f)) {
-				final float dist = ray.origin().less(entityPos).length();
-				if (dist < nearestDist) {
-					nearestDist = dist;
-					nearest = entity;
+			if (!(meshComp.getMesh() instanceof final ResourceMesh resourceMesh)) {
+				continue;
+			}
+			final Transform3D transform = posComp.getTransform();
+			final List<Vector3f> vertices = resourceMesh.getGeneratedPosition();
+			if (vertices == null || vertices.size() < 3) {
+				continue;
+			}
+			// Test ray against each triangle (vertices are triplets)
+			for (int i = 0; i + 2 < vertices.size(); i += 3) {
+				final Vector3f v0 = transform.multiply(vertices.get(i));
+				final Vector3f v1 = transform.multiply(vertices.get(i + 1));
+				final Vector3f v2 = transform.multiply(vertices.get(i + 2));
+				final Vector3f hit = ray.intersectTriangle(v0, v1, v2);
+				if (hit != null) {
+					final float dist = ray.origin().less(hit).length();
+					if (dist < nearestDist) {
+						nearestDist = dist;
+						nearest = entity;
+					}
 				}
 			}
 		}

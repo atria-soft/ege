@@ -27,10 +27,17 @@
 			<artifactId>ege</artifactId>
 			<version>0.1.0</version>
 		</dependency>
+		<!-- Loopback of logger JDK logging API to SLF4J -->
 		<dependency>
 			<groupId>org.slf4j</groupId>
-			<artifactId>slf4j-simple</artifactId>
+			<artifactId>jul-to-slf4j</artifactId>
 			<version>2.1.0-alpha1</version>
+		</dependency>
+		<!-- generic logger of SLF4J to console (in color) -->
+		<dependency>
+			<groupId>ch.qos.logback</groupId>
+			<artifactId>logback-classic</artifactId>
+			<version>1.5.28</version>
 		</dependency>
     </dependencies>
 

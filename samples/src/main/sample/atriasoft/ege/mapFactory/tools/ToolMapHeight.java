@@ -123,6 +123,7 @@ public class ToolMapHeight implements MapToolInterface {
 					}
 					return Maths.avg(this.minBrush, value + 0.1f, this.maxBrush);
 				});
+				map.updateEntityPositions();
 			}
 			return true;
 		}
@@ -137,6 +138,7 @@ public class ToolMapHeight implements MapToolInterface {
 					}
 					return Maths.avg(this.minBrush, value - 0.1f, this.maxBrush);
 				});
+				map.updateEntityPositions();
 			}
 			return true;
 		}

@@ -1,10 +1,11 @@
 package org.atriasoft.ege.components;
 
+import java.awt.image.BufferedImage;
 import java.io.IOException;
 import java.nio.file.Path;
 
-import org.atriasoft.egami.ImageByte;
-import org.atriasoft.egami.ToolImage;
+import javax.imageio.ImageIO;
+
 import org.atriasoft.ege.Component;
 import org.atriasoft.etk.Uri;
 import org.atriasoft.gale.resource.ResourceTexture2;
@@ -34,9 +35,9 @@ public class ComponentTexturePalette extends Component {
 	
 	public void updateFromPalette() {
 		LOGGER.warn("update palet environnement");
-		final ImageByte img = this.palette.getImageByte();
+		final BufferedImage img = this.palette.getImage();
 		try {
-			ToolImage.storeImage(Path.of("/home/heero/00000_palette_" + this.palette.getId() + ".png"), img);
+			ImageIO.write(img, "png", Path.of("/home/heero/00000_palette_" + this.palette.getId() + ".png").toFile());
 		} catch (final IOException ex) {
 			LOGGER.error("Failed to store palette debug image", ex);
 		}

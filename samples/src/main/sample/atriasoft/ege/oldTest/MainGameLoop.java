@@ -4,11 +4,14 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Random;
 
+import java.util.logging.LogManager;
+
 import org.atriasoft.ege.Ege;
 import org.atriasoft.etk.Uri;
 import org.atriasoft.etk.math.Vector2f;
 import org.atriasoft.etk.math.Vector3f;
 import org.atriasoft.gale.Gale;
+import org.slf4j.bridge.SLF4JBridgeHandler;
 
 import entities.Camera;
 import entities.Entity;
@@ -42,6 +45,9 @@ public class MainGameLoop {
 	 * @param args
 	 */
 	public static void main(final String[] args) {
+		// Loop-back of logger JDK logging API to SLF4J
+		LogManager.getLogManager().reset();
+		SLF4JBridgeHandler.install();
 		Gale.init();
 		Ege.init();
 		Uri.setGroup("DATA", "data");

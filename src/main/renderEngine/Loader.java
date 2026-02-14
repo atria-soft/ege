@@ -16,8 +16,8 @@ import org.lwjgl.opengl.GL15;
 import org.lwjgl.opengl.GL20;
 import org.lwjgl.opengl.GL30;
 
-import org.atriasoft.pngdecoder.PNGDecoder;
-import org.atriasoft.pngdecoder.PNGDecoder.Format;
+import javax.imageio.ImageIO;
+
 import models.RawModel;
 import textures.TextureData;
 
@@ -92,19 +92,26 @@ public class Loader {
         int tWidth = 0;
         int tHeight = 0;
         try {
-            // Open the PNG file as an InputStream
             InputStream in = new FileInputStream(filename);
-            // Link the PNG decoder to this stream
-            PNGDecoder decoder = new PNGDecoder(in);
-            // Get the width and height of the texture
-            tWidth = decoder.getWidth();
-            tHeight = decoder.getHeight();
-            // Decode the PNG file in a ByteBuffer
-            buf = ByteBuffer.allocateDirect(4 * decoder.getWidth() * decoder.getHeight());
-            //decoder.decodeFlipped(buf, decoder.getWidth() * 4, Format.RGBA);
-            decoder.decode(buf, decoder.getWidth() * 4, Format.RGBA);
-            buf.flip();
+            java.awt.image.BufferedImage image = ImageIO.read(in);
             in.close();
+            if (image == null) {
+                System.err.println("Unsupported image format: " + filename);
+                System.exit(-1);
+            }
+            tWidth = image.getWidth();
+            tHeight = image.getHeight();
+            buf = ByteBuffer.allocateDirect(4 * tWidth * tHeight);
+            for (int yyy = 0; yyy < tHeight; yyy++) {
+                for (int xxx = 0; xxx < tWidth; xxx++) {
+                    int argb = image.getRGB(xxx, yyy);
+                    buf.put((byte) ((argb >> 16) & 0xFF));
+                    buf.put((byte) ((argb >> 8) & 0xFF));
+                    buf.put((byte) (argb & 0xFF));
+                    buf.put((byte) ((argb >> 24) & 0xFF));
+                }
+            }
+            buf.flip();
         } catch (IOException e) {
             e.printStackTrace();
             System.err.println("try to load texture " + filename + ", didn't work");

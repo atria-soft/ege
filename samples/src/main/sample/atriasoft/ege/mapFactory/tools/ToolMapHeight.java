@@ -2,13 +2,12 @@ package sample.atriasoft.ege.mapFactory.tools;
 
 import org.atriasoft.ege.geometry.Ray;
 import org.atriasoft.etk.Color;
-import org.atriasoft.etk.Uri;
 import org.atriasoft.etk.math.Transform3D;
 import org.atriasoft.etk.math.Vector2f;
 import org.atriasoft.etk.math.Vector3f;
 import org.atriasoft.ewol.event.EventEntry;
 import org.atriasoft.ewol.event.EventInput;
-import org.atriasoft.ewol.widget.Composer;
+import org.atriasoft.ewol.widget.Label;
 import org.atriasoft.ewol.widget.Sizer;
 import org.atriasoft.ewol.widget.Slider;
 import org.atriasoft.ewol.widget.Widget;
@@ -39,7 +38,6 @@ public class ToolMapHeight implements MapToolInterface {
 		self.onCallbackValue(value);
 	}
 
-	int uniqueID = 555245;
 	Vector3f positionRay = null;
 
 	float widthBrush = 3.0f;
@@ -53,26 +51,33 @@ public class ToolMapHeight implements MapToolInterface {
 
 	@Override
 	public Widget getWidget() {
-		final Widget data = Composer.composerGenerateFile(new Uri("DATA", "ToolMapHeight.xml"), this.uniqueID);
-		if (data == null) {
-			LOGGER.error("Failed to load ToolMapHeight.xml");
-			return new Sizer(Sizer.DisplayMode.VERTICAL);
-		}
+		final Sizer mainSizer = Sizer.vertical().expand(true, true).fill(true, true);
 
-		if (data.getSubObjectNamed(
-				"[" + Long.toString(this.uniqueID) + "]HeighMap:slider-width") instanceof final Slider tmp) {
-			tmp.signalValue.connectAuto(this, ToolMapHeight::onCallbackWidthChange);
-		}
-		if (data.getSubObjectNamed(
-				"[" + Long.toString(this.uniqueID) + "]HeighMap:slider-top") instanceof final Slider tmp) {
-			tmp.signalValue.connectAuto(this, ToolMapHeight::onCallbackMaxChange);
-		}
-		if (data.getSubObjectNamed(
-				"[" + Long.toString(this.uniqueID) + "]HeighMap:slider-bottom") instanceof final Slider tmp) {
-			tmp.signalValue.connectAuto(this, ToolMapHeight::onCallbackMinChange);
-		}
+		// Title
+		mainSizer.subWidgetAdd(Label.create("Change height map").expand(true, false).fill(true, false));
 
-		return data;
+		// Width slider
+		mainSizer.subWidgetAdd(Label.create("Width:").expand(true, false).fill(true, false));
+		final Slider widthSlider = Slider.create().min(0.1f).max(40.0f).value(this.widthBrush)
+				.expand(true, false).fill(true, false);
+		widthSlider.signalValue.connectAuto(this, ToolMapHeight::onCallbackWidthChange);
+		mainSizer.subWidgetAdd(widthSlider);
+
+		// Top slider
+		mainSizer.subWidgetAdd(Label.create("Top:").expand(true, false).fill(true, false));
+		final Slider topSlider = Slider.create().min(-128.0f).max(128.0f).value(this.maxBrush)
+				.expand(true, false).fill(true, false);
+		topSlider.signalValue.connectAuto(this, ToolMapHeight::onCallbackMaxChange);
+		mainSizer.subWidgetAdd(topSlider);
+
+		// Bottom slider
+		mainSizer.subWidgetAdd(Label.create("Bottom:").expand(true, false).fill(true, false));
+		final Slider bottomSlider = Slider.create().min(-128.0f).max(128.0f).value(this.minBrush)
+				.expand(true, false).fill(true, false);
+		bottomSlider.signalValue.connectAuto(this, ToolMapHeight::onCallbackMinChange);
+		mainSizer.subWidgetAdd(bottomSlider);
+
+		return mainSizer;
 	}
 
 	protected void onCallbackMax(final float value) {
@@ -88,11 +93,11 @@ public class ToolMapHeight implements MapToolInterface {
 	}
 
 	@Override
-	public void onDraw(Map map) {
+	public void onDraw(final Map map) {
 		if (this.positionRay != null) {
 			map.ground.drawDynamicElement(this.dynamicElement, this.positionRay, this.widthBrush);
-			float size = this.maxBrush - this.minBrush;
-			Transform3D tmpTransform = new Transform3D(
+			final float size = this.maxBrush - this.minBrush;
+			final Transform3D tmpTransform = new Transform3D(
 					this.positionRay.add(new Vector3f(0.0f, 0.0f, this.minBrush + size * 0.5f)));
 			this.dynamicElement.drawCylinder(this.widthBrush, size, 10, 22, tmpTransform.getOpenGLMatrix(),
 					Color.AZURE.withA(0.5f), false, true);
@@ -100,23 +105,17 @@ public class ToolMapHeight implements MapToolInterface {
 	}
 
 	@Override
-	public boolean onEventEntry(EventEntry event, Map map, EgeScene widget) {
-		// TODO Auto-generated method stub
+	public boolean onEventEntry(final EventEntry event, final Map map, final EgeScene widget) {
 		return false;
 	}
 
 	@Override
-	public boolean onEventInput(EventInput event, Map map, EgeScene widget) {
-		Vector2f globalPos = event.pos();
-		Vector2f relPos = widget.relativePosition(globalPos);
+	public boolean onEventInput(final EventInput event, final Map map, final EgeScene widget) {
+		final Vector2f globalPos = event.pos();
+		final Vector2f relPos = widget.relativePosition(globalPos);
 		// ray-cast on the Z=0 plane (better for height editing)
-		Ray mouseRay = widget.mainView.getRayFromScreen(widget.projection, widget.getSize(), relPos);
+		final Ray mouseRay = widget.mainView.getRayFromScreen(widget.projection, widget.getSize(), relPos);
 		this.positionRay = mouseRay.intersectPlane(new Vector3f(0.0f, 0.0f, 1.0f), 0.0f);
-		/*
-		if (this.positionRay != null) {
-			this.posRay.setTransform(this.posRay.getTransform().withPosition(this.positionRay));
-		}
-		*/
 		if (event.inputId() == 1 && (event.status() == KeyStatus.move || event.status() == KeyStatus.down)) {
 			if (this.positionRay != null) {
 				map.ground.changeHeightOfElement(this.positionRay, this.widthBrush, (value, distance) -> {

@@ -100,7 +100,10 @@ public class ApplScene extends EgeScene {
 		return super.onEventInput(event);
 	}
 	
-	public void setCurrentTool(MapToolInterface currentTool) {
+	public void setCurrentTool(final MapToolInterface currentTool) {
+		if (this.currentTool != null) {
+			this.currentTool.onDeactivate(this);
+		}
 		this.currentTool = currentTool;
 	}
 }

@@ -9,11 +9,13 @@ import sample.atriasoft.ege.mapFactory.model.Map;
 
 public interface MapToolInterface {
 	Widget getWidget();
-	
+
 	void onDraw(Map map);
-	
+
 	boolean onEventEntry(final EventEntry event, Map map, EgeScene widget);
-	
+
 	boolean onEventInput(final EventInput event, Map relPos, EgeScene widget);
-	
+
+	default void onDeactivate(final EgeScene widget) {
+	}
 }

@@ -96,6 +96,22 @@ public class ToolObjectSelector implements MapToolInterface {
 	}
 
 	@Override
+	public void onDeactivate(final EgeScene widget) {
+		// Remove selection highlight
+		if (this.selectedEntity != null) {
+			this.selectedEntity.removeComponent(ComponentPostProcess.COMPONENT_NAME);
+			this.selectedEntity = null;
+			this.selectedPosition = null;
+		}
+		// Remove hover highlight
+		if (this.hoveredEntity != null) {
+			this.hoveredEntity.removeComponent(ComponentPostProcess.COMPONENT_NAME);
+			this.hoveredEntity = null;
+		}
+		this.sceneRef = null;
+	}
+
+	@Override
 	public void onDraw(final Map map) {
 		// Post-process effects are now handled by EnginePostProcess automatically.
 		// No manual drawing needed.

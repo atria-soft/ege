@@ -83,6 +83,17 @@ public class ToolObjectPlacer implements MapToolInterface {
 	}
 
 	@Override
+	public void onDeactivate(final EgeScene widget) {
+		if (this.previewEntity != null && widget != null) {
+			widget.getEnvironement().rmEntity(this.previewEntity);
+			this.previewEntity = null;
+			this.previewPosition = null;
+			this.previewMeshFile = null;
+		}
+		this.positionRay = null;
+	}
+
+	@Override
 	public Widget getWidget() {
 		final Sizer mainSizer = Sizer.vertical().expand(true, true).fill(true, true);
 

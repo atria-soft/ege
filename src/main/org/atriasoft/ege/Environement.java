@@ -422,6 +422,10 @@ public class Environement {
 			element.entityIsRemoved(removeEntity);
 		}
 		if (this.listEntity.remove(removeEntity)) {
+			// Unregister all components from their engines
+			for (final Component comp : removeEntity.component) {
+				engineComponentRemove(comp);
+			}
 			removeEntity.onDestroy();
 			removeEntity.dynamicDisable();
 			removeEntity.unInit();

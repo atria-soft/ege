@@ -74,6 +74,7 @@ public class AdditiveOverlayEffect implements PostProcessEffect {
 		quad.unBindForRendering();
 
 		program.unUse();
+		OpenGL.blendFuncAuto();
 		OpenGL.disable(Flag.flag_blend);
 	}
 }

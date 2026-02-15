@@ -32,7 +32,7 @@ public class Map {
 			final Vector3f pos = current.position();
 			final float newZ = this.ground.getHeightAt(pos.x(), pos.y());
 			if (pos.z() != newZ) {
-				posComp.setTransform(new Transform3D(new Vector3f(pos.x(), pos.y(), newZ), current.orientation()));
+				posComp.setTransform(new Transform3D(new Vector3f(pos.x(), pos.y(), newZ), current.orientation(), current.scale()));
 			}
 		}
 	}

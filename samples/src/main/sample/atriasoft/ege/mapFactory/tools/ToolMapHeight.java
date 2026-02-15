@@ -9,6 +9,7 @@ import org.atriasoft.etk.math.Vector3f;
 import org.atriasoft.ewol.event.EventEntry;
 import org.atriasoft.ewol.event.EventInput;
 import org.atriasoft.ewol.widget.Composer;
+import org.atriasoft.ewol.widget.Sizer;
 import org.atriasoft.ewol.widget.Slider;
 import org.atriasoft.ewol.widget.Widget;
 import org.atriasoft.gale.key.KeyStatus;
@@ -53,6 +54,10 @@ public class ToolMapHeight implements MapToolInterface {
 	@Override
 	public Widget getWidget() {
 		final Widget data = Composer.composerGenerateFile(new Uri("DATA", "ToolMapHeight.xml"), this.uniqueID);
+		if (data == null) {
+			LOGGER.error("Failed to load ToolMapHeight.xml");
+			return new Sizer(Sizer.DisplayMode.VERTICAL);
+		}
 
 		if (data.getSubObjectNamed(
 				"[" + Long.toString(this.uniqueID) + "]HeighMap:slider-width") instanceof final Slider tmp) {

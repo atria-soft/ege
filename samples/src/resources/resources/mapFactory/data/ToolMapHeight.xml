@@ -2,7 +2,7 @@
 	<Sizer mode="VERTICAL" lock="true" fill="true" expand="true">
 		<Label name="[{ID}]file-chooser:title-label">_T{Change height map}</Label> 
 		<Sizer mode="HORIZONTAL" lock="true" expand="true,false,false">
-			<Image src="width.svg" expand="false" image-size="48,48px"/>
+			<Label expand="false" min-size="48,0px">Width:</Label>
 			<Spacer min-size="2,2mm"/>
 			<Slider name="[{ID}]HeighMap:slider-width"
 				    expand="true,false"
@@ -11,7 +11,7 @@
 				    maximum="40" />
 		</Sizer>
 		<Sizer mode="HORIZONTAL" lock="true" expand="true,false,false">
-			<Image src="top.svg" expand="false" image-size="48,48px"/>
+			<Label expand="false" min-size="48,0px">Top:</Label>
 			<Spacer min-size="2,2mm"/>
 			<Slider name="[{ID}]HeighMap:slider-top"
 				    expand="true,false"
@@ -20,7 +20,7 @@
 				    maximum="128" />
 		</Sizer>
 		<Sizer mode="HORIZONTAL" lock="true" expand="true,false,false">
-			<Image src="bottom.svg" expand="false" image-size="48,48px"/>
+			<Label expand="false" min-size="48,0px">Bottom:</Label>
 			<Spacer min-size="2,2mm"/>
 			<Slider name="[{ID}]HeighMap:slider-bottom"
 				    expand="true,false"

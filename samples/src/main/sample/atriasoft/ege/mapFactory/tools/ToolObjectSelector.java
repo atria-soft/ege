@@ -45,6 +45,8 @@ public class ToolObjectSelector implements MapToolInterface {
 	private ComponentPosition selectedPosition = null;
 	private Entity hoveredEntity = null;
 	private float objectRotation = 0.0f;
+	private float objectScale = 1.0f;
+	private Slider scaleSlider = null;
 
 	private static void onRotationChanged(final ToolObjectSelector self, final Float value) {
 		self.objectRotation = value;
@@ -53,7 +55,17 @@ public class ToolObjectSelector implements MapToolInterface {
 			final Transform3D current = self.selectedPosition.getTransform();
 			final Quaternion rot = Quaternion.fromEulerAngles(
 					new Vector3f(0, 0, value * (float) Math.PI / 180.0f));
-			self.selectedPosition.setTransform(new Transform3D(current.position(), rot));
+			self.selectedPosition.setTransform(new Transform3D(current.position(), rot, current.scale()));
+		}
+	}
+
+	private static void onScaleChanged(final ToolObjectSelector self, final Float value) {
+		self.objectScale = value;
+		LOGGER.debug("Object scale: {}", value);
+		if (self.selectedEntity != null && self.selectedPosition != null) {
+			final Transform3D current = self.selectedPosition.getTransform();
+			self.selectedPosition.setTransform(
+					current.withScale(new Vector3f(value, value, value)));
 		}
 	}
 
@@ -71,6 +83,14 @@ public class ToolObjectSelector implements MapToolInterface {
 				.expand(true, false).fill(true, false);
 		rotationSlider.signalValue.connectAuto(this, ToolObjectSelector::onRotationChanged);
 		mainSizer.subWidgetAdd(rotationSlider);
+
+		// Scale slider
+		mainSizer.subWidgetAdd(Label.create("Scale:").expand(true, false).fill(true, false));
+
+		this.scaleSlider = Slider.create().min(0.1f).max(5.0f).value(this.objectScale)
+				.expand(true, false).fill(true, false);
+		this.scaleSlider.signalValue.connectAuto(this, ToolObjectSelector::onScaleChanged);
+		mainSizer.subWidgetAdd(this.scaleSlider);
 
 		return mainSizer;
 	}
@@ -130,7 +150,23 @@ public class ToolObjectSelector implements MapToolInterface {
 				final Transform3D current = this.selectedPosition.getTransform();
 				final Quaternion rot = Quaternion.fromEulerAngles(
 						new Vector3f(0, 0, this.objectRotation * (float) Math.PI / 180.0f));
-				this.selectedPosition.setTransform(new Transform3D(current.position(), rot));
+				this.selectedPosition.setTransform(new Transform3D(current.position(), rot, current.scale()));
+			}
+			return true;
+		}
+
+		// Scale with scroll wheel while holding Shift
+		if ((event.inputId() == 4 || event.inputId() == 5) && event.status() == KeyStatus.down
+				&& event.specialKey() != null && event.specialKey().getShiftLeft()) {
+			if (this.selectedEntity != null && this.selectedPosition != null) {
+				final float delta = (event.inputId() == 4) ? 0.1f : -0.1f;
+				this.objectScale = Math.max(0.1f, Math.min(5.0f, this.objectScale + delta));
+				final Transform3D current = this.selectedPosition.getTransform();
+				this.selectedPosition.setTransform(
+						current.withScale(new Vector3f(this.objectScale, this.objectScale, this.objectScale)));
+				if (this.scaleSlider != null) {
+					this.scaleSlider.value(this.objectScale);
+				}
 			}
 			return true;
 		}
@@ -173,6 +209,12 @@ public class ToolObjectSelector implements MapToolInterface {
 			this.selectedEntity.addComponent(new ComponentPostProcess()
 					.addEffect(new OutlineEffect(SELECTION_OUTLINE_WIDTH, SELECTION_BORDER_COLOR))
 					.addEffect(new AdditiveOverlayEffect(SELECTION_ADD)));
+			// Read the entity's current scale and update the slider
+			final Vector3f currentScale = this.selectedPosition.getTransform().scale();
+			this.objectScale = currentScale.x();
+			if (this.scaleSlider != null) {
+				this.scaleSlider.value(this.objectScale);
+			}
 		} else {
 			this.selectedEntity = null;
 			this.selectedPosition = null;

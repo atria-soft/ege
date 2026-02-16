@@ -17,6 +17,7 @@ import org.atriasoft.etk.math.Vector3f;
 import org.atriasoft.ewol.event.EventEntry;
 import org.atriasoft.ewol.event.EventInput;
 import org.atriasoft.ewol.event.EventTime;
+import org.atriasoft.ewol.object.EwolObject;
 import org.atriasoft.ewol.widget.Widget;
 import org.atriasoft.gale.backend3d.OpenGL;
 import org.atriasoft.gale.backend3d.OpenGL.Flag;
@@ -31,13 +32,6 @@ public class EgeScene extends Widget {
 	 * @param _event Time generic event
 	 */
 	protected static void periodicCall(final EgeScene self, final EventTime event) {
-		LOGGER.trace("Periodic call on Entry({});", event);
-		/*
-		if (!self.shape.periodicCall(event)) {
-			//LOGGER.error("end periodic call");
-			self.periodicConnectionHanble.close();
-		}
-		*/
 		self.markToRedraw();
 	}
 	
@@ -60,7 +54,7 @@ public class EgeScene extends Widget {
 		// can not support multiple click...
 		setMouseLimit(2);
 		this.env = new Environement();
-		
+
 		// default camera....
 		this.mainView = new Camera();
 		this.env.addCamera("default", this.mainView);
@@ -68,7 +62,11 @@ public class EgeScene extends Widget {
 		this.mainView.setPosition(new Vector3f(4, -5, 5));
 
 		this.projection = new ProjectionPerspective();
-		
+
+		// Connect to periodic callback to ensure the 3D scene is refreshed
+		// even when no other widget triggers a redraw
+		this.periodicConnectionHanble = EwolObject.getObjectManager().periodicCall
+				.connect(this, EgeScene::periodicCall);
 	}
 	
 	public Environement getEnvironement() {
@@ -137,7 +135,6 @@ public class EgeScene extends Widget {
 	
 	@Override
 	public boolean onEventEntry(final EventEntry event) {
-		LOGGER.warn("=================> ENTER EgeScene <==================");
 		this.env.onKeyboard(event.specialKey(), event.type(), event.getChar(), event.status());
 		return true;
 	}
@@ -154,6 +151,11 @@ public class EgeScene extends Widget {
 	
 	@Override
 	public void onRegenerateDisplay() {
+		// IMPORTANT: needRedraw() resets the internal needRegenerateDisplay flag.
+		// Without this call, markToRedraw() short-circuits (the flag is already true)
+		// and never notifies the WidgetManager that a redraw is needed, causing the
+		// render loop to skip drawing this widget entirely.
+		needRedraw();
 		this.env.periodicCall();
 		markToRedraw();
 	}

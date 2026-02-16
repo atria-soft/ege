@@ -16,7 +16,9 @@ import org.atriasoft.gale.resource.ResourceColored3DObject;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import sample.atriasoft.ege.mapFactory.ApplScene;
 import sample.atriasoft.ege.mapFactory.EgeScene;
+import sample.atriasoft.ege.mapFactory.HeightMapAction;
 import sample.atriasoft.ege.mapFactory.model.Map;
 import toolbox.Maths;
 
@@ -44,6 +46,10 @@ public class ToolMapHeight implements MapToolInterface {
 	float maxBrush = 10.0f;
 	float minBrush = -10.0f;
 	ResourceColored3DObject dynamicElement;
+
+	// Undo state: snapshot before brush stroke
+	private float[][] heightMapBefore = null;
+	private EgeScene sceneRef = null;
 
 	public ToolMapHeight() {
 		this.dynamicElement = ResourceColored3DObject.create();
@@ -93,6 +99,24 @@ public class ToolMapHeight implements MapToolInterface {
 	}
 
 	@Override
+	public void onDeactivate(final EgeScene widget) {
+		flushBrushStroke(widget);
+		this.sceneRef = null;
+	}
+
+	private void flushBrushStroke(final EgeScene widget) {
+		if (this.heightMapBefore != null && widget instanceof final ApplScene applScene) {
+			final Map map = applScene.getMap();
+			final float[][] after = HeightMapAction.snapshotHeightMap(map.ground);
+			if (HeightMapAction.hasChanges(this.heightMapBefore, after, map.ground.sizeY, map.ground.sizeX)) {
+				final HeightMapAction action = new HeightMapAction(map.ground, map, this.heightMapBefore, after);
+				applScene.getUndoManager().execute(action);
+			}
+			this.heightMapBefore = null;
+		}
+	}
+
+	@Override
 	public void onDraw(final Map map) {
 		if (this.positionRay != null) {
 			map.ground.drawDynamicElement(this.dynamicElement, this.positionRay, this.widthBrush);
@@ -111,13 +135,26 @@ public class ToolMapHeight implements MapToolInterface {
 
 	@Override
 	public boolean onEventInput(final EventInput event, final Map map, final EgeScene widget) {
+		this.sceneRef = widget;
 		final Vector2f globalPos = event.pos();
 		final Vector2f relPos = widget.relativePosition(globalPos);
 		// ray-cast on the Z=0 plane (better for height editing)
 		final Ray mouseRay = widget.mainView.getRayFromScreen(widget.projection, widget.getSize(), relPos);
 		this.positionRay = mouseRay.intersectPlane(new Vector3f(0.0f, 0.0f, 1.0f), 0.0f);
+
+		// End brush stroke on mouse up
+		if ((event.inputId() == 1 || event.inputId() == 3)
+				&& (event.status() == KeyStatus.up || event.status() == KeyStatus.upAfter)) {
+			flushBrushStroke(widget);
+			return true;
+		}
+
 		if (event.inputId() == 1 && (event.status() == KeyStatus.move || event.status() == KeyStatus.down)) {
 			if (this.positionRay != null) {
+				// Snapshot before first brush stroke modification
+				if (this.heightMapBefore == null) {
+					this.heightMapBefore = HeightMapAction.snapshotHeightMap(map.ground);
+				}
 				map.ground.changeHeightOfElement(this.positionRay, this.widthBrush, (value, distance) -> {
 					if (value > this.maxBrush) {
 						return value;
@@ -133,6 +170,10 @@ public class ToolMapHeight implements MapToolInterface {
 		}
 		if (event.inputId() == 3 && (event.status() == KeyStatus.move || event.status() == KeyStatus.down)) {
 			if (this.positionRay != null) {
+				// Snapshot before first brush stroke modification
+				if (this.heightMapBefore == null) {
+					this.heightMapBefore = HeightMapAction.snapshotHeightMap(map.ground);
+				}
 				map.ground.changeHeightOfElement(this.positionRay, this.widthBrush, (value, distance) -> {
 					if (value < this.minBrush) {
 						return value;

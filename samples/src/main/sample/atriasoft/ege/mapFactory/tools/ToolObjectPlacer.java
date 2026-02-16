@@ -23,7 +23,9 @@ import org.atriasoft.gale.resource.ResourceColored3DObject;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import sample.atriasoft.ege.mapFactory.ApplScene;
 import sample.atriasoft.ege.mapFactory.EgeScene;
+import sample.atriasoft.ege.mapFactory.PlaceEntityAction;
 import sample.atriasoft.ege.mapFactory.model.Map;
 
 public class ToolObjectPlacer implements MapToolInterface {
@@ -175,9 +177,14 @@ public class ToolObjectPlacer implements MapToolInterface {
 				new Uri("DATA", "basicPalette.vert"),
 				new Uri("DATA", "basicPalette.frag"),
 				(EngineLight) env.getEngine(EngineLight.ENGINE_NAME)));
-		env.addEntity(entity);
-		map.placedEntities.add(entity);
-		map.entityMeshPaths.put(entity, this.selectedMeshFile);
+
+		// Register via undo manager
+		final PlaceEntityAction action = new PlaceEntityAction(entity, this.selectedMeshFile, map, env);
+		if (this.sceneRef instanceof final ApplScene applScene) {
+			applScene.getUndoManager().execute(action);
+		} else {
+			action.redo();
+		}
 
 		LOGGER.info("Placed mesh '{}' at position {}", this.selectedMeshFile, this.positionRay);
 	}

@@ -1,6 +1,7 @@
 package sample.atriasoft.ege.mapFactory.tools;
 
 import java.util.List;
+import java.util.function.Consumer;
 
 import org.atriasoft.ege.Entity;
 import org.atriasoft.ege.components.ComponentMesh;
@@ -41,6 +42,7 @@ public class ToolObjectSelector implements MapToolInterface {
 	private static final Color HOVER_ADD = new Color(1.0f, 1.0f, 1.0f, 0.15f);
 
 	private EgeScene sceneRef = null;
+	private Consumer<Entity> onSelectionChanged = null;
 	private Entity selectedEntity = null;
 	private ComponentPosition selectedPosition = null;
 	private Entity hoveredEntity = null;
@@ -131,6 +133,9 @@ public class ToolObjectSelector implements MapToolInterface {
 					this.selectedPosition = null;
 					this.hoveredEntity = null;
 					LOGGER.info("Deleted selected entity");
+					if (this.onSelectionChanged != null) {
+						this.onSelectionChanged.accept(null);
+					}
 					return true;
 				}
 			}
@@ -208,7 +213,11 @@ public class ToolObjectSelector implements MapToolInterface {
 		}
 	}
 
-	private void selectEntity(final Entity entity) {
+	public void setOnSelectionChanged(final Consumer<Entity> callback) {
+		this.onSelectionChanged = callback;
+	}
+
+	public void selectEntity(final Entity entity) {
 		// Remove old selection highlight
 		if (this.selectedEntity != null) {
 			this.selectedEntity.removeComponent(ComponentPostProcess.COMPONENT_NAME);
@@ -235,6 +244,9 @@ public class ToolObjectSelector implements MapToolInterface {
 		} else {
 			this.selectedEntity = null;
 			this.selectedPosition = null;
+		}
+		if (this.onSelectionChanged != null) {
+			this.onSelectionChanged.accept(this.selectedEntity);
 		}
 	}
 

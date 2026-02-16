@@ -40,10 +40,13 @@ public class MainWindows extends Windows {
 	ApplScene scene;
 	Select toolSelect;
 	Sizer sizerMenu;
+	ScrollView rightScrollView;
 	List<MapToolInterface> tools = new ArrayList<>();
 	List<Button> toolButtons = new ArrayList<>();
 	int currentToolIndex = 0;
 	private Path currentProjectFile = null;
+	private boolean showingEntityList = false;
+	private EntityListWidget entityListWidget = null;
 
 	private static void onToolSelectionChanged(final MainWindows self, final Integer index) {
 		if (index >= 0 && index < self.tools.size()) {
@@ -140,8 +143,53 @@ public class MainWindows extends Windows {
 		}
 	}
 
+	private void showToolsPanel() {
+		this.showingEntityList = false;
+		this.rightScrollView.setSubWidget(this.sizerMenu);
+		selectTool(this.currentToolIndex);
+	}
+
+	private void showEntityListPanel() {
+		this.showingEntityList = true;
+		if (this.entityListWidget == null) {
+			this.entityListWidget = new EntityListWidget(this.scene.getMap(), this::onEntitySelectedFromList);
+			this.entityListWidget.setPropertyExpand(Vector2b.TRUE);
+			this.entityListWidget.setPropertyFill(Vector2b.TRUE);
+		}
+		this.entityListWidget.refresh();
+		this.rightScrollView.setSubWidget(this.entityListWidget);
+	}
+
+	private void onEntitySelectedFromList(final org.atriasoft.ege.Entity entity) {
+		// Switch to Object Selector tool if not already active
+		final int selectorIndex = 2;
+		if (this.currentToolIndex != selectorIndex) {
+			this.currentToolIndex = selectorIndex;
+			this.scene.setCurrentTool(this.tools.get(selectorIndex));
+			this.toolSelect.setPropertySelectedIndex(selectorIndex);
+			updateToolbarSelection(selectorIndex);
+		}
+		// Select the entity
+		final ToolObjectSelector selector = (ToolObjectSelector) this.tools.get(selectorIndex);
+		selector.selectEntity(entity);
+		// Update list highlight
+		if (this.entityListWidget != null) {
+			this.entityListWidget.setSelectedEntity(entity);
+		}
+	}
+
+	private void onSelectionChangedFromTool(final org.atriasoft.ege.Entity entity) {
+		if (this.entityListWidget != null) {
+			this.entityListWidget.setSelectedEntity(entity);
+		}
+	}
+
 	private void selectTool(final int index) {
 		this.currentToolIndex = index;
+		this.showingEntityList = false;
+
+		// Ensure tools panel is shown in the scroll view
+		this.rightScrollView.setSubWidget(this.sizerMenu);
 
 		// Clear previous tool widget
 		this.sizerMenu.subWidgetRemoveAll();
@@ -178,7 +226,9 @@ public class MainWindows extends Windows {
 		// Register available tools
 		this.tools.add(new ToolMapHeight());
 		this.tools.add(new ToolObjectPlacer());
-		this.tools.add(new ToolObjectSelector());
+		final ToolObjectSelector objectSelector = new ToolObjectSelector();
+		objectSelector.setOnSelectionChanged(this::onSelectionChangedFromTool);
+		this.tools.add(objectSelector);
 
 		// Menu bar
 		final MenuBar menuBar = MenuBar.create()
@@ -190,6 +240,17 @@ public class MainWindows extends Windows {
 						.item("Save As...", null, null, this::onFileSaveAs)
 						.separator()
 						.item("Quit", null, null, this::onFileQuit))
+				.menu("View", () -> {
+					final MenuPopup popup = MenuPopup.create();
+					if (!this.showingEntityList) {
+						popup.item("Tools", "check", null, this::showToolsPanel);
+						popup.item("Entity List", null, null, this::showEntityListPanel);
+					} else {
+						popup.item("Tools", null, null, this::showToolsPanel);
+						popup.item("Entity List", "check", null, this::showEntityListPanel);
+					}
+					return popup;
+				})
 				.menu("Edit", () -> MenuPopup.create()
 						.disabledItem("Undo")
 						.disabledItem("Redo")
@@ -253,16 +314,16 @@ public class MainWindows extends Windows {
 		rightPanel.subWidgetAdd(this.toolSelect);
 		
 		// ScrollView for the tool options (vertical only)
-		final ScrollView scrollView = new ScrollView();
-		scrollView.setPropertyExpand(Vector2b.TRUE);
-		scrollView.setPropertyFill(Vector2b.TRUE);
-		scrollView.setPropertyShowHorizontal(false);
-		rightPanel.subWidgetAdd(scrollView);
-		
+		this.rightScrollView = new ScrollView();
+		this.rightScrollView.setPropertyExpand(Vector2b.TRUE);
+		this.rightScrollView.setPropertyFill(Vector2b.TRUE);
+		this.rightScrollView.setPropertyShowHorizontal(false);
+		rightPanel.subWidgetAdd(this.rightScrollView);
+
 		this.sizerMenu = new Sizer(DisplayMode.VERTICAL);
 		this.sizerMenu.setPropertyExpand(Vector2b.TRUE);
 		this.sizerMenu.setPropertyFill(Vector2b.TRUE);
-		scrollView.setSubWidget(this.sizerMenu);
+		this.rightScrollView.setSubWidget(this.sizerMenu);
 		
 		// Set default tool
 		selectTool(0);

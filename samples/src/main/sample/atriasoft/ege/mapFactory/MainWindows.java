@@ -98,7 +98,8 @@ public class MainWindows extends Windows {
 		LOGGER.info("File > Open");
 		final FileChooser fileChooser = FileChooser.create()
 				.title("Open Project")
-				.validateLabel("Open");
+				.validateLabel("Open")
+				.filterExtension(".mapFactory");
 		fileChooser.signalValidate.connectAuto(this, MainWindows::onOpenFileSelected);
 		popUpWidgetPush(fileChooser);
 	}
@@ -120,7 +121,8 @@ public class MainWindows extends Windows {
 		LOGGER.info("File > Save As...");
 		final FileChooser fileChooser = FileChooser.create()
 				.title("Save Project As")
-				.validateLabel("Save");
+				.validateLabel("Save")
+				.filterExtension(".mapFactory");
 		fileChooser.signalValidate.connectAuto(this, MainWindows::onSaveAsFileSelected);
 		popUpWidgetPush(fileChooser);
 	}

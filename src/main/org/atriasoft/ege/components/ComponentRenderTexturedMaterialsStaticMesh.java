@@ -4,29 +4,39 @@ import org.atriasoft.ege.Component;
 import org.atriasoft.ege.components.part.LightRender;
 import org.atriasoft.ege.components.part.MaterialRender;
 import org.atriasoft.ege.components.part.PositionningInterface;
+import org.atriasoft.ege.components.part.ShadowRender;
 import org.atriasoft.ege.components.part.TransformRender;
 import org.atriasoft.ege.engines.EngineLight;
+import org.atriasoft.ege.engines.EngineShadow;
 import org.atriasoft.etk.Uri;
 import org.atriasoft.gale.backend3d.OpenGL;
 import org.atriasoft.gale.resource.ResourceProgram;
 
 public class ComponentRenderTexturedMaterialsStaticMesh extends ComponentRender {
-	
+
 	ComponentStaticMesh mesh = null;
 	ResourceProgram program = null;
 	ComponentTexture texture = null;
-	
+
 	LightRender renderLight = null;
 	MaterialRender renderMaterial = null;
 	TransformRender renderTransform = null;
+	ShadowRender renderShadow = null;
 
 	public ComponentRenderTexturedMaterialsStaticMesh(final Uri vertexShader, final Uri fragmentShader) {
-		this(vertexShader, fragmentShader, null);
+		this(vertexShader, fragmentShader, null, null);
 	}
-	
+
 	public ComponentRenderTexturedMaterialsStaticMesh(final Uri vertexShader, final Uri fragmentShader, final EngineLight lightEngine) {
+		this(vertexShader, fragmentShader, lightEngine, null);
+	}
+
+	public ComponentRenderTexturedMaterialsStaticMesh(final Uri vertexShader, final Uri fragmentShader, final EngineLight lightEngine, final EngineShadow shadowEngine) {
 		if (lightEngine != null) {
 			this.renderLight = new LightRender(lightEngine);
+		}
+		if (shadowEngine != null) {
+			this.renderShadow = new ShadowRender(shadowEngine);
 		}
 		this.renderTransform = new TransformRender();
 		this.renderMaterial = new MaterialRender();
@@ -36,9 +46,12 @@ public class ComponentRenderTexturedMaterialsStaticMesh extends ComponentRender 
 			if (this.renderLight != null) {
 				this.renderLight.init(this.program);
 			}
+			if (this.renderShadow != null) {
+				this.renderShadow.init(this.program);
+			}
 			this.renderMaterial.init(this.program);
 		}
-		
+
 	}
 	
 	@Override
@@ -76,6 +89,9 @@ public class ComponentRenderTexturedMaterialsStaticMesh extends ComponentRender 
 		if (this.renderLight != null) {
 			this.renderLight.bindForRendering(this.program);
 		}
+		if (this.renderShadow != null) {
+			this.renderShadow.bindForRendering(this.program);
+		}
 		this.renderTransform.bindForRendering(this.program);
 		// update of flags is done asynchronously ==> need update before drawing...
 		OpenGL.updateAllFlags();
@@ -83,6 +99,9 @@ public class ComponentRenderTexturedMaterialsStaticMesh extends ComponentRender 
 		this.mesh.render();
 		// remove all element to render:
 		this.renderTransform.unBindForRendering();
+		if (this.renderShadow != null) {
+			this.renderShadow.unBindForRendering();
+		}
 		if (this.renderLight != null) {
 			this.renderLight.unBindForRendering();
 		}

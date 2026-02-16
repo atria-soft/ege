@@ -21,54 +21,44 @@ import sample.atriasoft.ege.mapFactory.tools.MapToolInterface;
 
 public class ApplScene extends EgeScene {
 	final static private Logger LOGGER = LoggerFactory.getLogger(ApplScene.class);
-	//Ground ground = new Ground();
 	Map map = new Map();
 	private ControlInterface simpleControl;
 	private MapToolInterface currentTool = null;
-	
+	private Entity groundEntity = null;
+
 	/**
 	 * Constructor
 	 */
 	public ApplScene() {
 		addGenericGird();
-		// test entity
-		Entity groundEntity = new Entity(this.env);
-		ComponentPosition objectPosition = new ComponentPosition(new Transform3D(new Vector3f(0, 0, 0)));
-		groundEntity.addComponent(objectPosition);
-		//this.materialCube = new Material();
-		//basicTree.addComponent(new ComponentMaterial(this.materialCube));
-		//groundEntity.addComponent(new ComponentMesh(new Uri("DATA", "tree1.emf", "plop")));
-		groundEntity.addComponent(new ComponentMesh(this.map.ground.createMesh()));
-		groundEntity.addComponent(new ComponentTexturePalette(new Uri("DATA", "palette_1.json")));
-		//basicTree.addComponent(new ComponentRenderTexturedStaticMesh(new Uri("DATA", "basic.vert", "loxelEngine"), new Uri("DATA", "basic.frag", "loxelEngine")));
-		groundEntity.addComponent(new ComponentRenderMeshPalette(new Uri("DATA", "basicPalette.vert"),
-				new Uri("DATA", "basicPalette.frag"), (EngineLight) this.env.getEngine(EngineLight.ENGINE_NAME)));
-		this.env.addEntity(groundEntity);
-		
+		this.groundEntity = createGroundEntity();
 		this.map.updateMesh();
 		this.simpleControl = new ControlCameraSimple(this.mainView);
 		this.env.addControlInterface(this.simpleControl);
-		
-		// add a cube to test collision ...
-		//		final Entity localBox = new Entity(this.env);
-		//		localBox.addComponent(new ComponentStaticMesh(new Uri("DATA", "cube-one.obj")));
-		//		localBox.addComponent(new ComponentTexture(new Uri("DATA", "clay.png")));
-		//		//localBox.addComponent(new ComponentLight(new Light(new Color(0.0f, 1.0f, 0.0f), new Vector3f(0, 0, 0), new Vector3f(0.8f, 0.03f, 0.002f))));
-		//		localBox.addComponent(new ComponentRenderTexturedStaticMesh(new Uri("DATA", "basic.vert"), new Uri("DATA", "basic.frag")));
-		//		this.posRay = new ComponentPosition(new Transform3D(new Vector3f(0, 4, 2.5f)));
-		//
-		//		localBox.addComponent(this.posRay);
-		//		//final ComponentPhysics physics2 = new ComponentPhysics(this.env);
-		//		//final PhysicBox box2 = new PhysicBox();
-		//		//box2.setSize(new Vector3f(2.0f, 2.0f, 2.0f));
-		//		//box2.setOrigin(new Vector3f(0, 0, 0));
-		//		//box2.setMass(1);
-		//		//physics2.addShape(box2);
-		//		//localBox.addComponent(physics2);
-		//		this.env.addEntity(localBox);
-		
 	}
 	
+	private Entity createGroundEntity() {
+		final Entity entity = new Entity(this.env);
+		entity.addComponent(new ComponentPosition(new Transform3D(new Vector3f(0, 0, 0))));
+		entity.addComponent(new ComponentMesh(this.map.ground.createMesh()));
+		entity.addComponent(new ComponentTexturePalette(new Uri("DATA", "palette_1.json")));
+		entity.addComponent(new ComponentRenderMeshPalette(new Uri("DATA", "basicPalette.vert"),
+				new Uri("DATA", "basicPalette.frag"), (EngineLight) this.env.getEngine(EngineLight.ENGINE_NAME)));
+		this.env.addEntity(entity);
+		return entity;
+	}
+
+	public Map getMap() {
+		return this.map;
+	}
+
+	public void reloadGround() {
+		if (this.groundEntity != null) {
+			this.env.rmEntity(this.groundEntity);
+		}
+		this.groundEntity = createGroundEntity();
+	}
+
 	public MapToolInterface getCurrentTool() {
 		return this.currentTool;
 	}

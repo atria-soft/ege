@@ -177,6 +177,7 @@ public class ToolObjectPlacer implements MapToolInterface {
 				(EngineLight) env.getEngine(EngineLight.ENGINE_NAME)));
 		env.addEntity(entity);
 		map.placedEntities.add(entity);
+		map.entityMeshPaths.put(entity, this.selectedMeshFile);
 
 		LOGGER.info("Placed mesh '{}' at position {}", this.selectedMeshFile, this.positionRay);
 	}

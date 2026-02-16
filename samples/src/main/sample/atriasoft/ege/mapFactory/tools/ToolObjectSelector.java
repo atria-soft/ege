@@ -126,6 +126,7 @@ public class ToolObjectSelector implements MapToolInterface {
 				if (this.selectedEntity != null && this.sceneRef != null) {
 					this.sceneRef.getEnvironement().rmEntity(this.selectedEntity);
 					map.placedEntities.remove(this.selectedEntity);
+					map.entityMeshPaths.remove(this.selectedEntity);
 					this.selectedEntity = null;
 					this.selectedPosition = null;
 					this.hoveredEntity = null;

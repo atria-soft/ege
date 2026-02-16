@@ -1,5 +1,7 @@
 package sample.atriasoft.ege.mapFactory;
 
+import java.io.IOException;
+import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -17,9 +19,13 @@ import org.atriasoft.ewol.widget.Sizer.DisplayMode;
 import org.atriasoft.ewol.widget.SplitPane;
 import org.atriasoft.ewol.widget.Widget;
 import org.atriasoft.ewol.widget.Windows;
+import org.atriasoft.ewol.widget.menu.MenuBar;
+import org.atriasoft.ewol.widget.menu.MenuPopup;
+import org.atriasoft.ewol.widget.meta.FileChooser;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import sample.atriasoft.ege.mapFactory.model.MapProject;
 import sample.atriasoft.ege.mapFactory.tools.MapToolInterface;
 import sample.atriasoft.ege.mapFactory.tools.ToolMapHeight;
 import sample.atriasoft.ege.mapFactory.tools.ToolObjectPlacer;
@@ -37,6 +43,7 @@ public class MainWindows extends Windows {
 	List<MapToolInterface> tools = new ArrayList<>();
 	List<Button> toolButtons = new ArrayList<>();
 	int currentToolIndex = 0;
+	private Path currentProjectFile = null;
 
 	private static void onToolSelectionChanged(final MainWindows self, final Integer index) {
 		if (index >= 0 && index < self.tools.size()) {
@@ -54,6 +61,81 @@ public class MainWindows extends Windows {
 
 	private static void onToolButton2(final MainWindows self) {
 		self.selectTool(2);
+	}
+
+	private static void onOpenFileSelected(final MainWindows self, final String filePath) {
+		LOGGER.info("Opening project: {}", filePath);
+		try {
+			MapProject.load(Path.of(filePath), self.scene.getMap(), self.scene.getEnvironement());
+			self.currentProjectFile = Path.of(filePath);
+			self.scene.reloadGround();
+			self.updateTitle();
+		} catch (final IOException e) {
+			LOGGER.error("Failed to open project: {}", filePath, e);
+		}
+	}
+
+	private static void onSaveAsFileSelected(final MainWindows self, final String filePath) {
+		LOGGER.info("Saving project as: {}", filePath);
+		try {
+			MapProject.save(Path.of(filePath), self.scene.getMap());
+			self.currentProjectFile = Path.of(filePath);
+			self.updateTitle();
+		} catch (final IOException e) {
+			LOGGER.error("Failed to save project: {}", filePath, e);
+		}
+	}
+
+	private void onFileNew() {
+		LOGGER.info("File > New");
+		this.scene.getMap().reset(this.scene.getEnvironement());
+		this.scene.reloadGround();
+		this.currentProjectFile = null;
+		updateTitle();
+	}
+
+	private void onFileOpen() {
+		LOGGER.info("File > Open");
+		final FileChooser fileChooser = FileChooser.create()
+				.title("Open Project")
+				.validateLabel("Open");
+		fileChooser.signalValidate.connectAuto(this, MainWindows::onOpenFileSelected);
+		popUpWidgetPush(fileChooser);
+	}
+
+	private void onFileSave() {
+		LOGGER.info("File > Save");
+		if (this.currentProjectFile != null) {
+			try {
+				MapProject.save(this.currentProjectFile, this.scene.getMap());
+			} catch (final IOException e) {
+				LOGGER.error("Failed to save project: {}", this.currentProjectFile, e);
+			}
+		} else {
+			onFileSaveAs();
+		}
+	}
+
+	private void onFileSaveAs() {
+		LOGGER.info("File > Save As...");
+		final FileChooser fileChooser = FileChooser.create()
+				.title("Save Project As")
+				.validateLabel("Save");
+		fileChooser.signalValidate.connectAuto(this, MainWindows::onSaveAsFileSelected);
+		popUpWidgetPush(fileChooser);
+	}
+
+	private void onFileQuit() {
+		LOGGER.info("File > Quit");
+		System.exit(0);
+	}
+
+	private void updateTitle() {
+		if (this.currentProjectFile != null) {
+			setPropertyTitle("Map Factory - " + this.currentProjectFile.getFileName());
+		} else {
+			setPropertyTitle("Map Factory (create your dream world)");
+		}
 	}
 
 	private void selectTool(final int index) {
@@ -95,7 +177,28 @@ public class MainWindows extends Windows {
 		this.tools.add(new ToolMapHeight());
 		this.tools.add(new ToolObjectPlacer());
 		this.tools.add(new ToolObjectSelector());
-		
+
+		// Menu bar
+		final MenuBar menuBar = MenuBar.create()
+				.menu("File", () -> MenuPopup.create()
+						.item("New", null, null, this::onFileNew)
+						.item("Open", null, null, this::onFileOpen)
+						.separator()
+						.item("Save", null, null, this::onFileSave)
+						.item("Save As...", null, null, this::onFileSaveAs)
+						.separator()
+						.item("Quit", null, null, this::onFileQuit))
+				.menu("Edit", () -> MenuPopup.create()
+						.disabledItem("Undo")
+						.disabledItem("Redo")
+						.separator()
+						.disabledItem("Cut")
+						.disabledItem("Copy")
+						.disabledItem("Paste")
+						.separator()
+						.disabledItem("Select All"));
+		mainLayout.subWidgetAdd(menuBar);
+
 		// Toolbar (horizontal bar with icon buttons, limited to 50px height)
 		final Sizer toolbar = new Sizer(DisplayMode.HORIZONTAL);
 		toolbar.setPropertyExpand(new Vector2b(true, false));
@@ -124,7 +227,7 @@ public class MainWindows extends Windows {
 		btnSelector.signalClick.connectAuto(this, MainWindows::onToolButton2);
 		toolbar.subWidgetAdd(btnSelector);
 		this.toolButtons.add(btnSelector);
-		
+
 		// SplitPane with scene on the left and menu on the right
 		final SplitPane splitPane = SplitPane.horizontal().splitPosition(0.75f).separatorSize(6).minSizes(200, 150)
 				.expand(true, true).fill(true, true);

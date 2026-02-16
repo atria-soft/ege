@@ -17,6 +17,8 @@ import org.atriasoft.ege.engines.EnginePhysics;
 import org.atriasoft.ege.engines.EnginePlayer;
 import org.atriasoft.ege.engines.EnginePostProcess;
 import org.atriasoft.ege.engines.EngineRender;
+import org.atriasoft.ege.engines.EngineShadow;
+import org.atriasoft.ege.celestial.CelestialSystem;
 //import org.atriasoft.ege.resource.Mesh;
 import org.atriasoft.etk.math.Vector2f;
 import org.atriasoft.ewol.event.EventEntry;
@@ -67,18 +69,41 @@ public class Environement {
 	long startTime = 0;
 	Clock startClock = null;
 
+	private final CelestialSystem celestialSystem = new CelestialSystem();
+	private EngineShadow engineShadow;
+
 	//protected List<Mesh> listMeshToDrawFirst = new ArrayList<Mesh>();
 	public Environement() {
 		addEngine(new EngineGravity(this));
 		addEngine(new EnginePlayer(this));
 		addEngine(new EngineAI(this));
 		addEngine(new EngineDynamicMeshs(this));
+		// Shadow engine must run before EngineRender so shadow maps are ready
+		this.engineShadow = new EngineShadow(this, this.celestialSystem);
+		addEngine(this.engineShadow);
 		addEngine(new EngineRender(this));
 		addEngine(new EnginePostProcess(this));
 		addEngine(new EnginePhysics(this));
 		addEngine(new EngineParticle(this));
 		addEngine(new EngineLight(this));
 		this.startClock = Clock.systemUTC();
+	}
+
+	/**
+	 * Get the celestial system for adding/removing suns and moons.
+	 * @return The celestial system instance
+	 */
+	public CelestialSystem getCelestialSystem() {
+		return this.celestialSystem;
+	}
+
+	/**
+	 * Get the shadow engine for configuring shadow parameters or
+	 * passing to render components.
+	 * @return The shadow engine instance
+	 */
+	public EngineShadow getEngineShadow() {
+		return this.engineShadow;
 	}
 
 	/**

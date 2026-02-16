@@ -97,6 +97,14 @@ public class Entity {
 		return false;
 	}
 	
+	/**
+	 * Get all components of this entity.
+	 * @return The component list
+	 */
+	public List<Component> getComponents() {
+		return this.component;
+	}
+
 	public Component getComponent(final String type) {
 		// check if not exist
 		for (final Component element : this.component) {

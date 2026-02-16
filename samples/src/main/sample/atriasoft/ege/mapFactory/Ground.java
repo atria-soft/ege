@@ -14,15 +14,15 @@ import org.atriasoft.loader3d.resources.ResourceMeshHeightMap;
 import toolbox.Maths;
 
 public class Ground {
-	int sizeX = 64;
-	int sizeY = 64;
-	float[][] heightMap = new float[this.sizeY][this.sizeX];
-	String[][] colorMap = new String[this.sizeY][this.sizeX * 2];
+	public int sizeX = 64;
+	public int sizeY = 64;
+	public float[][] heightMap = new float[this.sizeY][this.sizeX];
+	public String[][] colorMap = new String[this.sizeY][this.sizeX * 2];
 	ResourceMeshHeightMap mesh = new ResourceMeshHeightMap();
-	String baseNamePalette = "palette:grass_1";
-	String baseNamePalette2 = "palette:grass_2";
-	String baseNamePalette3 = "palette:grass_3";
-	String baseNamePalette4 = "palette:grass_4";
+	public String baseNamePalette = "palette:grass_1";
+	public String baseNamePalette2 = "palette:grass_2";
+	public String baseNamePalette3 = "palette:grass_3";
+	public String baseNamePalette4 = "palette:grass_4";
 	
 	public Ground() {
 		for (int yyy = 0; yyy < this.sizeY; yyy++) {
@@ -39,6 +39,22 @@ public class Ground {
 		}
 	}
 	
+	public void reset() {
+		for (int yyy = 0; yyy < this.sizeY; yyy++) {
+			for (int xxx = 0; xxx < this.sizeX; xxx++) {
+				this.heightMap[yyy][xxx] = 0.0f;
+				if (xxx % 2 == 0) {
+					this.colorMap[yyy][xxx * 2] = this.baseNamePalette;
+					this.colorMap[yyy][xxx * 2 + 1] = this.baseNamePalette2;
+				} else {
+					this.colorMap[yyy][xxx * 2] = this.baseNamePalette3;
+					this.colorMap[yyy][xxx * 2 + 1] = this.baseNamePalette4;
+				}
+			}
+		}
+		updateMesh();
+	}
+
 	public void changeHeightOfElement(Vector3f position, float distance, BiFunction<Float, Float, Float> applyer) {
 		for (int yyy = 0; yyy < this.sizeY; yyy++) {
 			for (int xxx = 0; xxx < this.sizeX; xxx++) {

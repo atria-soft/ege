@@ -1,9 +1,11 @@
 package sample.atriasoft.ege.mapFactory.model;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 
 import org.atriasoft.ege.Entity;
+import org.atriasoft.ege.Environement;
 import org.atriasoft.ege.components.ComponentPosition;
 import org.atriasoft.etk.math.Transform3D;
 import org.atriasoft.etk.math.Vector3f;
@@ -13,6 +15,16 @@ import sample.atriasoft.ege.mapFactory.Ground;
 public class Map {
 	public Ground ground = new Ground();
 	public final List<Entity> placedEntities = new ArrayList<>();
+	public final java.util.Map<Entity, String> entityMeshPaths = new HashMap<>();
+
+	public void reset(final Environement env) {
+		for (final Entity entity : this.placedEntities) {
+			env.rmEntity(entity);
+		}
+		this.placedEntities.clear();
+		this.entityMeshPaths.clear();
+		this.ground.reset();
+	}
 
 	public void updateMesh() {
 		this.ground.updateMesh();

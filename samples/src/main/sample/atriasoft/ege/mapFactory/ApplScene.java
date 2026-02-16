@@ -13,6 +13,8 @@ import org.atriasoft.etk.math.Transform3D;
 import org.atriasoft.etk.math.Vector3f;
 import org.atriasoft.ewol.event.EventEntry;
 import org.atriasoft.ewol.event.EventInput;
+import org.atriasoft.gale.key.KeyKeyboard;
+import org.atriasoft.gale.key.KeyStatus;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -22,6 +24,7 @@ import sample.atriasoft.ege.mapFactory.tools.MapToolInterface;
 public class ApplScene extends EgeScene {
 	final static private Logger LOGGER = LoggerFactory.getLogger(ApplScene.class);
 	Map map = new Map();
+	private final UndoManager undoManager = new UndoManager();
 	private ControlInterface simpleControl;
 	private MapToolInterface currentTool = null;
 	private Entity groundEntity = null;
@@ -52,6 +55,10 @@ public class ApplScene extends EgeScene {
 		return this.map;
 	}
 
+	public UndoManager getUndoManager() {
+		return this.undoManager;
+	}
+
 	public void reloadGround() {
 		if (this.groundEntity != null) {
 			this.env.rmEntity(this.groundEntity);
@@ -72,6 +79,21 @@ public class ApplScene extends EgeScene {
 
 	@Override
 	public boolean onEventEntry(final EventEntry event) {
+		// Ctrl+Z = undo, Ctrl+Y = redo
+		if (event.type() == KeyKeyboard.CHARACTER && event.status() == KeyStatus.down
+				&& event.specialKey() != null && event.specialKey().getCtrlLeft()) {
+			final Character ch = event.getChar();
+			if (ch != null) {
+				if (ch == '\u001a') { // Ctrl+Z
+					this.undoManager.undo();
+					return true;
+				}
+				if (ch == '\u0019') { // Ctrl+Y
+					this.undoManager.redo();
+					return true;
+				}
+			}
+		}
 		if (this.currentTool != null) {
 			if (this.currentTool.onEventEntry(event, this.map, this)) {
 				return true;

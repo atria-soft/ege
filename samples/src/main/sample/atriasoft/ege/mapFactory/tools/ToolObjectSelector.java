@@ -27,7 +27,10 @@ import org.atriasoft.gale.key.KeyStatus;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import sample.atriasoft.ege.mapFactory.ApplScene;
+import sample.atriasoft.ege.mapFactory.DeleteEntityAction;
 import sample.atriasoft.ege.mapFactory.EgeScene;
+import sample.atriasoft.ege.mapFactory.TransformEntityAction;
 import sample.atriasoft.ege.mapFactory.model.Map;
 
 public class ToolObjectSelector implements MapToolInterface {
@@ -50,10 +53,20 @@ public class ToolObjectSelector implements MapToolInterface {
 	private float objectScale = 1.0f;
 	private Slider scaleSlider = null;
 
+	// Drag state
+	private boolean isDragging = false;
+	private Transform3D dragStartTransform = null;
+
+	// Undo tracking for rotation/scale edits
+	private Transform3D transformBeforeEdit = null;
+
 	private static void onRotationChanged(final ToolObjectSelector self, final Float value) {
 		self.objectRotation = value;
 		LOGGER.debug("Object rotation: {}", value);
 		if (self.selectedEntity != null && self.selectedPosition != null) {
+			if (self.transformBeforeEdit == null) {
+				self.transformBeforeEdit = self.selectedPosition.getTransform();
+			}
 			final Transform3D current = self.selectedPosition.getTransform();
 			final Quaternion rot = Quaternion.fromEulerAngles(
 					new Vector3f(0, 0, value * (float) Math.PI / 180.0f));
@@ -65,9 +78,23 @@ public class ToolObjectSelector implements MapToolInterface {
 		self.objectScale = value;
 		LOGGER.debug("Object scale: {}", value);
 		if (self.selectedEntity != null && self.selectedPosition != null) {
+			if (self.transformBeforeEdit == null) {
+				self.transformBeforeEdit = self.selectedPosition.getTransform();
+			}
 			final Transform3D current = self.selectedPosition.getTransform();
 			self.selectedPosition.setTransform(
 					current.withScale(new Vector3f(value, value, value)));
+		}
+	}
+
+	private void flushPendingTransformAction() {
+		if (this.transformBeforeEdit != null && this.selectedPosition != null && this.sceneRef instanceof final ApplScene applScene) {
+			final Transform3D after = this.selectedPosition.getTransform();
+			if (!this.transformBeforeEdit.equals(after)) {
+				final TransformEntityAction action = new TransformEntityAction(this.selectedPosition, this.transformBeforeEdit, after);
+				applScene.getUndoManager().execute(action);
+			}
+			this.transformBeforeEdit = null;
 		}
 	}
 
@@ -99,6 +126,7 @@ public class ToolObjectSelector implements MapToolInterface {
 
 	@Override
 	public void onDeactivate(final EgeScene widget) {
+		flushPendingTransformAction();
 		// Remove selection highlight
 		if (this.selectedEntity != null) {
 			this.selectedEntity.removeComponent(ComponentPostProcess.COMPONENT_NAME);
@@ -110,6 +138,8 @@ public class ToolObjectSelector implements MapToolInterface {
 			this.hoveredEntity.removeComponent(ComponentPostProcess.COMPONENT_NAME);
 			this.hoveredEntity = null;
 		}
+		this.isDragging = false;
+		this.dragStartTransform = null;
 		this.sceneRef = null;
 	}
 
@@ -126,12 +156,21 @@ public class ToolObjectSelector implements MapToolInterface {
 			final Character ch = event.getChar();
 			if (ch != null && (ch == '\b' || ch == '\u007f')) {
 				if (this.selectedEntity != null && this.sceneRef != null) {
-					this.sceneRef.getEnvironement().rmEntity(this.selectedEntity);
-					map.placedEntities.remove(this.selectedEntity);
-					map.entityMeshPaths.remove(this.selectedEntity);
+					flushPendingTransformAction();
+					if (this.sceneRef instanceof final ApplScene applScene) {
+						final String meshPath = map.entityMeshPaths.get(this.selectedEntity);
+						final Transform3D transform = this.selectedPosition.getTransform();
+						final DeleteEntityAction action = new DeleteEntityAction(
+								this.selectedEntity, meshPath, transform, map, applScene);
+						// Remove highlight before executing
+						this.selectedEntity.removeComponent(ComponentPostProcess.COMPONENT_NAME);
+						applScene.getUndoManager().execute(action);
+					}
 					this.selectedEntity = null;
 					this.selectedPosition = null;
 					this.hoveredEntity = null;
+					this.isDragging = false;
+					this.dragStartTransform = null;
 					LOGGER.info("Deleted selected entity");
 					if (this.onSelectionChanged != null) {
 						this.onSelectionChanged.accept(null);
@@ -153,13 +192,50 @@ public class ToolObjectSelector implements MapToolInterface {
 		// Ray-cast
 		final Ray mouseRay = widget.mainView.getRayFromScreen(widget.projection, widget.getSize(), relPos);
 
-		// Update hover on every mouse event
-		final Entity newHovered = findEntityAtRay(mouseRay, map);
-		updateHover(newHovered);
+		// Drag move while button held
+		if (event.inputId() == 1 && event.status() == KeyStatus.move && this.isDragging) {
+			if (this.selectedPosition != null) {
+				final Vector3f newPos = map.ground.intersectRay(mouseRay);
+				if (newPos != null) {
+					final Transform3D current = this.selectedPosition.getTransform();
+					this.selectedPosition.setTransform(
+							new Transform3D(newPos, current.orientation(), current.scale()));
+				}
+			}
+			return true;
+		}
 
-		// Select object on left click
+		// End drag on mouse up
+		if (event.inputId() == 1 && (event.status() == KeyStatus.up || event.status() == KeyStatus.upAfter)) {
+			if (this.isDragging && this.dragStartTransform != null && this.selectedPosition != null) {
+				final Transform3D after = this.selectedPosition.getTransform();
+				if (!this.dragStartTransform.position().equals(after.position())) {
+					if (widget instanceof final ApplScene applScene) {
+						final TransformEntityAction action = new TransformEntityAction(
+								this.selectedPosition, this.dragStartTransform, after);
+						applScene.getUndoManager().execute(action);
+					}
+				}
+			}
+			this.isDragging = false;
+			this.dragStartTransform = null;
+			return true;
+		}
+
+		// Update hover on every mouse event
+		if (!this.isDragging) {
+			final Entity newHovered = findEntityAtRay(mouseRay, map);
+			updateHover(newHovered);
+		}
+
+		// Select object on left click + start drag if entity under cursor
 		if (event.inputId() == 1 && event.status() == KeyStatus.pressSingle) {
+			final Entity newHovered = findEntityAtRay(mouseRay, map);
 			selectEntity(newHovered);
+			if (this.selectedEntity != null && this.selectedPosition != null) {
+				this.isDragging = true;
+				this.dragStartTransform = this.selectedPosition.getTransform();
+			}
 			return true;
 		}
 
@@ -167,6 +243,9 @@ public class ToolObjectSelector implements MapToolInterface {
 		if ((event.inputId() == 4 || event.inputId() == 5) && event.status() == KeyStatus.down
 				&& event.specialKey() != null && event.specialKey().getCtrlLeft()) {
 			if (this.selectedEntity != null && this.selectedPosition != null) {
+				if (this.transformBeforeEdit == null) {
+					this.transformBeforeEdit = this.selectedPosition.getTransform();
+				}
 				final float delta = (event.inputId() == 4) ? 15.0f : -15.0f;
 				this.objectRotation = (this.objectRotation + delta + 360.0f) % 360.0f;
 				final Transform3D current = this.selectedPosition.getTransform();
@@ -181,6 +260,9 @@ public class ToolObjectSelector implements MapToolInterface {
 		if ((event.inputId() == 4 || event.inputId() == 5) && event.status() == KeyStatus.down
 				&& event.specialKey() != null && event.specialKey().getShiftLeft()) {
 			if (this.selectedEntity != null && this.selectedPosition != null) {
+				if (this.transformBeforeEdit == null) {
+					this.transformBeforeEdit = this.selectedPosition.getTransform();
+				}
 				final float delta = (event.inputId() == 4) ? 0.1f : -0.1f;
 				this.objectScale = Math.max(0.1f, Math.min(5.0f, this.objectScale + delta));
 				final Transform3D current = this.selectedPosition.getTransform();
@@ -218,6 +300,9 @@ public class ToolObjectSelector implements MapToolInterface {
 	}
 
 	public void selectEntity(final Entity entity) {
+		// Flush any pending rotation/scale edits as undo action
+		flushPendingTransformAction();
+
 		// Remove old selection highlight
 		if (this.selectedEntity != null) {
 			this.selectedEntity.removeComponent(ComponentPostProcess.COMPONENT_NAME);

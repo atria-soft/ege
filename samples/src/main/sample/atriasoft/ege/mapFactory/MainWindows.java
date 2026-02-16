@@ -72,6 +72,7 @@ public class MainWindows extends Windows {
 			MapProject.load(Path.of(filePath), self.scene.getMap(), self.scene.getEnvironement());
 			self.currentProjectFile = Path.of(filePath);
 			self.scene.reloadGround();
+			self.scene.getUndoManager().clear();
 			self.updateTitle();
 		} catch (final IOException e) {
 			LOGGER.error("Failed to open project: {}", filePath, e);
@@ -93,6 +94,7 @@ public class MainWindows extends Windows {
 		LOGGER.info("File > New");
 		this.scene.getMap().reset(this.scene.getEnvironement());
 		this.scene.reloadGround();
+		this.scene.getUndoManager().clear();
 		this.currentProjectFile = null;
 		updateTitle();
 	}
@@ -251,15 +253,26 @@ public class MainWindows extends Windows {
 					}
 					return popup;
 				})
-				.menu("Edit", () -> MenuPopup.create()
-						.disabledItem("Undo")
-						.disabledItem("Redo")
-						.separator()
-						.disabledItem("Cut")
-						.disabledItem("Copy")
-						.disabledItem("Paste")
-						.separator()
-						.disabledItem("Select All"));
+				.menu("Edit", () -> {
+					final MenuPopup popup = MenuPopup.create();
+					if (this.scene.getUndoManager().canUndo()) {
+						popup.item("Undo", null, "ctrl+z", () -> this.scene.getUndoManager().undo());
+					} else {
+						popup.disabledItem("Undo");
+					}
+					if (this.scene.getUndoManager().canRedo()) {
+						popup.item("Redo", null, "ctrl+y", () -> this.scene.getUndoManager().redo());
+					} else {
+						popup.disabledItem("Redo");
+					}
+					popup.separator();
+					popup.disabledItem("Cut");
+					popup.disabledItem("Copy");
+					popup.disabledItem("Paste");
+					popup.separator();
+					popup.disabledItem("Select All");
+					return popup;
+				});
 		mainLayout.subWidgetAdd(menuBar);
 
 		// Toolbar (horizontal bar with icon buttons, limited to 50px height)

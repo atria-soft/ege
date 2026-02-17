@@ -6,21 +6,31 @@ import org.atriasoft.etk.math.Vector3f;
 /**
  * Represents a celestial body (sun or moon) orbiting in the sky.
  * <p>
- * The body moves along a circular orbit defined by its angular speed and orbital
- * inclination. The inclination simulates seasonal effects:
+ * The body moves along a circular orbit defined by its angular speed,
+ * orbital inclination and orbital elevation:
  * <ul>
- *   <li>{@code inclination = 0} — equinox, the body passes through zenith</li>
- *   <li>{@code inclination = π/6} — summer/winter offset</li>
- *   <li>{@code inclination > π/3} — polar behavior (never sets or never rises)</li>
+ *   <li>{@code orbitalInclination} — tilts the orbital plane sideways (Y axis).
+ *       0 = orbit in the XZ plane, higher values spread the path in Y.</li>
+ *   <li>{@code orbitalElevation} — raises the entire orbit above the horizon.
+ *       Simulates latitude effect / seasonal declination:
+ *       <ul>
+ *         <li>{@code elevation = 0} — orbit passes through the horizon (normal day/night)</li>
+ *         <li>{@code elevation > 0} — orbit center raised, lowest point stays above horizon
+ *             (midnight sun / polar day)</li>
+ *         <li>{@code elevation < 0} — orbit center lowered, highest point stays below
+ *             horizon (polar night)</li>
+ *       </ul>
+ *   </li>
  * </ul>
  * <p>
- * When the body is below the horizon ({@code direction.y < 0}), it does not
+ * When the body is below the horizon ({@code direction.z < 0}), it does not
  * contribute light or cast shadows.
  */
 public class CelestialBody {
 	private final CelestialBodyType type;
 	private float angularSpeed;
 	private float orbitalInclination;
+	private float orbitalElevation;
 	private float currentAngle;
 	private Color lightColor;
 	private float intensity;
@@ -47,6 +57,7 @@ public class CelestialBody {
 		this.type = type;
 		this.angularSpeed = angularSpeed;
 		this.orbitalInclination = orbitalInclination;
+		this.orbitalElevation = 0.0f;
 		this.currentAngle = initialAngle;
 		this.lightColor = lightColor;
 		this.intensity = intensity;
@@ -72,8 +83,13 @@ public class CelestialBody {
 	/**
 	 * Compute the direction vector of this body on the celestial sphere.
 	 * <p>
-	 * The world uses Z-up convention: the body orbits in the XY plane
-	 * and Z represents the height above the horizon.
+	 * The world uses Z-up convention. The body orbits on a circle:
+	 * <ol>
+	 *   <li>Base orbit in XZ plane: {@code (cos(angle), 0, sin(angle))}</li>
+	 *   <li>Inclination tilts the orbit sideways into Y</li>
+	 *   <li>Elevation shifts the whole orbit up/down in Z (latitude effect)</li>
+	 * </ol>
+	 * The result is normalized so it stays on the unit sphere.
 	 * {@code direction.z() > 0} means the body is above the horizon.
 	 * @return Normalized direction vector from world center to the body
 	 */
@@ -82,11 +98,23 @@ public class CelestialBody {
 		final float sinAngle = (float) Math.sin(this.currentAngle);
 		final float cosIncl = (float) Math.cos(this.orbitalInclination);
 		final float sinIncl = (float) Math.sin(this.orbitalInclination);
-		// Orbit in the XY plane: X varies with cos, Y with inclination tilt, Z = height
-		final float x = cosAngle;
-		final float y = sinAngle * sinIncl;
-		final float z = sinAngle * cosIncl;
-		return new Vector3f(x, y, z);
+		final float cosElev = (float) Math.cos(this.orbitalElevation);
+		final float sinElev = (float) Math.sin(this.orbitalElevation);
+		// Base orbit in XZ plane, tilted by inclination into Y
+		final float ox = cosAngle;
+		final float oy = sinAngle * sinIncl;
+		final float oz = sinAngle * cosIncl;
+		// Elevation rotates the orbit around the X axis, raising Z
+		// Rotation around X: y' = y*cos - z*sin, z' = y*sin + z*cos
+		final float x = ox;
+		final float y = oy * cosElev - oz * sinElev;
+		final float z = oy * sinElev + oz * cosElev;
+		// Normalize (should be near unit length but ensure precision)
+		final float len = (float) Math.sqrt(x * x + y * y + z * z);
+		if (len < 1e-6f) {
+			return new Vector3f(1.0f, 0.0f, 0.0f);
+		}
+		return new Vector3f(x / len, y / len, z / len);
 	}
 
 	/**
@@ -128,6 +156,14 @@ public class CelestialBody {
 		this.orbitalInclination = orbitalInclination;
 	}
 
+	public float getOrbitalElevation() {
+		return this.orbitalElevation;
+	}
+
+	public void setOrbitalElevation(final float orbitalElevation) {
+		this.orbitalElevation = orbitalElevation;
+	}
+
 	public float getCurrentAngle() {
 		return this.currentAngle;
 	}
@@ -166,6 +202,7 @@ public class CelestialBody {
 				+ ", angle=" + this.currentAngle
 				+ ", speed=" + this.angularSpeed
 				+ ", inclination=" + this.orbitalInclination
+				+ ", elevation=" + this.orbitalElevation
 				+ ", intensity=" + this.intensity + "]";
 	}
 }

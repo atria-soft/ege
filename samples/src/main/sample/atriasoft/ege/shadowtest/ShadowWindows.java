@@ -22,11 +22,48 @@ public class ShadowWindows extends Windows {
 	private static final Logger LOGGER = LoggerFactory.getLogger(ShadowWindows.class);
 
 	private final ShadowScene scene;
+	private Button pauseButton;
 	private boolean sunPaused = false;
 	private float savedAngularSpeed = 0.3f;
 	private Label angleLabel;
 	private Label infoLabel;
 	private Slider angleSlider;
+
+	// --- Static callbacks for connectAuto (prevent GC via weak ref) ---
+
+	private static void onPauseClicked(final ShadowWindows self) {
+		final CelestialBody sun = self.scene.getSun();
+		if (self.sunPaused) {
+			sun.setAngularSpeed(self.savedAngularSpeed);
+			self.sunPaused = false;
+			self.pauseButton.label("Pause Sun");
+			LOGGER.info("Sun RESUMED (speed={})", self.savedAngularSpeed);
+		} else {
+			self.savedAngularSpeed = sun.getAngularSpeed();
+			sun.setAngularSpeed(0.0f);
+			self.sunPaused = true;
+			self.pauseButton.label("Resume Sun");
+			LOGGER.info("Sun PAUSED at angle={}", sun.getCurrentAngle());
+		}
+	}
+
+	private static void onAngleChanged(final ShadowWindows self, final Float degrees) {
+		final float radians = (float) (degrees * Math.PI / 180.0);
+		self.scene.getSun().setCurrentAngle(radians);
+		self.angleLabel.setPropertyValue(String.format("Angle: %.1f", degrees));
+	}
+
+	private static void onFrustumToggled(final ShadowWindows self, final Boolean value) {
+		self.scene.setDrawFrustumWireframe(value);
+	}
+
+	private static void onLightAABBToggled(final ShadowWindows self, final Boolean value) {
+		self.scene.setDrawLightAABB(value);
+	}
+
+	private static void onSunDirectionToggled(final ShadowWindows self, final Boolean value) {
+		self.scene.setDrawSunDirection(value);
+	}
 
 	public ShadowWindows() {
 		setPropertyTitle("Shadow Test - Phase 2 CSM (ewol)");
@@ -39,7 +76,7 @@ public class ShadowWindows extends Windows {
 		// Create the control panel
 		final Sizer controlPanel = createControlPanel();
 
-		// SplitPane: 3D scene (left, 75%) + controls (right, 25%)
+		// SplitPane: 3D scene (left, 78%) + controls (right, 22%)
 		final SplitPane splitPane = SplitPane.horizontal()
 				.splitPosition(0.78f)
 				.separatorSize(4)
@@ -66,25 +103,11 @@ public class ShadowWindows extends Windows {
 		panel.subWidgetAdd(sunSectionLabel);
 
 		// Pause/Resume button
-		final Button pauseButton = Button.create("Pause Sun");
-		pauseButton.setPropertyExpand(new Vector2b(true, false));
-		pauseButton.setPropertyFill(new Vector2b(true, false));
-		pauseButton.signalClick.connect(() -> {
-			final CelestialBody sun = this.scene.getSun();
-			if (this.sunPaused) {
-				sun.setAngularSpeed(this.savedAngularSpeed);
-				this.sunPaused = false;
-				pauseButton.label("Pause Sun");
-				LOGGER.info("Sun RESUMED (speed={})", this.savedAngularSpeed);
-			} else {
-				this.savedAngularSpeed = sun.getAngularSpeed();
-				sun.setAngularSpeed(0.0f);
-				this.sunPaused = true;
-				pauseButton.label("Resume Sun");
-				LOGGER.info("Sun PAUSED at angle={}", sun.getCurrentAngle());
-			}
-		});
-		panel.subWidgetAdd(pauseButton);
+		this.pauseButton = Button.create("Pause Sun");
+		this.pauseButton.setPropertyExpand(new Vector2b(true, false));
+		this.pauseButton.setPropertyFill(new Vector2b(true, false));
+		this.pauseButton.signalClick.connectAuto(this, ShadowWindows::onPauseClicked);
+		panel.subWidgetAdd(this.pauseButton);
 
 		// Angle slider (0-360 degrees)
 		this.angleLabel = new Label("Angle: 45.0");
@@ -92,11 +115,11 @@ public class ShadowWindows extends Windows {
 
 		this.angleSlider = Slider.create()
 				.range(0, 360)
-				.value((float) (Math.PI * 0.25 * 180.0 / Math.PI))
-				.step(1.0f)
-				.onValueChange(this::onAngleChanged);
+				.value(45.0f)
+				.step(1.0f);
 		this.angleSlider.setPropertyExpand(new Vector2b(true, false));
 		this.angleSlider.setPropertyFill(new Vector2b(true, false));
+		this.angleSlider.signalValue.connectAuto(this, ShadowWindows::onAngleChanged);
 		panel.subWidgetAdd(this.angleSlider);
 
 		// --- Wireframe section ---
@@ -104,27 +127,25 @@ public class ShadowWindows extends Windows {
 		panel.subWidgetAdd(wireSectionLabel);
 
 		// Camera frustum wireframe
-		final CheckBox frustumCheck = CheckBox.create("Camera Frustum")
-				.checked(false)
-				.onValueChange(value -> this.scene.setDrawFrustumWireframe(value));
+		final CheckBox frustumCheck = CheckBox.create("Camera Frustum");
 		frustumCheck.setPropertyExpand(new Vector2b(true, false));
 		frustumCheck.setPropertyFill(new Vector2b(true, false));
+		frustumCheck.signalValue.connectAuto(this, ShadowWindows::onFrustumToggled);
 		panel.subWidgetAdd(frustumCheck);
 
 		// Light AABB wireframe
-		final CheckBox aabbCheck = CheckBox.create("Light AABB")
-				.checked(false)
-				.onValueChange(value -> this.scene.setDrawLightAABB(value));
+		final CheckBox aabbCheck = CheckBox.create("Light AABB");
 		aabbCheck.setPropertyExpand(new Vector2b(true, false));
 		aabbCheck.setPropertyFill(new Vector2b(true, false));
+		aabbCheck.signalValue.connectAuto(this, ShadowWindows::onLightAABBToggled);
 		panel.subWidgetAdd(aabbCheck);
 
 		// Sun direction line
 		final CheckBox sunDirCheck = CheckBox.create("Sun Direction")
-				.checked(true)
-				.onValueChange(value -> this.scene.setDrawSunDirection(value));
+				.checked(true);
 		sunDirCheck.setPropertyExpand(new Vector2b(true, false));
 		sunDirCheck.setPropertyFill(new Vector2b(true, false));
+		sunDirCheck.signalValue.connectAuto(this, ShadowWindows::onSunDirectionToggled);
 		panel.subWidgetAdd(sunDirCheck);
 
 		// --- Info section ---
@@ -137,12 +158,6 @@ public class ShadowWindows extends Windows {
 		panel.subWidgetAdd(this.infoLabel);
 
 		return panel;
-	}
-
-	private void onAngleChanged(final Float degrees) {
-		final float radians = (float) (degrees * Math.PI / 180.0);
-		this.scene.getSun().setCurrentAngle(radians);
-		this.angleLabel.setPropertyValue(String.format("Angle: %.1f", degrees));
 	}
 
 	@Override

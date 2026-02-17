@@ -26,8 +26,10 @@ public class ShadowWindows extends Windows {
 	private boolean sunPaused = false;
 	private float savedAngularSpeed = 0.3f;
 	private Label angleLabel;
+	private Label inclinationLabel;
 	private Label infoLabel;
 	private Slider angleSlider;
+	private Slider inclinationSlider;
 
 	// --- Static callbacks for connectAuto (prevent GC via weak ref) ---
 
@@ -51,6 +53,12 @@ public class ShadowWindows extends Windows {
 		final float radians = (float) (degrees * Math.PI / 180.0);
 		self.scene.getSun().setCurrentAngle(radians);
 		self.angleLabel.setPropertyValue(String.format("Angle: %.1f", degrees));
+	}
+
+	private static void onInclinationChanged(final ShadowWindows self, final Float degrees) {
+		final float radians = (float) (degrees * Math.PI / 180.0);
+		self.scene.getSun().setOrbitalInclination(radians);
+		self.inclinationLabel.setPropertyValue(String.format("Inclination: %.1f", degrees));
 	}
 
 	private static void onFrustumToggled(final ShadowWindows self, final Boolean value) {
@@ -122,6 +130,20 @@ public class ShadowWindows extends Windows {
 		this.angleSlider.signalValue.connectAuto(this, ShadowWindows::onAngleChanged);
 		panel.subWidgetAdd(this.angleSlider);
 
+		// Inclination slider (0-90 degrees) — orbital tilt (summer/winter)
+		final float initialInclinationDeg = (float) (0.1 * 180.0 / Math.PI);
+		this.inclinationLabel = new Label(String.format("Inclination: %.1f", initialInclinationDeg));
+		panel.subWidgetAdd(this.inclinationLabel);
+
+		this.inclinationSlider = Slider.create()
+				.range(0, 90)
+				.value(initialInclinationDeg)
+				.step(1.0f);
+		this.inclinationSlider.setPropertyExpand(new Vector2b(true, false));
+		this.inclinationSlider.setPropertyFill(new Vector2b(true, false));
+		this.inclinationSlider.signalValue.connectAuto(this, ShadowWindows::onInclinationChanged);
+		panel.subWidgetAdd(this.inclinationSlider);
+
 		// --- Wireframe section ---
 		final Label wireSectionLabel = new Label("<b>Wireframe</b>");
 		panel.subWidgetAdd(wireSectionLabel);
@@ -167,10 +189,11 @@ public class ShadowWindows extends Windows {
 		if (this.infoLabel != null && this.scene != null) {
 			final CelestialBody sun = this.scene.getSun();
 			final float angleDeg = (float) (sun.getCurrentAngle() * 180.0 / Math.PI);
+			final float inclDeg = (float) (sun.getOrbitalInclination() * 180.0 / Math.PI);
 			final Vector3f dir = sun.getDirection();
 			this.infoLabel.setPropertyValue(String.format(
-					"Sun: %.0f  h=%.2f\n%s",
-					angleDeg, dir.z(),
+					"Angle: %.0f  Incl: %.0f\nh=%.2f  %s",
+					angleDeg, inclDeg, dir.z(),
 					sun.isAboveHorizon() ? "above horizon" : "BELOW horizon"));
 			// Sync slider position when sun is animating
 			if (!this.sunPaused && this.angleSlider != null) {

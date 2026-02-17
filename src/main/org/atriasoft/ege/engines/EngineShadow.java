@@ -326,6 +326,20 @@ public class EngineShadow extends Engine {
 		return this.activeCascadeSplitDistances;
 	}
 	
+	/**
+	 * Get a specific cascade for debug visualization.
+	 * @param casterIndex Shadow caster index (0-based)
+	 * @param cascadeIndex Cascade index (0-based)
+	 * @return The ShadowCascade, or null if not initialized
+	 */
+	public ShadowCascade getCascade(final int casterIndex, final int cascadeIndex) {
+		if (casterIndex < 0 || casterIndex >= MAX_SHADOW_CASTERS
+				|| cascadeIndex < 0 || cascadeIndex >= MAX_CASCADES) {
+			return null;
+		}
+		return this.cascades[casterIndex][cascadeIndex];
+	}
+
 	// --- Legacy API compatibility (Phase 1 single-cascade) ---
 	
 	/** @return Total number of active shadow maps (casters * cascades) */

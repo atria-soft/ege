@@ -13,7 +13,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
  * Validates the shadow cascade math:
- * - CelestialBody.getDirection() for various angles/inclinations/elevations
+ * - CelestialBody.getDirection() for various angles/inclinations
  * - buildLookAtMatrix round-trip (eye → origin, target → -Z)
  * - computeFrustumCorners symmetry
  * - lightSpaceMatrix transforms frustum corners into NDC [-1,1]
@@ -25,80 +25,45 @@ class TestShadowCascadeMatrix {
 
 	@Test
 	void testDirectionAngle0() {
-		// angle=0, incl=0, elev=0 → direction should be (1, 0, 0) — on the horizon
-		final CelestialBody body = createBody(0.0f, 0.0f, 0.0f);
+		// angle=0, incl=0 → direction should be (1, 0, 0) — on the horizon
+		final CelestialBody body = createBody(0.0f, 0.0f);
 		final Vector3f dir = body.getDirection();
 		assertVec3(1, 0, 0, dir, "angle=0");
 	}
 
 	@Test
 	void testDirectionAngle90() {
-		// angle=π/2, incl=0, elev=0 → direction should be (0, 0, 1) — zenith
-		final CelestialBody body = createBody((float) (Math.PI / 2), 0.0f, 0.0f);
+		// angle=π/2, incl=0 → direction should be (0, 0, 1) — zenith
+		final CelestialBody body = createBody((float) (Math.PI / 2), 0.0f);
 		final Vector3f dir = body.getDirection();
 		assertVec3(0, 0, 1, dir, "angle=90, zenith");
 	}
 
 	@Test
 	void testDirectionAngle180() {
-		// angle=π, incl=0, elev=0 → direction should be (-1, 0, 0) — opposite horizon
-		final CelestialBody body = createBody((float) Math.PI, 0.0f, 0.0f);
+		// angle=π, incl=0 → direction should be (-1, 0, 0) — opposite horizon
+		final CelestialBody body = createBody((float) Math.PI, 0.0f);
 		final Vector3f dir = body.getDirection();
 		assertVec3(-1, 0, 0, dir, "angle=180");
 	}
 
 	@Test
 	void testDirectionAngle270() {
-		// angle=3π/2, incl=0, elev=0 → direction should be (0, 0, -1) — nadir (below horizon)
-		final CelestialBody body = createBody((float) (3 * Math.PI / 2), 0.0f, 0.0f);
+		// angle=3π/2, incl=0 → direction should be (0, 0, -1) — nadir (below horizon)
+		final CelestialBody body = createBody((float) (3 * Math.PI / 2), 0.0f);
 		final Vector3f dir = body.getDirection();
 		assertVec3(0, 0, -1, dir, "angle=270, nadir");
 	}
 
 	@Test
 	void testDirectionWithInclination() {
-		// angle=π/2, incl=π/4, elev=0
+		// angle=π/2, incl=π/4
 		// base orbit: ox=0, oy=sin(π/4)=0.707, oz=cos(π/4)=0.707
-		// no elevation → final = (0, 0.707, 0.707)
-		final CelestialBody body = createBody((float) (Math.PI / 2), (float) (Math.PI / 4), 0.0f);
+		final CelestialBody body = createBody((float) (Math.PI / 2), (float) (Math.PI / 4));
 		final Vector3f dir = body.getDirection();
 		final float s = (float) (1.0 / Math.sqrt(2));
 		assertVec3(0, s, s, dir, "angle=90, incl=45");
 		assertTrue(dir.z() > 0, "should be above horizon");
-	}
-
-	@Test
-	void testDirectionWithElevation30() {
-		// angle=0, incl=0, elev=30°
-		// base orbit at angle=0: (1, 0, 0) — on the horizon
-		// elevation rotates around X by 30°: y'=0, z'=0 → still (1, 0, 0) !
-		// Because at angle=0, oy=oz=0, rotation around X has no effect.
-		final CelestialBody body = createBody(0.0f, 0.0f, (float) Math.toRadians(30));
-		final Vector3f dir = body.getDirection();
-		assertVec3(1, 0, 0, dir, "angle=0, elev=30 (no effect at horizon crossing)");
-	}
-
-	@Test
-	void testDirectionElevation_raisesZenith() {
-		// angle=π/2 (normally zenith), incl=0, elev=30°
-		// base: (0, 0, 1)
-		// elevation rotates around X by 30°: y'=-sin(30)*1=-0.5, z'=cos(30)*1=0.866
-		final CelestialBody body = createBody((float) (Math.PI / 2), 0.0f, (float) Math.toRadians(30));
-		final Vector3f dir = body.getDirection();
-		assertVec3(0, -0.5f, 0.866f, dir, "angle=90, elev=30");
-	}
-
-	@Test
-	void testDirectionElevation_midnightSun() {
-		// angle=3π/2 (normally nadir, z=-1), incl=0, elev=90°
-		// base: (0, 0, -1)
-		// elevation rotates around X by 90°: y'=0*0-(-1)*1=1, z'=0*1+(-1)*0=0
-		// → direction = (0, 1, 0) — still above horizon!
-		final CelestialBody body = createBody((float) (3 * Math.PI / 2), 0.0f, (float) Math.toRadians(90));
-		final Vector3f dir = body.getDirection();
-		assertVec3(0, 1, 0, dir, "midnight sun: nadir + 90° elevation");
-		// At the equator angle (what was nadir), z >= 0 → never sets
-		assertTrue(dir.z() >= -EPS, "midnight sun: should not go below horizon");
 	}
 
 	// === Camera forward/right/up tests ===
@@ -279,12 +244,10 @@ class TestShadowCascadeMatrix {
 
 	// === Helpers ===
 
-	private static CelestialBody createBody(final float angle, final float inclination, final float elevation) {
-		final CelestialBody body = new CelestialBody(
+	private static CelestialBody createBody(final float angle, final float inclination) {
+		return new CelestialBody(
 				CelestialBodyType.SUN, 0.0f, inclination, angle,
 				new Color(1, 1, 1, 1), 1.0f, true);
-		body.setOrbitalElevation(elevation);
-		return body;
 	}
 
 	private static void assertVec3(final float ex, final float ey, final float ez,

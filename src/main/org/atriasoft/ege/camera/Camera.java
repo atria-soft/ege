@@ -108,9 +108,7 @@ public class Camera {
 	}
 
 	public ValueLine reverseTransform(ValueLine basicValues) {
-		Matrix4f cameraMatrix = getConvertionMatrix().transpose();
-		// invert Matrix:
-		Matrix4f cameraMatrixInverted = cameraMatrix.invert();
+		Matrix4f cameraMatrixInverted = getConvertionMatrix().invert();
 		
 		return new ValueLine(cameraMatrixInverted.multiply(basicValues.near()), // compute near
 		                     cameraMatrixInverted.multiply(basicValues.far())); // compute far

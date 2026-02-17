@@ -60,9 +60,7 @@ public class ProjectionOrthogonal implements ProjectionInterface {
 		Vector4f mouse_pos_near_clip = new Vector4f(mouse_pos_x_clip, mouse_pos_y_clip, -1.0f, 1.0f);
 		Vector4f mouse_pos_far_clip = new Vector4f(mouse_pos_x_clip, mouse_pos_y_clip, 1.0f, 1.0f);
 		
-		Matrix4f projectionMatrix = getMatrix().transpose();
-		// invert Matrix:
-		Matrix4f projectionMatrixInverted = projectionMatrix.invert();
+		Matrix4f projectionMatrixInverted = getMatrix().invert();
 		
 		Vector4f mouse_pos_near_view = projectionMatrixInverted.multiply(mouse_pos_near_clip);
 		Vector4f mouse_pos_far_view = projectionMatrixInverted.multiply(mouse_pos_far_clip);

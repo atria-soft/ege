@@ -1,7 +1,6 @@
 package org.atriasoft.ege.shadow;
 
-import org.atriasoft.ege.components.ComponentStaticMesh;
-import org.atriasoft.ege.components.part.PositionningInterface;
+import org.atriasoft.ege.engines.EngineShadow.MeshPositionPair;
 import org.atriasoft.etk.Uri;
 import org.atriasoft.etk.math.Matrix4f;
 import org.atriasoft.gale.backend3d.OpenGL;
@@ -120,20 +119,19 @@ public class ShadowMapResources {
 	/**
 	 * Render a single mesh into the shadow map depth buffer.
 	 *
-	 * @param mesh     The mesh to render
-	 * @param position The mesh's position/transform
+	 * @param pair The mesh+position pair to render
 	 */
-	public void renderMeshDepth(final ComponentStaticMesh mesh, final PositionningInterface position) {
-		if (this.depthProgram == null || mesh == null || position == null) {
+	public void renderMeshDepth(final MeshPositionPair pair) {
+		if (this.depthProgram == null || pair == null) {
 			return;
 		}
-		final Matrix4f transformMatrix = position.getTransform().getOpenGLMatrix();
+		final Matrix4f transformMatrix = pair.position.getTransform().getOpenGLMatrix();
 		this.depthProgram.uniformMatrix(this.depthMatTransform, transformMatrix);
 
-		mesh.bindForRendering();
+		pair.bind.run();
 		OpenGL.updateAllFlags();
-		mesh.render();
-		mesh.unBindForRendering();
+		pair.render.run();
+		pair.unbind.run();
 	}
 
 	/**

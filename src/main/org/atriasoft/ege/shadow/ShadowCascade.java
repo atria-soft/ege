@@ -25,6 +25,17 @@ public class ShadowCascade {
 	private float splitNear;
 	private float splitFar;
 
+	// Debug data — retained after computeLightSpaceMatrix for visualization
+	private Vector3f[] debugFrustumCorners;
+	private Vector3f debugLightPos;
+	private Matrix4f debugLightView;
+	private float debugMinX;
+	private float debugMaxX;
+	private float debugMinY;
+	private float debugMaxY;
+	private float debugMinZ;
+	private float debugMaxZ;
+
 	public ShadowCascade() {
 	}
 
@@ -93,6 +104,11 @@ public class ShadowCascade {
 		// translation dot products).
 		final Matrix4f lightView = buildLookAtMatrix(lightPos, center);
 
+		// Store debug data for visualization
+		this.debugFrustumCorners = frustumCorners;
+		this.debugLightPos = lightPos;
+		this.debugLightView = lightView;
+
 		// 4. Transform frustum corners into light space to find tight AABB
 		float minX = Float.MAX_VALUE;
 		float maxX = -Float.MAX_VALUE;
@@ -117,6 +133,14 @@ public class ShadowCascade {
 		final float zMargin = Math.max(zRange * 0.5f, 10.0f);
 		minZ -= zMargin;
 		maxZ += 1.0f; // small margin on near side
+
+		// Store AABB bounds for debug visualization
+		this.debugMinX = minX;
+		this.debugMaxX = maxX;
+		this.debugMinY = minY;
+		this.debugMaxY = maxY;
+		this.debugMinZ = minZ;
+		this.debugMaxZ = maxZ;
 
 		// 6. Build orthographic projection
 		// In the view matrix, the camera looks in -Z direction.
@@ -307,6 +331,56 @@ public class ShadowCascade {
 
 	public float getSplitFar() {
 		return this.splitFar;
+	}
+
+	// --- Debug accessors for wireframe visualization ---
+
+	/** @return The 8 frustum corners in world space, or null if not yet computed */
+	public Vector3f[] getDebugFrustumCorners() {
+		return this.debugFrustumCorners;
+	}
+
+	/** @return The light position used for the view matrix */
+	public Vector3f getDebugLightPos() {
+		return this.debugLightPos;
+	}
+
+	/** @return The light view matrix */
+	public Matrix4f getDebugLightView() {
+		return this.debugLightView;
+	}
+
+	/**
+	 * Get the 8 corners of the light-space AABB in world space.
+	 * Computed by transforming the AABB corners through the inverse light view matrix.
+	 * @return 8 corners of the ortho projection volume in world space, or null
+	 */
+	public Vector3f[] getDebugLightAABBCorners() {
+		if (this.debugLightView == null) {
+			return null;
+		}
+		// Invert the light view matrix to go from light space back to world space
+		final Matrix4f invView = this.debugLightView.invert();
+		if (invView == null) {
+			return null;
+		}
+		// 8 corners of the AABB box in light space
+		final float x0 = this.debugMinX;
+		final float x1 = this.debugMaxX;
+		final float y0 = this.debugMinY;
+		final float y1 = this.debugMaxY;
+		final float z0 = this.debugMinZ;
+		final float z1 = this.debugMaxZ;
+		return new Vector3f[] {
+				invView.multiply(new Vector3f(x0, y0, z0)),
+				invView.multiply(new Vector3f(x1, y0, z0)),
+				invView.multiply(new Vector3f(x1, y1, z0)),
+				invView.multiply(new Vector3f(x0, y1, z0)),
+				invView.multiply(new Vector3f(x0, y0, z1)),
+				invView.multiply(new Vector3f(x1, y0, z1)),
+				invView.multiply(new Vector3f(x1, y1, z1)),
+				invView.multiply(new Vector3f(x0, y1, z1)),
+		};
 	}
 
 	/**

@@ -1,13 +1,19 @@
 #version 400 core
 
+const int MAX_LIGHT_NUMBER = 4;
+const int MAX_SHADOW_MAPS = 12; // MAX_CASTERS(3) * MAX_CASCADES(4)
+const int MAX_CASCADES = 4;
+
 in vec2 pass_textureCoordinates;
 in vec3 surfaceNormal;
-in vec3 toLightVector[4];
+in vec3 toLightVector[MAX_LIGHT_NUMBER];
 in vec3 toCameraVector;
 // FOW: Fog Of War result calculation
 in float visibility;
 // Shadow mapping
-in vec4 fragPosLightSpace[3];
+in vec4 fragPosLightSpace[MAX_SHADOW_MAPS];
+// Distance from camera (for cascade selection)
+in float distanceFromCamera;
 
 out vec4 out_Color;
 
@@ -17,15 +23,17 @@ uniform sampler2D gTexture;
 uniform sampler2D bTexture;
 uniform sampler2D blendMap;
 
-uniform vec3 lightColour[4];
-uniform vec3 lightAttenuation[4];
+uniform vec3 lightColour[MAX_LIGHT_NUMBER];
+uniform vec3 lightAttenuation[MAX_LIGHT_NUMBER];
 uniform float reflectivity;
 uniform float shineDamper;
 uniform vec3 skyColor;
 
-// Shadow uniforms (optional: in_shadowCount == 0 means no shadows)
-uniform int in_shadowCount;
-uniform sampler2D in_shadowMap[3];
+// CSM shadow uniforms
+uniform int in_shadowCasterCount;
+uniform int in_cascadeCount;
+uniform sampler2D in_shadowMap[MAX_SHADOW_MAPS];
+uniform float in_cascadeSplits[MAX_CASCADES];
 
 // PCF shadow calculation with 3x3 kernel
 float calculateShadow(vec4 fragPosLS, sampler2D shadowTex) {
@@ -47,6 +55,16 @@ float calculateShadow(vec4 fragPosLS, sampler2D shadowTex) {
 	return shadow / 9.0;
 }
 
+// Select the cascade index based on fragment distance from camera
+int selectCascade() {
+	for (int i = 0; i < in_cascadeCount - 1; i++) {
+		if (distanceFromCamera < in_cascadeSplits[i]) {
+			return i;
+		}
+	}
+	return in_cascadeCount - 1;
+}
+
 void main(void) {
 
 	vec4 blendMapColour = texture(blendMap, pass_textureCoordinates);
@@ -64,7 +82,7 @@ void main(void) {
 
 	vec3 totalDiffuse = vec3(0.0);
 	vec3 totalSpecular = vec3(0.0);
-	for(int i=0;i<4;i++) {
+	for(int i=0;i<MAX_LIGHT_NUMBER;i++) {
 		float distance = length(toLightVector[i]);
 		float attenuationFactor = lightAttenuation[i].x + (lightAttenuation[i].y * distance) + (lightAttenuation[i].z * distance * distance);
 		vec3 unitLightVector = normalize(toLightVector[i]);
@@ -87,11 +105,15 @@ void main(void) {
 	// the 0.2 represent the ambiant lightning ==> maybe set an uniform for this
 	totalDiffuse = max(totalDiffuse, 0.2);
 
-	// Apply shadows (optional: when in_shadowCount == 0, no shadow attenuation)
-	if (in_shadowCount > 0) {
+	// Apply CSM shadows
+	if (in_shadowCasterCount > 0 && in_cascadeCount > 0) {
+		int cascade = selectCascade();
 		float maxShadow = 0.0;
-		for (int i = 0; i < in_shadowCount; i++) {
-			maxShadow = max(maxShadow, calculateShadow(fragPosLightSpace[i], in_shadowMap[i]));
+		for (int caster = 0; caster < in_shadowCasterCount; caster++) {
+			int mapIndex = caster * in_cascadeCount + cascade;
+			if (mapIndex < MAX_SHADOW_MAPS) {
+				maxShadow = max(maxShadow, calculateShadow(fragPosLightSpace[mapIndex], in_shadowMap[mapIndex]));
+			}
 		}
 		totalDiffuse *= (1.0 - maxShadow * 0.7);
 		totalSpecular *= (1.0 - maxShadow);
@@ -100,4 +122,3 @@ void main(void) {
 	out_Color = vec4(totalDiffuse, 1.0) * totalColour + vec4(totalSpecular, 1.0);
 	out_Color = mix(vec4(skyColor, 1.0), out_Color, visibility);
 }
-

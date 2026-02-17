@@ -6,7 +6,6 @@ import org.atriasoft.ege.components.ComponentMesh;
 import org.atriasoft.ege.components.ComponentPosition;
 import org.atriasoft.ege.components.ComponentRenderMeshPalette;
 import org.atriasoft.ege.components.ComponentTexturePalette;
-import org.atriasoft.ege.engines.EngineLight;
 import org.atriasoft.ege.geometry.Ray;
 import org.atriasoft.etk.Color;
 import org.atriasoft.etk.Uri;
@@ -78,8 +77,7 @@ public class ToolObjectPlacer implements MapToolInterface {
 		this.previewEntity.addComponent(new ComponentTexturePalette(meshUri));
 		this.previewEntity.addComponent(new ComponentRenderMeshPalette(
 				new Uri("DATA", "basicPalette.vert"),
-				new Uri("DATA", "basicPalette.frag"),
-				(EngineLight) env.getEngine(EngineLight.ENGINE_NAME)));
+				new Uri("DATA", "basicPalette.frag")));
 		env.addEntity(this.previewEntity);
 		this.previewMeshFile = this.selectedMeshFile;
 	}
@@ -175,8 +173,7 @@ public class ToolObjectPlacer implements MapToolInterface {
 		entity.addComponent(new ComponentTexturePalette(meshUri));
 		entity.addComponent(new ComponentRenderMeshPalette(
 				new Uri("DATA", "basicPalette.vert"),
-				new Uri("DATA", "basicPalette.frag"),
-				(EngineLight) env.getEngine(EngineLight.ENGINE_NAME)));
+				new Uri("DATA", "basicPalette.frag")));
 
 		// Register via undo manager
 		final PlaceEntityAction action = new PlaceEntityAction(entity, this.selectedMeshFile, map, env);

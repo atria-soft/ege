@@ -7,7 +7,6 @@ import org.atriasoft.ege.components.ComponentMesh;
 import org.atriasoft.ege.components.ComponentPosition;
 import org.atriasoft.ege.components.ComponentRenderMeshPalette;
 import org.atriasoft.ege.components.ComponentTexturePalette;
-import org.atriasoft.ege.engines.EngineLight;
 import org.atriasoft.etk.Uri;
 import org.atriasoft.etk.math.Transform3D;
 import org.atriasoft.etk.math.Vector3f;
@@ -46,7 +45,7 @@ public class ApplScene extends EgeScene {
 		entity.addComponent(new ComponentMesh(this.map.ground.createMesh()));
 		entity.addComponent(new ComponentTexturePalette(new Uri("DATA", "palette_1.json")));
 		entity.addComponent(new ComponentRenderMeshPalette(new Uri("DATA", "basicPalette.vert"),
-				new Uri("DATA", "basicPalette.frag"), (EngineLight) this.env.getEngine(EngineLight.ENGINE_NAME)));
+				new Uri("DATA", "basicPalette.frag")));
 		this.env.addEntity(entity);
 		return entity;
 	}

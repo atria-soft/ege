@@ -16,7 +16,6 @@ import org.atriasoft.ege.components.ComponentRenderTexturedMaterialsStaticMesh;
 import org.atriasoft.ege.components.ComponentRenderTexturedStaticMesh;
 import org.atriasoft.ege.components.ComponentStaticMesh;
 import org.atriasoft.ege.components.ComponentTexture;
-import org.atriasoft.ege.engines.EngineLight;
 import org.atriasoft.ege.tools.MeshGenerator;
 import org.atriasoft.etk.Color;
 import org.atriasoft.etk.Uri;
@@ -97,8 +96,7 @@ public class LightTestApplication extends GaleApplication {
 		//basicTree.addComponent(new ComponentRenderTexturedStaticMesh(new Uri("DATA", "basic.vert", "loxelEngine"), new Uri("DATA", "basic.frag", "loxelEngine")));
 		basicTree.addComponent(
 				new ComponentRenderTexturedMaterialsStaticMesh(new Uri("DATA", "basicMaterial.vert", "loxelEngine"),
-						new Uri("DATA", "basicMaterial.frag", "loxelEngine"),
-						(EngineLight) this.env.getEngine(EngineLight.ENGINE_NAME)));
+						new Uri("DATA", "basicMaterial.frag", "loxelEngine")));
 		this.env.addEntity(basicTree);
 
 		for (int xxx = -10; xxx < 10; xxx++) {
@@ -110,8 +108,7 @@ public class LightTestApplication extends GaleApplication {
 				superGrass.addComponent(new ComponentTexture(new Uri("RES", "dirt.png")));
 				superGrass.addComponent(new ComponentRenderTexturedMaterialsStaticMesh(
 						new Uri("DATA", "basicMaterial.vert", "loxelEngine"),
-						new Uri("DATA", "basicMaterial.frag", "loxelEngine"),
-						(EngineLight) this.env.getEngine(EngineLight.ENGINE_NAME)));
+						new Uri("DATA", "basicMaterial.frag", "loxelEngine")));
 				this.env.addEntity(superGrass);
 			}
 		}

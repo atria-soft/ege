@@ -6,18 +6,12 @@ import org.atriasoft.ege.engines.EngineLight;
 import org.atriasoft.etk.math.Vector3f;
 import org.atriasoft.gale.resource.ResourceProgram;
 
-public class LightRender implements PartRenderInterface {
+public class LightRender {
 
 	private static final int numberOfLight = 8;
 	private GlLightIndex[] GLlights;
-	EngineLight lightEngine;
-	PositionningInterface position = null;
-	
-	public LightRender(final EngineLight lightEngine) {
-		this.lightEngine = lightEngine;
-	}
+	private PositionningInterface position = null;
 
-	@Override
 	public void init(final ResourceProgram program) {
 		this.GLlights = new GlLightIndex[LightRender.numberOfLight];
 		for (int iii = 0; iii < LightRender.numberOfLight; iii++) {
@@ -28,29 +22,29 @@ public class LightRender implements PartRenderInterface {
 		}
 	}
 
-	@Override
-	public void bindForRendering(final ResourceProgram program) {
+	public void bindForRendering(final ResourceProgram program, final EngineLight lightEngine) {
+		if (lightEngine == null) {
+			return;
+		}
 		// preparing stage
-		Vector3f positionObject = this.position.getTransform().getPosition();
-		Light[] lights = this.lightEngine.getNearest(positionObject);
+		final Vector3f positionObject = this.position.getTransform().getPosition();
+		final Light[] lights = lightEngine.getNearest(positionObject);
 		// injection stage
 		for (int iii = 0; iii < LightRender.numberOfLight; iii++) {
 			if (lights[iii] != null) {
-				//LOGGER.warn("Set light : [{}] {}", iii, lights[iii]);
 				program.uniformVector(this.GLlights[iii].oGLposition, lights[iii].getPositionDelta());
 				program.uniformColorRGB(this.GLlights[iii].oGLcolor, lights[iii].getColor());
 				program.uniformVector(this.GLlights[iii].oGLattenuation, lights[iii].getAttenuation());
 			} else {
 				program.uniformVector(this.GLlights[iii].oGLposition, Vector3f.ZERO);
 				program.uniformVector(this.GLlights[iii].oGLcolor, Vector3f.ZERO);
-				//program.uniformColorRGB(this.GLlights[iii].oGLcolor, Color.NONE);
 				program.uniformVector(this.GLlights[iii].oGLattenuation, new Vector3f(1, 0, 0));
 			}
 		}
 	}
-	@Override
+
 	public void unBindForRendering() {
-		
+
 	}
 
 	public void setPositionning(final PositionningInterface component) {

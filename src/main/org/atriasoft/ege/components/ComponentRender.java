@@ -1,6 +1,7 @@
 package org.atriasoft.ege.components;
 
 import org.atriasoft.ege.Component;
+import org.atriasoft.ege.components.part.RenderContext;
 import org.atriasoft.ege.engines.EngineRender;
 
 public abstract class ComponentRender extends Component {
@@ -8,16 +9,14 @@ public abstract class ComponentRender extends Component {
 
 	@Override
 	public String getType() {
-		// TODO Auto-generated method stub
 		return EngineRender.ENGINE_NAME;
 	}
-	public void setPropertyDebugNormal(boolean value) {
+	public void setPropertyDebugNormal(final boolean value) {
 		this.propertyDebugNormal = value;
 	}
 	public boolean getPropertyDebugNormal() {
 		return this.propertyDebugNormal;
 	}
-	public abstract void render();
-	public void update(float timeStep) {};
-	
+	public abstract void render(RenderContext context);
+	public void update(final float timeStep) {}
 }

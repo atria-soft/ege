@@ -19,13 +19,11 @@ import org.atriasoft.gale.resource.ResourceProgram;
  *
  * @see EngineShadow
  */
-public class ShadowRender implements PartRenderInterface {
+public class ShadowRender {
 	/** Max total shadow maps = MAX_SHADOW_CASTERS * MAX_CASCADES */
 	private static final int MAX_TOTAL_SHADOW_MAPS = EngineShadow.MAX_SHADOW_CASTERS * EngineShadow.MAX_CASCADES;
 	/** First texture unit used for shadow maps (0 = diffuse, 1 = reserved) */
 	private static final int SHADOW_TEXTURE_UNIT_BASE = 2;
-
-	private final EngineShadow shadowEngine;
 
 	// Uniform locations
 	private int glShadowCasterCount = -1;
@@ -34,11 +32,6 @@ public class ShadowRender implements PartRenderInterface {
 	private final int[] glShadowMap = new int[MAX_TOTAL_SHADOW_MAPS];
 	private final int[] glCascadeSplits = new int[EngineShadow.MAX_CASCADES];
 
-	public ShadowRender(final EngineShadow shadowEngine) {
-		this.shadowEngine = shadowEngine;
-	}
-
-	@Override
 	public void init(final ResourceProgram program) {
 		this.glShadowCasterCount = program.getUniform("in_shadowCasterCount");
 		this.glCascadeCount = program.getUniform("in_cascadeCount");
@@ -51,10 +44,12 @@ public class ShadowRender implements PartRenderInterface {
 		}
 	}
 
-	@Override
-	public void bindForRendering(final ResourceProgram program) {
-		final int casterCount = this.shadowEngine.getActiveShadowCasterCount();
-		final int cascadeCount = this.shadowEngine.getCascadeCount();
+	public void bindForRendering(final ResourceProgram program, final EngineShadow shadowEngine) {
+		if (shadowEngine == null) {
+			return;
+		}
+		final int casterCount = shadowEngine.getActiveShadowCasterCount();
+		final int cascadeCount = shadowEngine.getCascadeCount();
 		final int totalMaps = casterCount * cascadeCount;
 
 		program.uniformInt(this.glShadowCasterCount, casterCount);
@@ -62,19 +57,18 @@ public class ShadowRender implements PartRenderInterface {
 
 		// Bind all shadow maps and light-space matrices (flattened: caster * cascade + cascade)
 		for (int i = 0; i < totalMaps && i < MAX_TOTAL_SHADOW_MAPS; i++) {
-			program.uniformMatrix(this.glLightSpaceMatrix[i], this.shadowEngine.getLightSpaceMatrix(i));
-			program.setTexture(this.glShadowMap[i], this.shadowEngine.getShadowTextureId(i),
+			program.uniformMatrix(this.glLightSpaceMatrix[i], shadowEngine.getLightSpaceMatrix(i));
+			program.setTexture(this.glShadowMap[i], shadowEngine.getShadowTextureId(i),
 					SHADOW_TEXTURE_UNIT_BASE + i);
 		}
 
 		// Bind cascade split distances
-		final float[] splits = this.shadowEngine.getCascadeSplitDistances();
+		final float[] splits = shadowEngine.getCascadeSplitDistances();
 		for (int i = 0; i < splits.length && i < EngineShadow.MAX_CASCADES; i++) {
 			program.uniformFloat(this.glCascadeSplits[i], splits[i]);
 		}
 	}
 
-	@Override
 	public void unBindForRendering() {
 		// Shadow textures are unbound when the next frame rebinds them.
 	}

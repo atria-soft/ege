@@ -17,7 +17,6 @@ import org.atriasoft.ege.components.ComponentRenderTexturedStaticMesh;
 import org.atriasoft.ege.components.ComponentStaticMesh;
 import org.atriasoft.ege.components.ComponentTexture;
 import org.atriasoft.ege.components.ComponentTexturePalette;
-import org.atriasoft.ege.engines.EngineLight;
 import org.atriasoft.ege.tools.MeshGenerator;
 import org.atriasoft.etk.Color;
 import org.atriasoft.etk.Uri;
@@ -99,9 +98,9 @@ public class LowPolyApplication extends GaleApplication {
 		basicTree.addComponent(new ComponentTexturePalette(new Uri("DATA", "palette_1.json")));
 		//basicTree.addComponent(new ComponentRenderTexturedStaticMesh(new Uri("DATA", "basic.vert", "loxelEngine"), new Uri("DATA", "basic.frag", "loxelEngine")));
 		basicTree.addComponent(new ComponentRenderMeshPalette(new Uri("DATA", "basicPalette.vert"),
-				new Uri("DATA", "basicPalette.frag"), (EngineLight) this.env.getEngine(EngineLight.ENGINE_NAME)));
+				new Uri("DATA", "basicPalette.frag")));
 		this.env.addEntity(basicTree);
-		
+
 		basicTree = new Entity(this.env);
 		this.objectPosition = new ComponentPosition(new Transform3D(new Vector3f(3, 2, 0)));
 		basicTree.addComponent(this.objectPosition);
@@ -111,16 +110,16 @@ public class LowPolyApplication extends GaleApplication {
 		basicTree.addComponent(new ComponentTexturePalette(new Uri("DATA", "palette_1.json")));
 		//basicTree.addComponent(new ComponentRenderTexturedStaticMesh(new Uri("DATA", "basic.vert", "loxelEngine"), new Uri("DATA", "basic.frag", "loxelEngine")));
 		basicTree.addComponent(new ComponentRenderMeshPalette(new Uri("DATA", "basicPalette.vert"),
-				new Uri("DATA", "basicPalette.frag"), (EngineLight) this.env.getEngine(EngineLight.ENGINE_NAME)));
+				new Uri("DATA", "basicPalette.frag")));
 		this.env.addEntity(basicTree);
-		
+
 		basicTree = new Entity(this.env);
 		this.objectPosition = new ComponentPosition(new Transform3D(new Vector3f(-3, -2, 0)));
 		basicTree.addComponent(this.objectPosition);
 		basicTree.addComponent(new ComponentMesh(new Uri("DATA", "tree1.emf")));
 		basicTree.addComponent(new ComponentTexturePalette(new Uri("DATA", "tree1.emf")));
 		basicTree.addComponent(new ComponentRenderMeshPalette(new Uri("DATA", "basicPalette.vert"),
-				new Uri("DATA", "basicPalette.frag"), (EngineLight) this.env.getEngine(EngineLight.ENGINE_NAME)));
+				new Uri("DATA", "basicPalette.frag")));
 		this.env.addEntity(basicTree);
 		
 		//		for (int xxx = -10; xxx < 10; xxx++) {

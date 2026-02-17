@@ -6,8 +6,8 @@ import org.atriasoft.ege.Component;
 import org.atriasoft.ege.components.part.LightRender;
 import org.atriasoft.ege.components.part.MaterialsRender;
 import org.atriasoft.ege.components.part.PositionningInterface;
+import org.atriasoft.ege.components.part.RenderContext;
 import org.atriasoft.ege.components.part.TransformRender;
-import org.atriasoft.ege.engines.EngineLight;
 import org.atriasoft.etk.Uri;
 import org.atriasoft.gale.backend3d.OpenGL;
 import org.atriasoft.gale.resource.ResourceProgram;
@@ -21,22 +21,16 @@ public class ComponentRenderTexturedMaterialsDynamicMeshs extends ComponentRende
 	LightRender renderLight = null;
 	MaterialsRender renderMaterials = null;
 	TransformRender renderTransform = null;
-	
-	public ComponentRenderTexturedMaterialsDynamicMeshs(final Uri vertexShader, final Uri fragmentShader, final EngineLight lightEngine) {
-		if (lightEngine != null) {
-			this.renderLight = new LightRender(lightEngine);
-		}
+	private boolean lightInitialized = false;
+
+	public ComponentRenderTexturedMaterialsDynamicMeshs(final Uri vertexShader, final Uri fragmentShader) {
 		this.renderTransform = new TransformRender();
 		this.renderMaterials = new MaterialsRender();
 		this.program = ResourceProgram.create(vertexShader, fragmentShader);
 		if (this.program != null) {
 			this.renderTransform.init(this.program);
-			if (this.renderLight != null) {
-				this.renderLight.init(this.program);
-			}
 			this.renderMaterials.init(this.program);
 		}
-		
 	}
 	@Override
 	public void addFriendComponent(final Component component) {
@@ -61,17 +55,26 @@ public class ComponentRenderTexturedMaterialsDynamicMeshs extends ComponentRende
 		// nothing to do.
 	}
 	@Override
-	public void render() {
+	public void render(final RenderContext context) {
+		// Lazy init of LightRender on first render
+		if (!this.lightInitialized && context.getEngineLight() != null && this.program != null) {
+			this.renderLight = new LightRender();
+			this.renderLight.init(this.program);
+			if (this.renderTransform.getPositionning() != null) {
+				this.renderLight.setPositionning(this.renderTransform.getPositionning());
+			}
+			this.lightInitialized = true;
+		}
 		// Select the program:
 		this.program.use();
 		// Bind all the element for the rendering:
 		if (this.renderLight != null) {
-			this.renderLight.bindForRendering(this.program);
+			this.renderLight.bindForRendering(this.program, context.getEngineLight());
 		}
-		this.renderTransform.bindForRendering(this.program);		
-		Set<String> keys = this.meshs.getKeys();
-		
-		for (String key : keys) {
+		this.renderTransform.bindForRendering(this.program);
+		final Set<String> keys = this.meshs.getKeys();
+
+		for (final String key : keys) {
 			this.meshs.bindForRendering(key);
 			this.textures.bindForRendering(key);
 			this.renderMaterials.bindForRendering(this.program, key);

@@ -27,11 +27,9 @@ public class ShadowWindows extends Windows {
 	private float savedAngularSpeed = 0.3f;
 	private Label angleLabel;
 	private Label inclinationLabel;
-	private Label elevationLabel;
 	private Label infoLabel;
 	private Slider angleSlider;
 	private Slider inclinationSlider;
-	private Slider elevationSlider;
 
 	// --- Static callbacks for connectAuto (prevent GC via weak ref) ---
 
@@ -61,12 +59,6 @@ public class ShadowWindows extends Windows {
 		final float radians = (float) (degrees * Math.PI / 180.0);
 		self.scene.getSun().setOrbitalInclination(radians);
 		self.inclinationLabel.setPropertyValue(String.format("Inclination: %.1f", degrees));
-	}
-
-	private static void onElevationChanged(final ShadowWindows self, final Float degrees) {
-		final float radians = (float) (degrees * Math.PI / 180.0);
-		self.scene.getSun().setOrbitalElevation(radians);
-		self.elevationLabel.setPropertyValue(String.format("Elevation: %.1f", degrees));
 	}
 
 	private static void onFrustumToggled(final ShadowWindows self, final Boolean value) {
@@ -152,19 +144,6 @@ public class ShadowWindows extends Windows {
 		this.inclinationSlider.signalValue.connectAuto(this, ShadowWindows::onInclinationChanged);
 		panel.subWidgetAdd(this.inclinationSlider);
 
-		// Elevation slider (-90 to +90 degrees) — raises orbit above horizon
-		this.elevationLabel = new Label("Elevation: 0.0");
-		panel.subWidgetAdd(this.elevationLabel);
-
-		this.elevationSlider = Slider.create()
-				.range(-90, 90)
-				.value(0.0f)
-				.step(1.0f);
-		this.elevationSlider.setPropertyExpand(new Vector2b(true, false));
-		this.elevationSlider.setPropertyFill(new Vector2b(true, false));
-		this.elevationSlider.signalValue.connectAuto(this, ShadowWindows::onElevationChanged);
-		panel.subWidgetAdd(this.elevationSlider);
-
 		// --- Wireframe section ---
 		final Label wireSectionLabel = new Label("<b>Wireframe</b>");
 		panel.subWidgetAdd(wireSectionLabel);
@@ -211,11 +190,10 @@ public class ShadowWindows extends Windows {
 			final CelestialBody sun = this.scene.getSun();
 			final float angleDeg = (float) (sun.getCurrentAngle() * 180.0 / Math.PI);
 			final float inclDeg = (float) (sun.getOrbitalInclination() * 180.0 / Math.PI);
-			final float elevDeg = (float) (sun.getOrbitalElevation() * 180.0 / Math.PI);
 			final Vector3f dir = sun.getDirection();
 			this.infoLabel.setPropertyValue(String.format(
-					"A:%.0f I:%.0f E:%.0f\nh=%.2f %s",
-					angleDeg, inclDeg, elevDeg, dir.z(),
+					"A:%.0f I:%.0f\nh=%.2f %s",
+					angleDeg, inclDeg, dir.z(),
 					sun.isAboveHorizon() ? "above" : "BELOW"));
 			// Sync slider position when sun is animating
 			if (!this.sunPaused && this.angleSlider != null) {

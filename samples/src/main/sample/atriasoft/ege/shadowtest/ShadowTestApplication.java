@@ -23,6 +23,8 @@ import org.atriasoft.ege.components.ComponentTexturePalette;
 import org.atriasoft.ege.engines.EngineLight;
 import org.atriasoft.ege.engines.EngineShadow;
 import org.atriasoft.ege.tools.MeshGenerator;
+import java.util.List;
+
 import org.atriasoft.etk.Color;
 import org.atriasoft.etk.Uri;
 import org.atriasoft.etk.math.Matrix4f;
@@ -37,14 +39,15 @@ import org.atriasoft.gale.key.KeyKeyboard;
 import org.atriasoft.gale.key.KeySpecial;
 import org.atriasoft.gale.key.KeyStatus;
 import org.atriasoft.gale.key.KeyType;
+import org.atriasoft.gale.resource.ResourceColored3DObject;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 /**
- * Shadow test sample — Phase 1 validation.
+ * Shadow test sample — Phase 2 CSM validation.
  * <p>
  * Sets up a celestial sun that orbits (fast, for visual testing),
- * a ground plane, and several cubes to verify shadow casting.
+ * a ground plane, cubes, and trees to verify cascaded shadow mapping.
  * <p>
  * Controls: same as lowPoly sample (WASD + mouse).
  */
@@ -58,6 +61,10 @@ public class ShadowTestApplication extends GaleApplication {
 	private CelestialBody sun;
 	private ComponentPosition sunPosition;
 	private ComponentLightSun sunLightComponent;
+	private EngineShadow engineShadow;
+	private boolean sunPaused = false;
+	private float savedAngularSpeed = 0.0f;
+	private ResourceColored3DObject debugDraw;
 
 	public ShadowTestApplication() {
 	}
@@ -71,7 +78,7 @@ public class ShadowTestApplication extends GaleApplication {
 		}
 		this.env = new Environement();
 		setSize(new Vector2f(1024, 768));
-		setTitle("Shadow Test - Phase 1");
+		setTitle("Shadow Test - Phase 2 CSM");
 
 		// --- Celestial system: add a fast-orbiting sun for testing ---
 		final CelestialSystem celestialSystem = this.env.getCelestialSystem();
@@ -89,10 +96,17 @@ public class ShadowTestApplication extends GaleApplication {
 
 		// --- Engine references ---
 		final EngineLight engineLight = (EngineLight) this.env.getEngine(EngineLight.ENGINE_NAME);
-		final EngineShadow engineShadow = this.env.getEngineShadow();
-		// Configure shadow: resolution and distance
-		engineShadow.setShadowMapResolution(2048);
-		engineShadow.setShadowDistance(80.0f);
+		this.engineShadow = this.env.getEngineShadow();
+		// Configure CSM shadow parameters
+		this.engineShadow.setShadowMapResolution(2048);
+		this.engineShadow.setShadowDistance(50.0f);
+		// Use 1 cascade for easier debugging
+		this.engineShadow.getConfig().setCascadeCount(1);
+		// Match camera FOV and aspect ratio for accurate cascade frustum fitting
+		this.engineShadow.setCameraFovY(3.14f * 0.5f);
+		this.engineShadow.setCameraAspectRatio(1024.0f / 768.0f);
+		// Enable debug thumbnails to visualize shadow maps
+		this.engineShadow.setDebugThumbnailEnabled(true);
 
 		// --- Shader URIs (local to sample resources) ---
 		final Uri shadowVert = new Uri("DATA", "shadowMaterial.vert");
@@ -128,17 +142,17 @@ public class ShadowTestApplication extends GaleApplication {
 		ground.addComponent(new ComponentTexture(new Uri("DATA", "dirt.png")));
 		ground.addComponent(new ComponentMaterial(new Material()));
 		ground.addComponent(new ComponentRenderTexturedMaterialsStaticMesh(
-				shadowVert, shadowFrag, engineLight, engineShadow));
+				shadowVert, shadowFrag, engineLight, this.engineShadow));
 		this.env.addEntity(ground);
 
 		// --- Shadow casting cubes ---
-		createCube(new Vector3f(0, 0, 0.5f), shadowVert, shadowFrag, engineLight, engineShadow);
-		createCube(new Vector3f(3, 2, 0.5f), shadowVert, shadowFrag, engineLight, engineShadow);
-		createCube(new Vector3f(-2, 3, 0.5f), shadowVert, shadowFrag, engineLight, engineShadow);
-		createCube(new Vector3f(-3, -2, 1.0f), shadowVert, shadowFrag, engineLight, engineShadow);
-		createCube(new Vector3f(4, -3, 0.5f), shadowVert, shadowFrag, engineLight, engineShadow);
+		createCube(new Vector3f(0, 0, 0.5f), shadowVert, shadowFrag, engineLight, this.engineShadow);
+		createCube(new Vector3f(3, 2, 0.5f), shadowVert, shadowFrag, engineLight, this.engineShadow);
+		createCube(new Vector3f(-2, 3, 0.5f), shadowVert, shadowFrag, engineLight, this.engineShadow);
+		createCube(new Vector3f(-3, -2, 1.0f), shadowVert, shadowFrag, engineLight, this.engineShadow);
+		createCube(new Vector3f(4, -3, 0.5f), shadowVert, shadowFrag, engineLight, this.engineShadow);
 		// A taller cube to see longer shadows
-		createCube(new Vector3f(0, 4, 1.5f), shadowVert, shadowFrag, engineLight, engineShadow);
+		createCube(new Vector3f(0, 4, 1.5f), shadowVert, shadowFrag, engineLight, this.engineShadow);
 
 		// --- Low-poly trees (EMF format with palette rendering) ---
 		final Uri paletteVert = new Uri("DATA", "basicPalette.vert");
@@ -224,6 +238,12 @@ public class ShadowTestApplication extends GaleApplication {
 
 		this.env.render(20, "default");
 
+		// Draw sun light direction line (yellow line from origin towards sun)
+		drawLightDirectionLine();
+
+		// Render shadow map debug thumbnails in bottom-right corner
+		this.engineShadow.renderDebugThumbnails();
+
 		// Restore context of matrix
 		OpenGL.pop();
 	}
@@ -234,6 +254,19 @@ public class ShadowTestApplication extends GaleApplication {
 			final KeyKeyboard type,
 			final Character value,
 			final KeyStatus state) {
+		// P = pause/resume sun orbit
+		if (value != null && (value == 'p' || value == 'P') && state == KeyStatus.down) {
+			if (this.sunPaused) {
+				this.sun.setAngularSpeed(this.savedAngularSpeed);
+				this.sunPaused = false;
+				LOGGER.info("Sun RESUMED (speed={})", this.savedAngularSpeed);
+			} else {
+				this.savedAngularSpeed = this.sun.getAngularSpeed();
+				this.sun.setAngularSpeed(0.0f);
+				this.sunPaused = true;
+				LOGGER.info("Sun PAUSED at angle={}", this.sun.getCurrentAngle());
+			}
+		}
 		this.env.onKeyboard(special, type, value, state);
 	}
 
@@ -260,6 +293,35 @@ public class ShadowTestApplication extends GaleApplication {
 		final Color sunColor = computeSunLightColor(dir.z());
 		this.sunLightComponent.getLight().setColor(sunColor);
 		markDrawingIsNeeded();
+	}
+
+	/**
+	 * Draw a line showing the sun light direction.
+	 * Yellow line from (0,0,0) towards the sun, length 20.
+	 * Red line from (0,0,0) in the opposite direction (shadow direction), length 10.
+	 */
+	private void drawLightDirectionLine() {
+		if (this.debugDraw == null) {
+			this.debugDraw = ResourceColored3DObject.create();
+		}
+		if (this.debugDraw == null) {
+			return;
+		}
+		final Vector3f dir = this.sun.getDirection();
+		final float lineLen = 20.0f;
+		final float shadowLen = 10.0f;
+
+		// Yellow line: origin → sun direction
+		final List<Vector3f> sunLine = List.of(
+				new Vector3f(0, 0, 0.1f),
+				new Vector3f(dir.x() * lineLen, dir.y() * lineLen, dir.z() * lineLen + 0.1f));
+		this.debugDraw.drawLine(sunLine, new Color(1.0f, 1.0f, 0.0f, 1.0f), Matrix4f.IDENTITY, false, true);
+
+		// Red line: origin → opposite direction (where shadow falls)
+		final List<Vector3f> shadowLine = List.of(
+				new Vector3f(0, 0, 0.1f),
+				new Vector3f(-dir.x() * shadowLen, -dir.y() * shadowLen, -dir.z() * shadowLen + 0.1f));
+		this.debugDraw.drawLine(shadowLine, new Color(1.0f, 0.0f, 0.0f, 1.0f), Matrix4f.IDENTITY, false, true);
 	}
 
 	/**

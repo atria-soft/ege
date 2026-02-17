@@ -18,6 +18,8 @@ struct Material {
     float shininess;
 };
 const int MAX_LIGHT_NUMBER = 8;
+const int MAX_SHADOW_MAPS = 12; // MAX_CASTERS(3) * MAX_CASCADES(4)
+const int MAX_CASCADES = 4;
 
 
 in vec2 io_textureCoords;
@@ -27,7 +29,9 @@ in vec3 io_toLightVector[MAX_LIGHT_NUMBER];
 // FOW: Fog Of War result calculation
 in float io_fowVisibility;
 // Shadow mapping
-in vec4 io_fragPosLightSpace[3];
+in vec4 io_fragPosLightSpace[MAX_SHADOW_MAPS];
+// Distance from camera (for cascade selection)
+in float io_distanceFromCamera;
 
 // texture properties
 uniform sampler2D in_textureBase;
@@ -38,9 +42,11 @@ uniform Light in_lights[MAX_LIGHT_NUMBER];
 // global color of the sky
 const vec3 in_sky_color = vec3(0.5, 0.7, 1.0);
 
-// Shadow uniforms (optional: in_shadowCount == 0 means no shadows)
-uniform int in_shadowCount;
-uniform sampler2D in_shadowMap[3];
+// CSM shadow uniforms
+uniform int in_shadowCasterCount;
+uniform int in_cascadeCount;
+uniform sampler2D in_shadowMap[MAX_SHADOW_MAPS];
+uniform float in_cascadeSplits[MAX_CASCADES];
 
 // output:
 out vec4 out_Color;
@@ -65,6 +71,16 @@ float calculateShadow(vec4 fragPosLightSpace, sampler2D shadowTex) {
 		}
 	}
 	return shadow / 9.0;
+}
+
+// Select the cascade index based on fragment distance from camera
+int selectCascade() {
+	for (int i = 0; i < in_cascadeCount - 1; i++) {
+		if (io_distanceFromCamera < in_cascadeSplits[i]) {
+			return i;
+		}
+	}
+	return in_cascadeCount - 1;
 }
 
 void main(void) {
@@ -97,11 +113,15 @@ void main(void) {
 	// the 0.2 represent the ambient lightning
 	totalDiffuse = max(totalDiffuse, 0.2);
 
-	// Apply shadows (optional: when in_shadowCount == 0, no shadow attenuation)
-	if (in_shadowCount > 0) {
+	// Apply CSM shadows
+	if (in_shadowCasterCount > 0 && in_cascadeCount > 0) {
+		int cascade = selectCascade();
 		float maxShadow = 0.0;
-		for (int i = 0; i < in_shadowCount; i++) {
-			maxShadow = max(maxShadow, calculateShadow(io_fragPosLightSpace[i], in_shadowMap[i]));
+		for (int caster = 0; caster < in_shadowCasterCount; caster++) {
+			int mapIndex = caster * in_cascadeCount + cascade;
+			if (mapIndex < MAX_SHADOW_MAPS) {
+				maxShadow = max(maxShadow, calculateShadow(io_fragPosLightSpace[mapIndex], in_shadowMap[mapIndex]));
+			}
 		}
 		// Shadows attenuate diffuse and specular (shadows are not fully black)
 		totalDiffuse *= (1.0 - maxShadow * 0.7);

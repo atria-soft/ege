@@ -23,7 +23,6 @@ import org.atriasoft.ege.components.ComponentStaticMesh;
 import org.atriasoft.ege.components.ComponentStaticMeshs;
 import org.atriasoft.ege.components.ComponentTexture;
 import org.atriasoft.ege.components.ComponentTextures;
-import org.atriasoft.ege.engines.EngineLight;
 import org.atriasoft.ege.engines.EngineMap;
 
 public class MapVoxel extends EngineMap {
@@ -70,8 +69,7 @@ public class MapVoxel extends EngineMap {
 		tmpEntity.addComponent(materials);
 		tmpEntity.addComponent(new ComponentRenderTexturedMaterialsDynamicMeshs(
 				new Uri("DATA", "basicMaterial.vert"),
-				new Uri("DATA", "basicMaterial.frag"),
-				(EngineLight)env.getEngine(EngineLight.ENGINE_NAME)));
+				new Uri("DATA", "basicMaterial.frag")));
 		ComponentPhysics physics = new ComponentPhysics(this.env);
 		//PhysicMapVoxel box = new PhysicMapVoxel(tmpVoxelChunk);
 		//physics.addShape(box);

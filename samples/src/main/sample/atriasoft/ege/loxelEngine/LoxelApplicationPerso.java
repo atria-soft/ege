@@ -24,7 +24,6 @@ import org.atriasoft.ege.components.ComponentRenderTexturedStaticMesh;
 import org.atriasoft.ege.components.ComponentStaticMesh;
 import org.atriasoft.ege.components.ComponentTexture;
 import org.atriasoft.ege.components.PhysicBodyType;
-import org.atriasoft.ege.engines.EngineLight;
 import org.atriasoft.ege.map.MapVoxel;
 import org.atriasoft.ege.tools.MeshGenerator;
 import org.atriasoft.etk.Color;
@@ -373,8 +372,7 @@ public class LoxelApplicationPerso extends GaleApplication {
 			player.addComponent(new ComponentTexture(new Uri("RES", "playerTexture.png")));
 			player.addComponent(
 					new ComponentRenderTexturedMaterialsStaticMesh(new Uri("DATA", "basicMaterial.vert", "loxelEngine"),
-							new Uri("DATA", "basicMaterial.frag", "loxelEngine"),
-							(EngineLight) this.env.getEngine(EngineLight.ENGINE_NAME)));
+							new Uri("DATA", "basicMaterial.frag", "loxelEngine")));
 			player.addComponent(new ComponentPosition(playerTransform));
 			final ComponentPhysics physics = new ComponentPhysics(this.env);
 			physics.setBodyType(PhysicBodyType.BODY_DYNAMIC);
@@ -399,8 +397,7 @@ public class LoxelApplicationPerso extends GaleApplication {
 			player.addComponent(new ComponentTexture(new Uri("RES", "playerTexture.png")));
 			player.addComponent(
 					new ComponentRenderTexturedMaterialsStaticMesh(new Uri("DATA", "basicMaterial.vert", "loxelEngine"),
-							new Uri("DATA", "basicMaterial.frag", "loxelEngine"),
-							(EngineLight) this.env.getEngine(EngineLight.ENGINE_NAME)));
+							new Uri("DATA", "basicMaterial.frag", "loxelEngine")));
 			final ComponentPhysics physics = new ComponentPhysics(this.env);
 			physics.setBodyType(PhysicBodyType.BODY_DYNAMIC);
 			final PhysicBox box = new PhysicBox();

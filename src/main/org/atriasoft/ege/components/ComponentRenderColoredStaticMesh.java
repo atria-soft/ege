@@ -3,6 +3,7 @@ package org.atriasoft.ege.components;
 
 import org.atriasoft.ege.Component;
 import org.atriasoft.ege.components.part.PositionningInterface;
+import org.atriasoft.ege.components.part.RenderContext;
 import org.atriasoft.ege.components.part.TransformRender;
 import org.atriasoft.etk.Uri;
 import org.atriasoft.gale.backend3d.OpenGL;
@@ -38,7 +39,7 @@ public class ComponentRenderColoredStaticMesh extends ComponentRender {
 	}
 	
 	@Override
-	public void render() {
+	public void render(final RenderContext context) {
 		// Select the program:
 		this.program.use();
 		// Bind all the element for the rendering:

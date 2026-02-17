@@ -6,7 +6,6 @@ import org.atriasoft.ege.components.ComponentMesh;
 import org.atriasoft.ege.components.ComponentPosition;
 import org.atriasoft.ege.components.ComponentRenderMeshPalette;
 import org.atriasoft.ege.components.ComponentTexturePalette;
-import org.atriasoft.ege.engines.EngineLight;
 import org.atriasoft.etk.Uri;
 import org.atriasoft.etk.math.Transform3D;
 
@@ -38,8 +37,7 @@ public class DeleteEntityAction implements MapAction {
 		this.entity.addComponent(new ComponentTexturePalette(meshUri));
 		this.entity.addComponent(new ComponentRenderMeshPalette(
 				new Uri("DATA", "basicPalette.vert"),
-				new Uri("DATA", "basicPalette.frag"),
-				(EngineLight) env.getEngine(EngineLight.ENGINE_NAME)));
+				new Uri("DATA", "basicPalette.frag")));
 		env.addEntity(this.entity);
 		this.map.placedEntities.add(this.entity);
 		this.map.entityMeshPaths.put(this.entity, this.meshPath);

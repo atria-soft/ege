@@ -2,12 +2,11 @@ package org.atriasoft.ege.map;
 
 import org.atriasoft.etk.Uri;
 import org.atriasoft.ege.components.ComponentRenderTexturedMaterialsStaticMeshs;
-import org.atriasoft.ege.engines.EngineLight;
 
 public class ComponentRenderVoxelMesh extends ComponentRenderTexturedMaterialsStaticMeshs {
 
-	public ComponentRenderVoxelMesh(Uri vertexShader, Uri fragmentShader, EngineLight lightEngine, VoxelChunk chunk) {
-		super(vertexShader, fragmentShader, lightEngine);
+	public ComponentRenderVoxelMesh(final Uri vertexShader, final Uri fragmentShader, final VoxelChunk chunk) {
+		super(vertexShader, fragmentShader);
 		// TODO Auto-generated constructor stub
 	}
 

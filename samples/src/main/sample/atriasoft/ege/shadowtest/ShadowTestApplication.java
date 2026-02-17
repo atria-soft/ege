@@ -20,7 +20,6 @@ import org.atriasoft.ege.components.ComponentRenderTexturedMaterialsStaticMesh;
 import org.atriasoft.ege.components.ComponentStaticMesh;
 import org.atriasoft.ege.components.ComponentTexture;
 import org.atriasoft.ege.components.ComponentTexturePalette;
-import org.atriasoft.ege.engines.EngineLight;
 import org.atriasoft.ege.engines.EngineShadow;
 import org.atriasoft.ege.tools.MeshGenerator;
 import java.util.List;
@@ -95,7 +94,6 @@ public class ShadowTestApplication extends GaleApplication {
 		celestialSystem.addBody(this.sun);
 
 		// --- Engine references ---
-		final EngineLight engineLight = (EngineLight) this.env.getEngine(EngineLight.ENGINE_NAME);
 		this.engineShadow = this.env.getEngineShadow();
 		// Configure CSM shadow parameters
 		this.engineShadow.setShadowMapResolution(2048);
@@ -142,35 +140,35 @@ public class ShadowTestApplication extends GaleApplication {
 		ground.addComponent(new ComponentTexture(new Uri("DATA", "dirt.png")));
 		ground.addComponent(new ComponentMaterial(new Material()));
 		ground.addComponent(new ComponentRenderTexturedMaterialsStaticMesh(
-				shadowVert, shadowFrag, engineLight, this.engineShadow));
+				shadowVert, shadowFrag));
 		this.env.addEntity(ground);
 
 		// --- Shadow casting cubes ---
-		createCube(new Vector3f(0, 0, 0.5f), shadowVert, shadowFrag, engineLight, this.engineShadow);
-		createCube(new Vector3f(3, 2, 0.5f), shadowVert, shadowFrag, engineLight, this.engineShadow);
-		createCube(new Vector3f(-2, 3, 0.5f), shadowVert, shadowFrag, engineLight, this.engineShadow);
-		createCube(new Vector3f(-3, -2, 1.0f), shadowVert, shadowFrag, engineLight, this.engineShadow);
-		createCube(new Vector3f(4, -3, 0.5f), shadowVert, shadowFrag, engineLight, this.engineShadow);
+		createCube(new Vector3f(0, 0, 0.5f), shadowVert, shadowFrag);
+		createCube(new Vector3f(3, 2, 0.5f), shadowVert, shadowFrag);
+		createCube(new Vector3f(-2, 3, 0.5f), shadowVert, shadowFrag);
+		createCube(new Vector3f(-3, -2, 1.0f), shadowVert, shadowFrag);
+		createCube(new Vector3f(4, -3, 0.5f), shadowVert, shadowFrag);
 		// A taller cube to see longer shadows
-		createCube(new Vector3f(0, 4, 1.5f), shadowVert, shadowFrag, engineLight, this.engineShadow);
+		createCube(new Vector3f(0, 4, 1.5f), shadowVert, shadowFrag);
 
 		// --- Low-poly trees (EMF format with palette rendering) ---
 		final Uri paletteVert = new Uri("DATA", "basicPalette.vert");
 		final Uri paletteFrag = new Uri("DATA", "basicPalette.frag");
 		// tree1 variants scattered around
-		createTree(new Vector3f(-6, 5, 0), "tree1.emf", paletteVert, paletteFrag, engineLight);
-		createTree(new Vector3f(8, -4, 0), "tree1.emf", paletteVert, paletteFrag, engineLight);
-		createTree(new Vector3f(-10, -8, 0), "tree1.emf", paletteVert, paletteFrag, engineLight);
-		createTree(new Vector3f(12, 7, 0), "tree1.emf", paletteVert, paletteFrag, engineLight);
-		createTree(new Vector3f(-4, 12, 0), "tree1.emf", paletteVert, paletteFrag, engineLight);
-		createTree(new Vector3f(6, -10, 0), "tree1.emf", paletteVert, paletteFrag, engineLight);
+		createTree(new Vector3f(-6, 5, 0), "tree1.emf", paletteVert, paletteFrag);
+		createTree(new Vector3f(8, -4, 0), "tree1.emf", paletteVert, paletteFrag);
+		createTree(new Vector3f(-10, -8, 0), "tree1.emf", paletteVert, paletteFrag);
+		createTree(new Vector3f(12, 7, 0), "tree1.emf", paletteVert, paletteFrag);
+		createTree(new Vector3f(-4, 12, 0), "tree1.emf", paletteVert, paletteFrag);
+		createTree(new Vector3f(6, -10, 0), "tree1.emf", paletteVert, paletteFrag);
 		// tree2 variants
-		createTree(new Vector3f(5, 8, 0), "tree2.emf", paletteVert, paletteFrag, engineLight);
-		createTree(new Vector3f(-8, -3, 0), "tree2.emf", paletteVert, paletteFrag, engineLight);
-		createTree(new Vector3f(10, 3, 0), "tree2.emf", paletteVert, paletteFrag, engineLight);
-		createTree(new Vector3f(-12, 6, 0), "tree2.emf", paletteVert, paletteFrag, engineLight);
-		createTree(new Vector3f(2, -12, 0), "tree2.emf", paletteVert, paletteFrag, engineLight);
-		createTree(new Vector3f(-7, -10, 0), "tree2.emf", paletteVert, paletteFrag, engineLight);
+		createTree(new Vector3f(5, 8, 0), "tree2.emf", paletteVert, paletteFrag);
+		createTree(new Vector3f(-8, -3, 0), "tree2.emf", paletteVert, paletteFrag);
+		createTree(new Vector3f(10, 3, 0), "tree2.emf", paletteVert, paletteFrag);
+		createTree(new Vector3f(-12, 6, 0), "tree2.emf", paletteVert, paletteFrag);
+		createTree(new Vector3f(2, -12, 0), "tree2.emf", paletteVert, paletteFrag);
+		createTree(new Vector3f(-7, -10, 0), "tree2.emf", paletteVert, paletteFrag);
 
 		// --- Camera ---
 		final Camera mainView = new Camera();
@@ -190,16 +188,14 @@ public class ShadowTestApplication extends GaleApplication {
 	private void createCube(
 			final Vector3f position,
 			final Uri vertShader,
-			final Uri fragShader,
-			final EngineLight engineLight,
-			final EngineShadow engineShadow) {
+			final Uri fragShader) {
 		final Entity cube = new Entity(this.env);
 		cube.addComponent(new ComponentPosition(new Transform3D(position)));
 		cube.addComponent(new ComponentStaticMesh(new Uri("DATA", "cube-one.obj")));
 		cube.addComponent(new ComponentTexture(new Uri("DATA", "grass.png")));
 		cube.addComponent(new ComponentMaterial(new Material()));
 		cube.addComponent(new ComponentRenderTexturedMaterialsStaticMesh(
-				vertShader, fragShader, engineLight, engineShadow));
+				vertShader, fragShader));
 		this.env.addEntity(cube);
 	}
 
@@ -207,13 +203,12 @@ public class ShadowTestApplication extends GaleApplication {
 			final Vector3f position,
 			final String emfFile,
 			final Uri vertShader,
-			final Uri fragShader,
-			final EngineLight engineLight) {
+			final Uri fragShader) {
 		final Entity tree = new Entity(this.env);
 		tree.addComponent(new ComponentPosition(new Transform3D(position)));
 		tree.addComponent(new ComponentMesh(new Uri("DATA", emfFile)));
 		tree.addComponent(new ComponentTexturePalette(new Uri("DATA", emfFile)));
-		tree.addComponent(new ComponentRenderMeshPalette(vertShader, fragShader, engineLight));
+		tree.addComponent(new ComponentRenderMeshPalette(vertShader, fragShader));
 		this.env.addEntity(tree);
 	}
 

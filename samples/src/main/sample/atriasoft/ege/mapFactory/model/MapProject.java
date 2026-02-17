@@ -16,7 +16,6 @@ import org.atriasoft.ege.components.ComponentMesh;
 import org.atriasoft.ege.components.ComponentPosition;
 import org.atriasoft.ege.components.ComponentRenderMeshPalette;
 import org.atriasoft.ege.components.ComponentTexturePalette;
-import org.atriasoft.ege.engines.EngineLight;
 import org.atriasoft.etk.Uri;
 import org.atriasoft.etk.math.Quaternion;
 import org.atriasoft.etk.math.Transform3D;
@@ -150,7 +149,6 @@ public class MapProject {
 		// Entities
 		final JsonNode entitiesNode = root.get("entities");
 		if (entitiesNode != null) {
-			final EngineLight engineLight = (EngineLight) env.getEngine(EngineLight.ENGINE_NAME);
 			for (final JsonNode entityNode : entitiesNode) {
 				final String meshFile = entityNode.get("meshFile").asText();
 
@@ -180,8 +178,7 @@ public class MapProject {
 				entity.addComponent(new ComponentTexturePalette(meshUri));
 				entity.addComponent(new ComponentRenderMeshPalette(
 						new Uri("DATA", "basicPalette.vert"),
-						new Uri("DATA", "basicPalette.frag"),
-						engineLight));
+						new Uri("DATA", "basicPalette.frag")));
 				env.addEntity(entity);
 				map.placedEntities.add(entity);
 				map.entityMeshPaths.put(entity, meshFile);

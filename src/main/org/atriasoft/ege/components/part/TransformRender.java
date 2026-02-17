@@ -41,6 +41,10 @@ public class TransformRender implements PartRenderInterface {
 	
 	}
 	
+	public PositionningInterface getPositionning() {
+		return this.position;
+	}
+
 	public void setPositionning(final PositionningInterface component) {
 		this.position = component;
 	}

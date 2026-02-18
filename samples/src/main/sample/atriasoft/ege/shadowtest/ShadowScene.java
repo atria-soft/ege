@@ -45,6 +45,9 @@ public class ShadowScene extends EgeScene {
 	private CelestialBody sun;
 	private ComponentPosition sunPosition;
 	private ComponentLightSun sunLightComponent;
+	private CelestialBody moon;
+	private ComponentPosition moonPosition;
+	private ComponentLightSun moonLightComponent;
 	private EngineShadow engineShadow;
 	private ResourceColored3DObject debugDraw;
 
@@ -97,6 +100,29 @@ public class ShadowScene extends EgeScene {
 				new Light(new Color(1.0f, 1.0f, 0.9f), new Vector3f(0, 0, 0), new Vector3f(1.0f, 0, 0)));
 		sunEntity.addComponent(this.sunLightComponent);
 		this.env.addEntity(sunEntity);
+
+		// --- Moon (opposite the sun) ---
+		this.moon = new CelestialBody(
+				CelestialBodyType.MOON,
+				0.3f,
+				0.1f,
+				(float) (Math.PI * 0.25 + Math.PI),
+				new Color(0.7f, 0.7f, 1.0f, 1.0f),
+				0.15f,
+				false);
+		celestialSystem.addBody(this.moon);
+
+		final Vector3f moonDir = this.moon.getDirection();
+		this.moonPosition = new ComponentPosition(new Transform3D(new Vector3f(
+				moonDir.x() * SUN_LIGHT_DISTANCE,
+				moonDir.y() * SUN_LIGHT_DISTANCE,
+				moonDir.z() * SUN_LIGHT_DISTANCE)));
+		final Entity moonEntity = new Entity(this.env);
+		moonEntity.addComponent(this.moonPosition);
+		this.moonLightComponent = new ComponentLightSun(
+				new Light(new Color(0.7f, 0.7f, 1.0f), new Vector3f(0, 0, 0), new Vector3f(1.0f, 0, 0)));
+		moonEntity.addComponent(this.moonLightComponent);
+		this.env.addEntity(moonEntity);
 
 		// --- Ground plane ---
 		final Entity ground = new Entity(this.env);
@@ -189,6 +215,14 @@ public class ShadowScene extends EgeScene {
 		// Sync the sun light color based on height
 		final Color sunColor = computeSunLightColor(dir.z());
 		this.sunLightComponent.getLight().setColor(sunColor);
+		// Sync moon position and light
+		final Vector3f moonDir = this.moon.getDirection();
+		this.moonPosition.setTransform(this.moonPosition.getTransform().withPosition(new Vector3f(
+				moonDir.x() * SUN_LIGHT_DISTANCE,
+				moonDir.y() * SUN_LIGHT_DISTANCE,
+				moonDir.z() * SUN_LIGHT_DISTANCE)));
+		final Color moonColor = computeMoonLightColor(moonDir.z());
+		this.moonLightComponent.getLight().setColor(moonColor);
 	}
 
 	@Override
@@ -309,6 +343,10 @@ public class ShadowScene extends EgeScene {
 		return this.sun;
 	}
 
+	public CelestialBody getMoon() {
+		return this.moon;
+	}
+
 	public EngineShadow getEngineShadow() {
 		return this.engineShadow;
 	}
@@ -338,6 +376,15 @@ public class ShadowScene extends EgeScene {
 	}
 
 	// --- Utility ---
+
+	private static Color computeMoonLightColor(final float height) {
+		if (height <= 0.0f) {
+			return new Color(0.0f, 0.0f, 0.0f, 1.0f);
+		}
+		// Dim bluish light, intensity proportional to height
+		final float t = Math.min(height, 1.0f);
+		return new Color(0.10f * t, 0.10f * t, 0.15f * t, 1.0f);
+	}
 
 	private static Color computeSunLightColor(final float height) {
 		if (height <= 0.0f) {

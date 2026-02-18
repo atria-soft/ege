@@ -126,13 +126,16 @@ public class ShadowCascade {
 			maxZ = Math.max(maxZ, transformed.z());
 		}
 
-		// 5. Expand Z range slightly to capture shadow casters near the edges.
-		// Push minZ (far from light) a bit further to catch objects behind the frustum.
-		// Keep expansion moderate to preserve depth buffer precision.
+		// 5. Expand Z range to capture shadow casters outside the camera frustum.
+		// In light space, Z decreases towards the light direction:
+		//   maxZ = nearest to light (behind frustum, towards light)
+		//   minZ = farthest from light (in front of frustum, away from light)
+		// Extend maxZ generously to include objects behind the camera that cast
+		// shadows into the visible frustum (e.g. trees behind casting long shadows).
+		// Extend minZ moderately to catch objects just beyond the far plane.
 		final float zRange = maxZ - minZ;
-		final float zMargin = Math.max(zRange * 0.5f, 10.0f);
-		minZ -= zMargin;
-		maxZ += 1.0f; // small margin on near side
+		minZ -= Math.max(zRange * 0.5f, 10.0f);
+		maxZ += Math.max(zRange * 2.0f, 50.0f);
 
 		// Store AABB bounds for debug visualization
 		this.debugMinX = minX;

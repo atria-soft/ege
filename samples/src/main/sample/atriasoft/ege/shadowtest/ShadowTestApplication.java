@@ -98,8 +98,8 @@ public class ShadowTestApplication extends GaleApplication {
 		// Configure CSM shadow parameters
 		this.engineShadow.setShadowMapResolution(2048);
 		this.engineShadow.setShadowDistance(50.0f);
-		// Use 1 cascade for easier debugging
-		this.engineShadow.getConfig().setCascadeCount(1);
+		// Use 3 cascades to test cascade blending
+		this.engineShadow.getConfig().setCascadeCount(3);
 		// Match camera FOV and aspect ratio for accurate cascade frustum fitting
 		this.engineShadow.setCameraFovY(3.14f * 0.5f);
 		this.engineShadow.setCameraAspectRatio(1024.0f / 768.0f);
@@ -249,17 +249,47 @@ public class ShadowTestApplication extends GaleApplication {
 			final KeyKeyboard type,
 			final Character value,
 			final KeyStatus state) {
-		// P = pause/resume sun orbit
-		if (value != null && (value == 'p' || value == 'P') && state == KeyStatus.down) {
-			if (this.sunPaused) {
-				this.sun.setAngularSpeed(this.savedAngularSpeed);
-				this.sunPaused = false;
-				LOGGER.info("Sun RESUMED (speed={})", this.savedAngularSpeed);
-			} else {
-				this.savedAngularSpeed = this.sun.getAngularSpeed();
-				this.sun.setAngularSpeed(0.0f);
-				this.sunPaused = true;
-				LOGGER.info("Sun PAUSED at angle={}", this.sun.getCurrentAngle());
+		if (value != null && state == KeyStatus.down) {
+			// P = pause/resume sun orbit
+			if (value == 'p' || value == 'P') {
+				if (this.sunPaused) {
+					this.sun.setAngularSpeed(this.savedAngularSpeed);
+					this.sunPaused = false;
+					LOGGER.info("Sun RESUMED (speed={})", this.savedAngularSpeed);
+				} else {
+					this.savedAngularSpeed = this.sun.getAngularSpeed();
+					this.sun.setAngularSpeed(0.0f);
+					this.sunPaused = true;
+					LOGGER.info("Sun PAUSED at angle={}", this.sun.getCurrentAngle());
+				}
+			}
+			// C = cycle cascade count (1 → 2 → 3 → 4 → 1)
+			if (value == 'c' || value == 'C') {
+				final int current = this.engineShadow.getConfig().getCascadeCount();
+				final int next = (current % 4) + 1;
+				this.engineShadow.getConfig().setCascadeCount(next);
+				LOGGER.info("Cascade count: {} -> {}", current, next);
+			}
+			// F = cycle PCF kernel size (1 → 3 → 5 → 1)
+			if (value == 'f' || value == 'F') {
+				final int current = this.engineShadow.getConfig().getPcfKernelSize();
+				final int next;
+				if (current <= 1) {
+					next = 3;
+				} else if (current <= 3) {
+					next = 5;
+				} else {
+					next = 1;
+				}
+				this.engineShadow.getConfig().setPcfKernelSize(next);
+				LOGGER.info("PCF kernel: {} -> {} ({})", current, next,
+						next == 1 ? "hard" : next == 3 ? "medium" : "soft");
+			}
+			// T = toggle debug thumbnails
+			if (value == 't' || value == 'T') {
+				final boolean current = this.engineShadow.isDebugThumbnailEnabled();
+				this.engineShadow.setDebugThumbnailEnabled(!current);
+				LOGGER.info("Debug thumbnails: {}", !current ? "ON" : "OFF");
 			}
 		}
 		this.env.onKeyboard(special, type, value, state);

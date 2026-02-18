@@ -76,7 +76,7 @@ public class ShadowScene extends EgeScene {
 		this.engineShadow = this.env.getEngineShadow();
 		this.engineShadow.setShadowMapResolution(2048);
 		this.engineShadow.setShadowDistance(50.0f);
-		this.engineShadow.getConfig().setCascadeCount(1);
+		this.engineShadow.getConfig().setCascadeCount(3);
 		this.engineShadow.setCameraFovY(3.14f * 0.5f);
 		this.engineShadow.setCameraAspectRatio(1024.0f / 768.0f);
 		this.engineShadow.setDebugThumbnailEnabled(true);

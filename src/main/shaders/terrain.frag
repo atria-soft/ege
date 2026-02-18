@@ -32,27 +32,25 @@ uniform vec3 skyColor;
 // CSM shadow uniforms
 uniform int in_shadowCasterCount;
 uniform int in_cascadeCount;
-uniform sampler2D in_shadowMap[MAX_SHADOW_MAPS];
+uniform sampler2DShadow in_shadowMap[MAX_SHADOW_MAPS];
 uniform float in_cascadeSplits[MAX_CASCADES];
 
-// PCF shadow calculation with 3x3 kernel
-float calculateShadow(vec4 fragPosLS, sampler2D shadowTex) {
+// PCF shadow calculation using hardware shadow comparison (sampler2DShadow).
+float calculateShadow(vec4 fragPosLS, sampler2DShadow shadowTex) {
 	vec3 projCoords = fragPosLS.xyz / fragPosLS.w;
 	projCoords = projCoords * 0.5 + 0.5;
 	if (projCoords.z > 1.0) {
 		return 0.0;
 	}
-	float currentDepth = projCoords.z;
-	float bias = 0.005;
+	float refDepth = projCoords.z - 0.0005;
 	float shadow = 0.0;
 	vec2 texelSize = 1.0 / textureSize(shadowTex, 0);
 	for (int x = -1; x <= 1; x++) {
 		for (int y = -1; y <= 1; y++) {
-			float closestDepth = texture(shadowTex, projCoords.xy + vec2(x, y) * texelSize).r;
-			shadow += (currentDepth - bias > closestDepth) ? 1.0 : 0.0;
+			shadow += texture(shadowTex, vec3(projCoords.xy + vec2(x, y) * texelSize, refDepth));
 		}
 	}
-	return shadow / 9.0;
+	return 1.0 - shadow / 9.0;
 }
 
 // Select the cascade index based on fragment distance from camera

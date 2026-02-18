@@ -38,29 +38,36 @@ public class ShadowWindows extends Windows {
 
 	private static void onPauseClicked(final ShadowWindows self) {
 		final CelestialBody sun = self.scene.getSun();
+		final CelestialBody moon = self.scene.getMoon();
 		if (self.sunPaused) {
 			sun.setAngularSpeed(self.savedAngularSpeed);
+			moon.setAngularSpeed(self.savedAngularSpeed);
 			self.sunPaused = false;
-			self.pauseButton.label("Pause Sun");
-			LOGGER.info("Sun RESUMED (speed={})", self.savedAngularSpeed);
+			self.pauseButton.label("Pause");
+			LOGGER.info("Sun/Moon RESUMED (speed={})", self.savedAngularSpeed);
 		} else {
 			self.savedAngularSpeed = sun.getAngularSpeed();
 			sun.setAngularSpeed(0.0f);
+			moon.setAngularSpeed(0.0f);
 			self.sunPaused = true;
-			self.pauseButton.label("Resume Sun");
-			LOGGER.info("Sun PAUSED at angle={}", sun.getCurrentAngle());
+			self.pauseButton.label("Resume");
+			LOGGER.info("Sun/Moon PAUSED at angle={}", sun.getCurrentAngle());
 		}
 	}
 
 	private static void onAngleChanged(final ShadowWindows self, final Float degrees) {
 		final float radians = (float) (degrees * Math.PI / 180.0);
 		self.scene.getSun().setCurrentAngle(radians);
+		// Keep moon in opposition
+		self.scene.getMoon().setCurrentAngle(radians + (float) Math.PI);
 		self.angleLabel.setPropertyValue(String.format("Angle: %.1f", degrees));
 	}
 
 	private static void onInclinationChanged(final ShadowWindows self, final Float degrees) {
 		final float radians = (float) (degrees * Math.PI / 180.0);
 		self.scene.getSun().setOrbitalInclination(radians);
+		// Sync moon inclination
+		self.scene.getMoon().setOrbitalInclination(radians);
 		self.inclinationLabel.setPropertyValue(String.format("Inclination: %.1f", degrees));
 	}
 
@@ -135,12 +142,12 @@ public class ShadowWindows extends Windows {
 		final Label title = new Label("<b>Shadow Debug Controls</b>");
 		panel.subWidgetAdd(title);
 
-		// --- Sun control section ---
-		final Label sunSectionLabel = new Label("<b>Sun</b>");
+		// --- Sun/Moon control section ---
+		final Label sunSectionLabel = new Label("<b>Sun / Moon</b>");
 		panel.subWidgetAdd(sunSectionLabel);
 
 		// Pause/Resume button
-		this.pauseButton = Button.create("Pause Sun");
+		this.pauseButton = Button.create("Pause");
 		this.pauseButton.setPropertyExpand(new Vector2b(true, false));
 		this.pauseButton.setPropertyFill(new Vector2b(true, false));
 		this.pauseButton.signalClick.connectAuto(this, ShadowWindows::onPauseClicked);
@@ -246,17 +253,20 @@ public class ShadowWindows extends Windows {
 	@Override
 	public void onRegenerateDisplay() {
 		super.onRegenerateDisplay();
-		// Update info label with sun state
+		// Update info label with sun/moon state
 		if (this.infoLabel != null && this.scene != null) {
 			final CelestialBody sun = this.scene.getSun();
+			final CelestialBody moon = this.scene.getMoon();
 			final float angleDeg = (float) (sun.getCurrentAngle() * 180.0 / Math.PI);
 			final float inclDeg = (float) (sun.getOrbitalInclination() * 180.0 / Math.PI);
-			final Vector3f dir = sun.getDirection();
+			final Vector3f sunDir = sun.getDirection();
+			final Vector3f moonDir = moon.getDirection();
 			this.infoLabel.setPropertyValue(String.format(
-					"A:%.0f I:%.0f\nh=%.2f %s",
-					angleDeg, inclDeg, dir.z(),
-					sun.isAboveHorizon() ? "above" : "BELOW"));
-			// Sync slider position when sun is animating
+					"A:%.0f I:%.0f\nSun h=%.2f %s\nMoon h=%.2f %s",
+					angleDeg, inclDeg,
+					sunDir.z(), sun.isAboveHorizon() ? "above" : "BELOW",
+					moonDir.z(), moon.isAboveHorizon() ? "above" : "BELOW"));
+			// Sync slider position when animating
 			if (!this.sunPaused && this.angleSlider != null) {
 				this.angleSlider.setPropertyValue(angleDeg);
 			}

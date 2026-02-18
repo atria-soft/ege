@@ -147,5 +147,8 @@ void main(void) {
 		totalSpecular *= (1.0 - maxShadow);
 	}
 
-	out_Color = (vec4(totalDiffuse, 1.0) * 0.5 + 0.5) * textureColour;
+	// Ambient floor so unlit faces remain slightly visible (reveals polygon edges)
+	totalDiffuse = max(totalDiffuse, 0.2);
+
+	out_Color = vec4(totalDiffuse, 1.0) * textureColour + vec4(totalSpecular, 1.0);
 }

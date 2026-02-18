@@ -97,8 +97,10 @@ void main(void) {
 	// keep material:
 	vec3 tex_ambientFactor = texture(in_textureBase, vec2(io_textureCoords.x, 4.5/8.0)).xyz;
 	vec4 textureColour = texture(in_textureBase, io_textureCoords);
+	// Clamp specular and shininess to avoid white blobs on palette meshes:
+	// palette textures may encode near-zero shininess, and pow(x, ~0) ≈ 1.0 for any x > 0.
 	vec3 tex_specularFactor = texture(in_textureBase, vec2(io_textureCoords.x, 2.5/8.0)).xyz;
-	float tex_shininess = texture(in_textureBase, vec2(io_textureCoords.x, 6.5/8.0)).x;
+	float tex_shininess = max(texture(in_textureBase, vec2(io_textureCoords.x, 6.5/8.0)).x * 128.0, 8.0);
 
 	vec3 unitNormal = normalize(io_surfaceNormal);
 	vec3 unitVectorToCamera = normalize(io_toCameraVector);
@@ -147,8 +149,14 @@ void main(void) {
 		totalSpecular *= (1.0 - maxShadow);
 	}
 
-	// Ambient floor so unlit faces remain slightly visible (reveals polygon edges)
-	totalDiffuse = max(totalDiffuse, 0.2);
+	// Hemisphere ambient: sky-facing normals get more ambient light than ground-facing.
+	// This reveals polygon edges on low-poly models even without direct lighting.
+	float hemisphereBlend = unitNormal.z * 0.5 + 0.5; // 0=down, 1=up
+	vec3 ambientColor = mix(vec3(0.05), vec3(0.15), hemisphereBlend);
+	// Tint ambient with first light color for natural day/night variation
+	vec3 lightTint = max(in_lights[0].color, vec3(0.3));
+	ambientColor *= lightTint;
+	totalDiffuse = max(totalDiffuse, ambientColor);
 
 	out_Color = vec4(totalDiffuse, 1.0) * textureColour + vec4(totalSpecular, 1.0);
 }

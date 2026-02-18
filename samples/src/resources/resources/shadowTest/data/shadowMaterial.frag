@@ -136,8 +136,14 @@ void main(void) {
 		totalDiffuse = totalDiffuse + diffuse;
 		totalSpecular = totalSpecular + finalSpecular;
 	}
-	// the 0.2 represent the ambient lightning
-	totalDiffuse = max(totalDiffuse, 0.2);
+	// Hemisphere ambient: sky-facing normals get more ambient light than ground-facing.
+	// This reveals surface variation even without direct lighting.
+	float hemisphereBlend = unitNormal.z * 0.5 + 0.5; // 0=down, 1=up
+	vec3 ambientColor = mix(vec3(0.05), vec3(0.15), hemisphereBlend);
+	// Tint ambient with first light color for natural day/night variation
+	vec3 lightTint = max(in_lights[0].color, vec3(0.3));
+	ambientColor *= lightTint;
+	totalDiffuse = max(totalDiffuse, ambientColor);
 
 	// Apply CSM shadows
 	if (in_shadowCasterCount > 0 && in_cascadeCount > 0) {

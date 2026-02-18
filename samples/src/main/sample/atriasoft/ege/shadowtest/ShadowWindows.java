@@ -1,6 +1,7 @@
 package sample.atriasoft.ege.shadowtest;
 
 import org.atriasoft.ege.celestial.CelestialBody;
+import org.atriasoft.ege.shadow.ShadowConfig;
 import org.atriasoft.etk.math.Vector2b;
 import org.atriasoft.etk.math.Vector3f;
 import org.atriasoft.ewol.widget.Button;
@@ -30,6 +31,8 @@ public class ShadowWindows extends Windows {
 	private Label infoLabel;
 	private Slider angleSlider;
 	private Slider inclinationSlider;
+	private Label cascadeLabel;
+	private Button pcfButton;
 
 	// --- Static callbacks for connectAuto (prevent GC via weak ref) ---
 
@@ -71,6 +74,32 @@ public class ShadowWindows extends Windows {
 
 	private static void onSunDirectionToggled(final ShadowWindows self, final Boolean value) {
 		self.scene.setDrawSunDirection(value);
+	}
+
+	private static void onCascadeCountChanged(final ShadowWindows self, final Float value) {
+		final int count = Math.round(value);
+		self.scene.getEngineShadow().getConfig().setCascadeCount(count);
+		self.cascadeLabel.setPropertyValue("Cascades: " + count);
+	}
+
+	private static void onPcfCycleClicked(final ShadowWindows self) {
+		final ShadowConfig config = self.scene.getEngineShadow().getConfig();
+		final int current = config.getPcfKernelSize();
+		final int next;
+		if (current <= 1) {
+			next = 3;
+		} else if (current <= 3) {
+			next = 5;
+		} else {
+			next = 1;
+		}
+		config.setPcfKernelSize(next);
+		final String label = next == 1 ? "hard (1x1)" : next == 3 ? "medium (3x3)" : "soft (5x5)";
+		self.pcfButton.label("PCF: " + label);
+	}
+
+	private static void onThumbnailsToggled(final ShadowWindows self, final Boolean value) {
+		self.scene.getEngineShadow().setDebugThumbnailEnabled(value);
 	}
 
 	public ShadowWindows() {
@@ -169,6 +198,38 @@ public class ShadowWindows extends Windows {
 		sunDirCheck.setPropertyFill(new Vector2b(true, false));
 		sunDirCheck.signalValue.connectAuto(this, ShadowWindows::onSunDirectionToggled);
 		panel.subWidgetAdd(sunDirCheck);
+
+		// --- Shadow Quality section ---
+		final Label shadowSectionLabel = new Label("<b>Shadow Quality</b>");
+		panel.subWidgetAdd(shadowSectionLabel);
+
+		// Cascade count slider (1-4)
+		this.cascadeLabel = new Label("Cascades: 3");
+		panel.subWidgetAdd(this.cascadeLabel);
+
+		final Slider cascadeSlider = Slider.create()
+				.range(1, 4)
+				.value(3.0f)
+				.step(1.0f);
+		cascadeSlider.setPropertyExpand(new Vector2b(true, false));
+		cascadeSlider.setPropertyFill(new Vector2b(true, false));
+		cascadeSlider.signalValue.connectAuto(this, ShadowWindows::onCascadeCountChanged);
+		panel.subWidgetAdd(cascadeSlider);
+
+		// PCF cycle button
+		this.pcfButton = Button.create("PCF: medium (3x3)");
+		this.pcfButton.setPropertyExpand(new Vector2b(true, false));
+		this.pcfButton.setPropertyFill(new Vector2b(true, false));
+		this.pcfButton.signalClick.connectAuto(this, ShadowWindows::onPcfCycleClicked);
+		panel.subWidgetAdd(this.pcfButton);
+
+		// Debug thumbnails checkbox
+		final CheckBox thumbnailsCheck = CheckBox.create("Debug Thumbnails")
+				.checked(true);
+		thumbnailsCheck.setPropertyExpand(new Vector2b(true, false));
+		thumbnailsCheck.setPropertyFill(new Vector2b(true, false));
+		thumbnailsCheck.signalValue.connectAuto(this, ShadowWindows::onThumbnailsToggled);
+		panel.subWidgetAdd(thumbnailsCheck);
 
 		// --- Info section ---
 		final Label infoSectionLabel = new Label("<b>Info</b>");

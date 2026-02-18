@@ -14,17 +14,11 @@ public class ShadowConfig {
 	/** Maximum shadow rendering distance from camera. */
 	private float shadowDistance = 300.0f;
 	/**
-	 * Cascade split ratios (length = cascadeCount - 1).
-	 * Each value is a ratio of shadowDistance defining where one cascade ends and the next begins.
-	 * <p>
-	 * For 3 cascades with splits {0.07, 0.27}:
-	 * <ul>
-	 *   <li>Cascade 0: 0 to 0.07 * shadowDistance</li>
-	 *   <li>Cascade 1: 0.07 to 0.27 * shadowDistance</li>
-	 *   <li>Cascade 2: 0.27 to 1.0 * shadowDistance</li>
-	 * </ul>
+	 * Blend factor between logarithmic and linear cascade splits (0.0 = linear, 1.0 = logarithmic).
+	 * Logarithmic splits give more resolution to nearby objects, linear distributes evenly.
+	 * A value of 0.5 provides a practical compromise.
 	 */
-	private float[] cascadeSplits = {0.07f, 0.27f};
+	private float cascadeSplitLambda = 0.5f;
 	/** Maximum number of simultaneous shadow-casting celestial bodies. */
 	private int maxShadowCasters = 2;
 	/** PCF kernel size: 1 = hard shadows, 3 = medium, 5 = soft. */
@@ -34,19 +28,29 @@ public class ShadowConfig {
 	}
 
 	/**
+	 * Compute cascade split distances using a practical logarithmic scheme.
+	 * <p>
+	 * Blends between linear and logarithmic distribution controlled by
+	 * {@code cascadeSplitLambda}:
+	 * <ul>
+	 *   <li>lambda = 0.0 → pure linear (equal distance per cascade)</li>
+	 *   <li>lambda = 1.0 → pure logarithmic (more resolution close to camera)</li>
+	 *   <li>lambda = 0.5 → practical compromise (default)</li>
+	 * </ul>
+	 *
 	 * @return The absolute split distances (in world units) for each cascade boundary.
 	 *         Array length = cascadeCount - 1.
 	 */
 	public float[] getCascadeSplitDistances() {
 		final int splitCount = Math.max(0, this.cascadeCount - 1);
 		final float[] distances = new float[splitCount];
+		final float nearClip = 0.1f;
+		final float ratio = this.shadowDistance / nearClip;
 		for (int i = 0; i < splitCount; i++) {
-			if (i < this.cascadeSplits.length) {
-				distances[i] = this.cascadeSplits[i] * this.shadowDistance;
-			} else {
-				// Linearly distribute remaining splits
-				distances[i] = this.shadowDistance * (float) (i + 1) / this.cascadeCount;
-			}
+			final float p = (float) (i + 1) / this.cascadeCount;
+			final float logSplit = nearClip * (float) Math.pow(ratio, p);
+			final float linearSplit = nearClip + (this.shadowDistance - nearClip) * p;
+			distances[i] = this.cascadeSplitLambda * logSplit + (1.0f - this.cascadeSplitLambda) * linearSplit;
 		}
 		return distances;
 	}
@@ -99,12 +103,12 @@ public class ShadowConfig {
 		this.shadowDistance = shadowDistance;
 	}
 
-	public float[] getCascadeSplits() {
-		return this.cascadeSplits;
+	public float getCascadeSplitLambda() {
+		return this.cascadeSplitLambda;
 	}
 
-	public void setCascadeSplits(final float[] cascadeSplits) {
-		this.cascadeSplits = cascadeSplits;
+	public void setCascadeSplitLambda(final float cascadeSplitLambda) {
+		this.cascadeSplitLambda = Math.max(0.0f, Math.min(1.0f, cascadeSplitLambda));
 	}
 
 	public int getMaxShadowCasters() {

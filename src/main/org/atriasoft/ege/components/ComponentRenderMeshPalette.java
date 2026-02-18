@@ -4,6 +4,7 @@ import org.atriasoft.ege.Component;
 import org.atriasoft.ege.components.part.LightRender;
 import org.atriasoft.ege.components.part.PositionningInterface;
 import org.atriasoft.ege.components.part.RenderContext;
+import org.atriasoft.ege.components.part.ShadowRender;
 import org.atriasoft.ege.components.part.TransformRender;
 import org.atriasoft.etk.Uri;
 import org.atriasoft.gale.backend3d.OpenGL;
@@ -16,7 +17,9 @@ public class ComponentRenderMeshPalette extends ComponentRender {
 
 	LightRender renderLight = null;
 	TransformRender renderTransform = null;
+	ShadowRender renderShadow = null;
 	private boolean lightInitialized = false;
+	private boolean shadowInitialized = false;
 
 	public ComponentRenderMeshPalette(final Uri vertexShader, final Uri fragmentShader) {
 		this.renderTransform = new TransformRender();
@@ -58,6 +61,12 @@ public class ComponentRenderMeshPalette extends ComponentRender {
 			}
 			this.lightInitialized = true;
 		}
+		// Lazy init of ShadowRender on first render
+		if (!this.shadowInitialized && context.getEngineShadow() != null && this.program != null) {
+			this.renderShadow = new ShadowRender();
+			this.renderShadow.init(this.program);
+			this.shadowInitialized = true;
+		}
 		// Select the program:
 		this.program.use();
 		// Bind all the element for the rendering:
@@ -66,6 +75,9 @@ public class ComponentRenderMeshPalette extends ComponentRender {
 		if (this.renderLight != null) {
 			this.renderLight.bindForRendering(this.program, context.getEngineLight());
 		}
+		if (this.renderShadow != null) {
+			this.renderShadow.bindForRendering(this.program, context.getEngineShadow());
+		}
 		this.renderTransform.bindForRendering(this.program);
 		// update of flags is done asynchronously ==> need update before drawing...
 		OpenGL.updateAllFlags();
@@ -73,6 +85,9 @@ public class ComponentRenderMeshPalette extends ComponentRender {
 		this.mesh.renderArrays();
 		// remove all element to render:
 		this.renderTransform.unBindForRendering();
+		if (this.renderShadow != null) {
+			this.renderShadow.unBindForRendering();
+		}
 		if (this.renderLight != null) {
 			this.renderLight.unBindForRendering();
 		}

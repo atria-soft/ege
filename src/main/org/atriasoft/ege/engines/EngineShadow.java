@@ -22,6 +22,8 @@ import org.atriasoft.etk.math.Vector3f;
 import org.atriasoft.gale.backend3d.OpenGL;
 import org.atriasoft.gale.resource.ResourceProgram;
 import org.atriasoft.gale.resource.ResourceVirtualArrayObject;
+import org.lwjgl.opengl.GL11;
+import org.lwjgl.opengl.GL14;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -198,20 +200,26 @@ public class EngineShadow extends Engine {
 			if (texId <= 0) {
 				continue;
 			}
-			
+
 			// Position: bottom-right corner, stacked vertically
 			final int x = viewW - thumbnailSize - padding;
 			final int y = padding + i * (thumbnailSize + padding);
-			
+
 			OpenGL.setViewPort(new Vector2f(x, y), new Vector2f(thumbnailSize, thumbnailSize));
-			
+
 			// Bind depth texture to unit 0
 			this.debugProgram.setTexture(this.debugDepthTexUniform, texId, 0);
-			
+			// Temporarily disable shadow compare mode so the debug shader
+			// can read raw depth values with sampler2D
+			GL11.glTexParameteri(GL11.GL_TEXTURE_2D, GL14.GL_TEXTURE_COMPARE_MODE, GL11.GL_NONE);
+
 			this.debugQuadVao.bindForRendering();
 			OpenGL.updateAllFlags();
 			this.debugQuadVao.render(OpenGL.RenderMode.TRIANGLE);
 			this.debugQuadVao.unBindForRendering();
+
+			// Restore shadow compare mode
+			GL11.glTexParameteri(GL11.GL_TEXTURE_2D, GL14.GL_TEXTURE_COMPARE_MODE, GL14.GL_COMPARE_R_TO_TEXTURE);
 		}
 		
 		this.debugProgram.unUse();
@@ -356,6 +364,13 @@ public class EngineShadow extends Engine {
 		return this.config;
 	}
 	
+	/**
+	 * @return PCF half-kernel size for the shader (kernel 1 → 0, 3 → 1, 5 → 2).
+	 */
+	public int getPcfHalfKernel() {
+		return this.config.getPcfKernelSize() / 2;
+	}
+
 	public int getShadowMapResolution() {
 		return this.config.getShadowMapResolution();
 	}

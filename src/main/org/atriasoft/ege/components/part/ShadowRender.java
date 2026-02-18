@@ -28,6 +28,7 @@ public class ShadowRender {
 	// Uniform locations
 	private int glShadowCasterCount = -1;
 	private int glCascadeCount = -1;
+	private int glPcfHalfKernel = -1;
 	private final int[] glLightSpaceMatrix = new int[MAX_TOTAL_SHADOW_MAPS];
 	private final int[] glShadowMap = new int[MAX_TOTAL_SHADOW_MAPS];
 	private final int[] glCascadeSplits = new int[EngineShadow.MAX_CASCADES];
@@ -35,6 +36,7 @@ public class ShadowRender {
 	public void init(final ResourceProgram program) {
 		this.glShadowCasterCount = program.getUniform("in_shadowCasterCount");
 		this.glCascadeCount = program.getUniform("in_cascadeCount");
+		this.glPcfHalfKernel = program.getUniform("in_pcfHalfKernel");
 		for (int i = 0; i < MAX_TOTAL_SHADOW_MAPS; i++) {
 			this.glLightSpaceMatrix[i] = program.getUniform("in_lightSpaceMatrix[" + i + "]");
 			this.glShadowMap[i] = program.getUniform("in_shadowMap[" + i + "]");
@@ -54,6 +56,8 @@ public class ShadowRender {
 
 		program.uniformInt(this.glShadowCasterCount, casterCount);
 		program.uniformInt(this.glCascadeCount, cascadeCount);
+		// PCF half-kernel: kernel size 1 → 0, 3 → 1, 5 → 2
+		program.uniformInt(this.glPcfHalfKernel, shadowEngine.getPcfHalfKernel());
 
 		// Bind all shadow maps and light-space matrices (flattened: caster * cascade + cascade)
 		for (int i = 0; i < totalMaps && i < MAX_TOTAL_SHADOW_MAPS; i++) {

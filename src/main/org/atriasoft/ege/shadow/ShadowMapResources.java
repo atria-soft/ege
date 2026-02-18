@@ -80,10 +80,18 @@ public class ShadowMapResources {
 		OpenGL.bindTexture2D(this.depthTextureId);
 		OpenGL.glTexImage2D(0, GL14.GL_DEPTH_COMPONENT24, width, height, 0,
 				GL11.GL_DEPTH_COMPONENT, GL11.GL_FLOAT);
-		OpenGL.setTexture2DFilterNearest();
+		// Linear filtering enables hardware-interpolated depth comparison:
+		// each texture() call on a sampler2DShadow performs bilinear interpolation
+		// of 4 depth comparisons, yielding a smooth 0.0-1.0 shadow factor per texel.
+		OpenGL.setTexture2DFilterLinear();
 		OpenGL.setTexture2DWrapClampToBorder();
 		// Border color = 1.0 → fragments outside the shadow map are fully lit
 		OpenGL.setTexture2DBorderColor(1.0f, 1.0f, 1.0f, 1.0f);
+		// Enable hardware shadow comparison: texture() with sampler2DShadow
+		// compares the reference depth against the stored depth and returns 0.0 or 1.0
+		// (with bilinear interpolation giving smooth intermediate values).
+		GL11.glTexParameteri(GL11.GL_TEXTURE_2D, GL14.GL_TEXTURE_COMPARE_MODE, GL14.GL_COMPARE_R_TO_TEXTURE);
+		GL11.glTexParameteri(GL11.GL_TEXTURE_2D, GL14.GL_TEXTURE_COMPARE_FUNC, GL11.GL_LEQUAL);
 		OpenGL.glFramebufferTexture2D(GL30.GL_DEPTH_ATTACHMENT, this.depthTextureId);
 
 		// No color attachment for depth-only FBO
@@ -154,6 +162,10 @@ public class ShadowMapResources {
 		OpenGL.clearDepth(1.0f);
 		OpenGL.clear(OpenGL.ClearFlag.clearFlag_depthBuffer);
 		OpenGL.enable(Flag.flag_depthTest);
+		// Small polygon offset to prevent shadow acne on angled surfaces.
+		// Keep values low to avoid a visible gap between objects and their shadows.
+		OpenGL.enable(Flag.flag_polygonOffsetFill);
+		GL11.glPolygonOffset(1.0f, 1.0f);
 		OpenGL.updateAllFlags();
 
 		if (this.depthProgram != null) {
@@ -171,6 +183,10 @@ public class ShadowMapResources {
 		if (this.depthProgram != null) {
 			this.depthProgram.unUse();
 		}
+		// Restore polygon offset state
+		OpenGL.disable(Flag.flag_polygonOffsetFill);
+		GL11.glPolygonOffset(0.0f, 0.0f);
+		OpenGL.updateAllFlags();
 		OpenGL.bindFramebuffer(0);
 		OpenGL.setViewPort(
 				new org.atriasoft.etk.math.Vector2f(0, 0),

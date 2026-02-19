@@ -9,6 +9,10 @@ struct Light {
     vec3 color;
     vec3 position;
     vec3 attenuation;
+    vec3 direction;        // spot light direction (zero = point light)
+    float cutoffCos;       // cosine of outer cone half-angle (0 = point light)
+    float cutoffCosInner;  // cosine of inner cone half-angle (full intensity inside)
+    float radius;          // physical radius of the light source (0 = point)
 };
 const int MAX_LIGHT_NUMBER = 8;
 const int MAX_SHADOW_MAPS = 12; // MAX_CASTERS(3) * MAX_CASCADES(4)

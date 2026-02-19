@@ -9,6 +9,10 @@ struct Light {
     vec3 color;
     vec3 position;
     vec3 attenuation;
+    vec3 direction;        // spot light direction (zero = point light)
+    float cutoffCos;       // cosine of outer cone half-angle (0 = point light)
+    float cutoffCosInner;  // cosine of inner cone half-angle (full intensity inside)
+    float radius;          // physical radius of the light source (0 = point)
 };
 
 struct Material {
@@ -130,9 +134,18 @@ void main(void) {
 		vec3 reflectedLightDirection = reflect(lightDirection, unitNormal);
 		float specularFactor = dot(reflectedLightDirection, unitVectorToCamera);
 		specularFactor = max(specularFactor, 0.0);
-		float damperFactor = pow(specularFactor, in_material.shininess);
-		vec3 diffuse = (brightness * in_lights[iii].color) / attenuationFactor;
-		vec3 finalSpecular = (damperFactor * in_material.specularFactor.x * in_lights[iii].color) / attenuationFactor;
+		// No specular on faces facing away from the light
+		float damperFactor = nDot1 > 0.0 ? pow(specularFactor, in_material.shininess) : 0.0;
+		// Spot light cone attenuation
+		float spotFactor = 1.0;
+		if (in_lights[iii].cutoffCos > 0.0) {
+			float theta = dot(-unitLightVector, normalize(in_lights[iii].direction));
+			float outerCos = in_lights[iii].cutoffCos;
+			float innerCos = in_lights[iii].cutoffCosInner;
+			spotFactor = clamp((theta - outerCos) / max(innerCos - outerCos, 0.001), 0.0, 1.0);
+		}
+		vec3 diffuse = (brightness * in_lights[iii].color * spotFactor) / attenuationFactor;
+		vec3 finalSpecular = (damperFactor * in_material.specularFactor.x * in_lights[iii].color * spotFactor) / attenuationFactor;
 		totalDiffuse = totalDiffuse + diffuse;
 		totalSpecular = totalSpecular + finalSpecular;
 	}
@@ -144,13 +157,17 @@ void main(void) {
 	// nDotL >= 0 → 1.0 (facing or perpendicular), nDotL = -1 → 0.3 (opposite)
 	float ambientScale = nDotL >= 0.0 ? 1.0 : mix(1.0, 0.3, -nDotL);
 	vec3 ambientColor = vec3(0.15) * ambientScale;
-	// Tint ambient with first light color for natural day/night variation
-	vec3 lightTint = max(in_lights[0].color, vec3(0.3));
+	// Tint ambient with first light color for natural day/night variation.
+	// Use a very low floor so night is truly dark (starlight level).
+	vec3 lightTint = max(in_lights[0].color, vec3(0.05));
 	ambientColor *= lightTint;
 	totalDiffuse = max(totalDiffuse, ambientColor);
 
-	// Apply CSM shadows
-	if (in_shadowCasterCount > 0 && in_cascadeCount > 0) {
+	// Sun brightness: used to fade shadows and fog at night
+	float sunBrightness = max(max(in_lights[0].color.r, in_lights[0].color.g), in_lights[0].color.b);
+
+	// Apply CSM shadows (fade out as sun goes down)
+	if (in_shadowCasterCount > 0 && in_cascadeCount > 0 && sunBrightness > 0.01) {
 		// Compute adaptive bias from surface normal vs first light direction
 		vec3 lightDir = normalize(io_toLightVector[0]);
 		float bias = computeBias(unitNormal, lightDir);
@@ -173,11 +190,15 @@ void main(void) {
 				maxShadow = max(maxShadow, shadowVal);
 			}
 		}
+		// Fade shadow strength with sun brightness so dusk/night is not darker than day
+		maxShadow *= clamp(sunBrightness, 0.0, 1.0);
 		// Shadows attenuate diffuse and specular (shadows are not fully black)
 		totalDiffuse *= (1.0 - maxShadow * 0.7);
 		totalSpecular *= (1.0 - maxShadow);
 	}
 
 	out_Color = vec4(totalDiffuse, 1.0) * textureColour + vec4(totalSpecular, 1.0);
-	out_Color = mix(vec4(in_sky_color, 1.0), out_Color, io_fowVisibility);
+	// Fog color adapts to lighting: bright sky during day, dark at night
+	vec3 fogColor = in_sky_color * sunBrightness;
+	out_Color = mix(vec4(fogColor, 1.0), out_Color, io_fowVisibility);
 }

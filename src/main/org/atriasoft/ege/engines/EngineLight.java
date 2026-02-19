@@ -67,13 +67,13 @@ public class EngineLight extends Engine {
 		int count = 0;
 		for (final ComponentLightSun elem : this.componentSuns) {
 			out[count] = new Light(elem.getLight().getColor(), elem.getPosition(), elem.getLight().getAttenuation());
+			out[count].setRadius(elem.getLight().getRadius());
 			if (count >= 8) {
 				LOGGER.error("need to update ligth count");
 				return out;
 			}
 			count++;
 		}
-		//LOGGER.warn("Get {}/{} lights (SUN) ...", count, out.length);
 		final float maxDistance = 50 * 50;
 		for (final ComponentLight elem : this.componentLights) {
 			final Vector3f pos = elem.getPosition();
@@ -82,11 +82,16 @@ public class EngineLight extends Engine {
 				return out;
 			}
 			if (pos.distance2(position) < maxDistance) {
-				out[count] = new Light(elem.getLight().getColor(), pos, elem.getLight().getAttenuation());
+				final Light src = elem.getLight();
+				out[count] = new Light(src.getColor(), pos, src.getAttenuation(),
+						src.getDirection(), 0.0f, 0.0f);
+				// Pass cutoff cosines directly (already computed)
+				out[count].setCutoffCos(src.getCutoffCos());
+				out[count].setCutoffCosInner(src.getCutoffCosInner());
+				out[count].setRadius(src.getRadius());
 				count++;
 			}
 		}
-		//LOGGER.warn("Get {} / {} lights...", count, out.length,);
 		return out;
 	}
 	

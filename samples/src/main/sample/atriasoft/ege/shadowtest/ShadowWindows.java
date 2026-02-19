@@ -33,6 +33,7 @@ public class ShadowWindows extends Windows {
 	private Slider inclinationSlider;
 	private Label cascadeLabel;
 	private Button pcfButton;
+	private Label lampIntensityLabel;
 
 	// --- Static callbacks for connectAuto (prevent GC via weak ref) ---
 
@@ -107,6 +108,15 @@ public class ShadowWindows extends Windows {
 
 	private static void onThumbnailsToggled(final ShadowWindows self, final Boolean value) {
 		self.scene.getEngineShadow().setDebugThumbnailEnabled(value);
+	}
+
+	private static void onLampsToggled(final ShadowWindows self, final Boolean value) {
+		self.scene.setLampsEnabled(value);
+	}
+
+	private static void onLampIntensityChanged(final ShadowWindows self, final Float value) {
+		self.scene.setLampIntensity(value);
+		self.lampIntensityLabel.setPropertyValue(String.format("Intensity: %.1f", value));
 	}
 
 	public ShadowWindows() {
@@ -237,6 +247,29 @@ public class ShadowWindows extends Windows {
 		thumbnailsCheck.setPropertyFill(new Vector2b(true, false));
 		thumbnailsCheck.signalValue.connectAuto(this, ShadowWindows::onThumbnailsToggled);
 		panel.subWidgetAdd(thumbnailsCheck);
+
+		// --- Street Lamps section ---
+		final Label lampSectionLabel = new Label("<b>Street Lamps</b>");
+		panel.subWidgetAdd(lampSectionLabel);
+
+		final CheckBox lampsCheck = CheckBox.create("Lamps On")
+				.checked(true);
+		lampsCheck.setPropertyExpand(new Vector2b(true, false));
+		lampsCheck.setPropertyFill(new Vector2b(true, false));
+		lampsCheck.signalValue.connectAuto(this, ShadowWindows::onLampsToggled);
+		panel.subWidgetAdd(lampsCheck);
+
+		this.lampIntensityLabel = new Label("Intensity: 1.0");
+		panel.subWidgetAdd(this.lampIntensityLabel);
+
+		final Slider intensitySlider = Slider.create()
+				.range(0, 2)
+				.value(1.0f)
+				.step(0.1f);
+		intensitySlider.setPropertyExpand(new Vector2b(true, false));
+		intensitySlider.setPropertyFill(new Vector2b(true, false));
+		intensitySlider.signalValue.connectAuto(this, ShadowWindows::onLampIntensityChanged);
+		panel.subWidgetAdd(intensitySlider);
 
 		// --- Info section ---
 		final Label infoSectionLabel = new Label("<b>Info</b>");

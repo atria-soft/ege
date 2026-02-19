@@ -136,10 +136,14 @@ void main(void) {
 		totalDiffuse = totalDiffuse + diffuse;
 		totalSpecular = totalSpecular + finalSpecular;
 	}
-	// Hemisphere ambient: sky-facing normals get more ambient light than ground-facing.
+	// Light-direction ambient: faces facing or perpendicular to main light get full
+	// ambient, faces opposite the light are attenuated down to 30%.
 	// This reveals surface variation even without direct lighting.
-	float hemisphereBlend = unitNormal.z * 0.5 + 0.5; // 0=down, 1=up
-	vec3 ambientColor = mix(vec3(0.05), vec3(0.15), hemisphereBlend);
+	vec3 mainLightDir = normalize(io_toLightVector[0]);
+	float nDotL = dot(unitNormal, mainLightDir);
+	// nDotL >= 0 → 1.0 (facing or perpendicular), nDotL = -1 → 0.3 (opposite)
+	float ambientScale = nDotL >= 0.0 ? 1.0 : mix(1.0, 0.3, -nDotL);
+	vec3 ambientColor = vec3(0.15) * ambientScale;
 	// Tint ambient with first light color for natural day/night variation
 	vec3 lightTint = max(in_lights[0].color, vec3(0.3));
 	ambientColor *= lightTint;

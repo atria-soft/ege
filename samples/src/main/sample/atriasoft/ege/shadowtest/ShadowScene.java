@@ -1,5 +1,6 @@
 package sample.atriasoft.ege.shadowtest;
 
+import java.util.ArrayList;
 import java.util.List;
 
 import org.atriasoft.ege.ControlCameraSimple;
@@ -10,11 +11,11 @@ import org.atriasoft.ege.Material;
 import org.atriasoft.ege.celestial.CelestialBody;
 import org.atriasoft.ege.celestial.CelestialBodyType;
 import org.atriasoft.ege.celestial.CelestialSystem;
+import org.atriasoft.ege.components.ComponentLight;
 import org.atriasoft.ege.components.ComponentLightSun;
 import org.atriasoft.ege.components.ComponentMaterial;
 import org.atriasoft.ege.components.ComponentMesh;
 import org.atriasoft.ege.components.ComponentPosition;
-import org.atriasoft.ege.components.ComponentRenderColoredStaticMesh;
 import org.atriasoft.ege.components.ComponentRenderMeshPalette;
 import org.atriasoft.ege.components.ComponentRenderTexturedMaterialsStaticMesh;
 import org.atriasoft.ege.components.ComponentStaticMesh;
@@ -22,13 +23,14 @@ import org.atriasoft.ege.components.ComponentTexture;
 import org.atriasoft.ege.components.ComponentTexturePalette;
 import org.atriasoft.ege.engines.EngineShadow;
 import org.atriasoft.ege.shadow.ShadowCascade;
-import org.atriasoft.ege.tools.MeshGenerator;
 import org.atriasoft.etk.Color;
 import org.atriasoft.etk.Uri;
 import org.atriasoft.etk.math.Matrix4f;
 import org.atriasoft.etk.math.Transform3D;
 import org.atriasoft.etk.math.Vector3f;
 import org.atriasoft.gale.resource.ResourceColored3DObject;
+import org.atriasoft.loader3d.model.LightData;
+import org.atriasoft.loader3d.resources.ResourceMesh;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -55,6 +57,12 @@ public class ShadowScene extends EgeScene {
 	private boolean drawFrustumWireframe = false;
 	private boolean drawLightAABB = false;
 	private boolean drawSunDirection = true;
+
+	// Street lamps
+	private final List<ComponentLight> lampLights = new ArrayList<>();
+	private final List<Color> lampOriginalColors = new ArrayList<>();
+	private boolean lampsEnabled = true;
+	private float lampIntensity = 1.0f;
 
 	public ShadowScene() {
 		// Override default camera position for shadow test
@@ -142,21 +150,47 @@ public class ShadowScene extends EgeScene {
 		createCube(new Vector3f(4, -3, 0.5f), shadowVert, shadowFrag);
 		createCube(new Vector3f(0, 4, 1.5f), shadowVert, shadowFrag);
 
-		// --- Trees ---
+		// --- Trees (spread over a larger area) ---
 		final Uri paletteVert = new Uri("DATA", "basicPalette.vert");
 		final Uri paletteFrag = new Uri("DATA", "basicPalette.frag");
-		createTree(new Vector3f(-6, 5, 0), "tree1.emf", paletteVert, paletteFrag);
-		createTree(new Vector3f(8, -4, 0), "tree1.emf", paletteVert, paletteFrag);
-		createTree(new Vector3f(-10, -8, 0), "tree1.emf", paletteVert, paletteFrag);
-		createTree(new Vector3f(12, 7, 0), "tree1.emf", paletteVert, paletteFrag);
-		createTree(new Vector3f(-4, 12, 0), "tree1.emf", paletteVert, paletteFrag);
-		createTree(new Vector3f(6, -10, 0), "tree1.emf", paletteVert, paletteFrag);
-		createTree(new Vector3f(5, 8, 0), "tree2.emf", paletteVert, paletteFrag);
-		createTree(new Vector3f(-8, -3, 0), "tree2.emf", paletteVert, paletteFrag);
+		// Inner ring
+		createTree(new Vector3f(-4, 3, 0), "tree1.emf", paletteVert, paletteFrag);
+		createTree(new Vector3f(5, -2, 0), "tree1.emf", paletteVert, paletteFrag);
+		createTree(new Vector3f(-2, -5, 0), "tree2.emf", paletteVert, paletteFrag);
+		createTree(new Vector3f(3, 5, 0), "tree2.emf", paletteVert, paletteFrag);
+		// Mid ring
+		createTree(new Vector3f(-8, 6, 0), "tree1.emf", paletteVert, paletteFrag);
+		createTree(new Vector3f(9, -5, 0), "tree1.emf", paletteVert, paletteFrag);
+		createTree(new Vector3f(-6, -9, 0), "tree2.emf", paletteVert, paletteFrag);
+		createTree(new Vector3f(7, 8, 0), "tree2.emf", paletteVert, paletteFrag);
+		createTree(new Vector3f(-10, -3, 0), "tree1.emf", paletteVert, paletteFrag);
 		createTree(new Vector3f(10, 3, 0), "tree2.emf", paletteVert, paletteFrag);
-		createTree(new Vector3f(-12, 6, 0), "tree2.emf", paletteVert, paletteFrag);
-		createTree(new Vector3f(2, -12, 0), "tree2.emf", paletteVert, paletteFrag);
-		createTree(new Vector3f(-7, -10, 0), "tree2.emf", paletteVert, paletteFrag);
+		createTree(new Vector3f(0, 10, 0), "tree1.emf", paletteVert, paletteFrag);
+		createTree(new Vector3f(0, -10, 0), "tree2.emf", paletteVert, paletteFrag);
+		// Outer ring
+		createTree(new Vector3f(-14, 10, 0), "tree1.emf", paletteVert, paletteFrag);
+		createTree(new Vector3f(15, -8, 0), "tree1.emf", paletteVert, paletteFrag);
+		createTree(new Vector3f(-12, -12, 0), "tree2.emf", paletteVert, paletteFrag);
+		createTree(new Vector3f(13, 11, 0), "tree2.emf", paletteVert, paletteFrag);
+		createTree(new Vector3f(-16, -5, 0), "tree1.emf", paletteVert, paletteFrag);
+		createTree(new Vector3f(16, 2, 0), "tree2.emf", paletteVert, paletteFrag);
+		createTree(new Vector3f(-5, 15, 0), "tree1.emf", paletteVert, paletteFrag);
+		createTree(new Vector3f(4, -15, 0), "tree2.emf", paletteVert, paletteFrag);
+		// Far corners
+		createTree(new Vector3f(-18, 14, 0), "tree2.emf", paletteVert, paletteFrag);
+		createTree(new Vector3f(18, -13, 0), "tree1.emf", paletteVert, paletteFrag);
+		createTree(new Vector3f(-17, -15, 0), "tree1.emf", paletteVert, paletteFrag);
+		createTree(new Vector3f(17, 14, 0), "tree2.emf", paletteVert, paletteFrag);
+		createTree(new Vector3f(-20, 0, 0), "tree1.emf", paletteVert, paletteFrag);
+		createTree(new Vector3f(20, 0, 0), "tree2.emf", paletteVert, paletteFrag);
+		createTree(new Vector3f(0, 18, 0), "tree2.emf", paletteVert, paletteFrag);
+		createTree(new Vector3f(0, -18, 0), "tree1.emf", paletteVert, paletteFrag);
+
+		// --- Lampadaires (4 lamps around the scene, not too far from objects) ---
+		addLamp(new Vector3f(-8, 8, 0), "roadLamp.emf", paletteVert, paletteFrag);
+		addLamp(new Vector3f(8, 8, 0), "roadLamp2.emf", paletteVert, paletteFrag);
+		addLamp(new Vector3f(-8, -8, 0), "roadLamp.emf", paletteVert, paletteFrag);
+		addLamp(new Vector3f(8, -8, 0), "roadLamp2.emf", paletteVert, paletteFrag);
 
 		// --- Camera control ---
 		final ControlCameraSimple simpleControl = new ControlCameraSimple(this.mainView);
@@ -192,6 +226,76 @@ public class ShadowScene extends EgeScene {
 		tree.addComponent(new ComponentTexturePalette(new Uri("DATA", emfFile)));
 		tree.addComponent(new ComponentRenderMeshPalette(vertShader, fragShader));
 		this.env.addEntity(tree);
+	}
+
+	private List<ComponentLight> createLamp(
+			final Vector3f position,
+			final String emfFile,
+			final Uri vertShader,
+			final Uri fragShader) {
+		final Uri meshUri = new Uri("DATA", emfFile);
+		final Entity lamp = new Entity(this.env);
+		lamp.addComponent(new ComponentPosition(new Transform3D(position)));
+		lamp.addComponent(new ComponentMesh(meshUri));
+		lamp.addComponent(new ComponentTexturePalette(meshUri));
+		lamp.addComponent(new ComponentRenderMeshPalette(vertShader, fragShader));
+		// Auto-load lights from the .emf file
+		final List<ComponentLight> lights = new ArrayList<>();
+		final ResourceMesh resourceMesh = ResourceMesh.create(meshUri);
+		if (resourceMesh != null) {
+			for (final LightData lightData : resourceMesh.getLights()) {
+				if (lightData.getType() == LightData.LightType.SUN) {
+					continue; // Skip sun lights — only local lights
+				}
+				final Vector3f col = lightData.getColor();
+				final Light light;
+				if (lightData.getType() == LightData.LightType.SPOT) {
+					light = new Light(
+							new Color(col.x(), col.y(), col.z()),
+							lightData.getPosition(),
+							lightData.getAttenuation(),
+							lightData.getDirection(),
+							lightData.getAngle(),
+							lightData.getBlend());
+				} else {
+					light = new Light(
+							new Color(col.x(), col.y(), col.z()),
+							lightData.getPosition(),
+							lightData.getAttenuation());
+				}
+				light.setRadius(lightData.getRadius());
+				final ComponentLight componentLight = new ComponentLight(light);
+				lamp.addComponent(componentLight);
+				lights.add(componentLight);
+				LOGGER.info("Loaded light from {}: type={} pos={} dir={} angle={} blend={} radius={} atten={}",
+						emfFile, lightData.getType(), lightData.getPosition(),
+						lightData.getDirection(), lightData.getAngle(), lightData.getBlend(),
+						lightData.getRadius(), lightData.getAttenuation());
+			}
+		}
+		if (lights.isEmpty()) {
+			LOGGER.warn("No lights found in {}, adding default point light", emfFile);
+			final ComponentLight defaultLight = new ComponentLight(
+					new Light(new Color(1.0f, 0.9f, 0.7f),
+							new Vector3f(0, 0, 3.0f),
+							new Vector3f(1.0f, 0.09f, 0.032f)));
+			lamp.addComponent(defaultLight);
+			lights.add(defaultLight);
+		}
+		this.env.addEntity(lamp);
+		return lights;
+	}
+
+	private void addLamp(
+			final Vector3f position,
+			final String emfFile,
+			final Uri vertShader,
+			final Uri fragShader) {
+		final List<ComponentLight> lights = createLamp(position, emfFile, vertShader, fragShader);
+		for (final ComponentLight light : lights) {
+			this.lampLights.add(light);
+			this.lampOriginalColors.add(light.getLight().getColor());
+		}
 	}
 
 	@Override
@@ -373,6 +477,37 @@ public class ShadowScene extends EgeScene {
 
 	public boolean isDrawSunDirection() {
 		return this.drawSunDirection;
+	}
+
+	public void setLampsEnabled(final boolean enabled) {
+		this.lampsEnabled = enabled;
+		updateLampColors();
+	}
+
+	public boolean isLampsEnabled() {
+		return this.lampsEnabled;
+	}
+
+	public void setLampIntensity(final float intensity) {
+		this.lampIntensity = intensity;
+		updateLampColors();
+	}
+
+	public float getLampIntensity() {
+		return this.lampIntensity;
+	}
+
+	private void updateLampColors() {
+		final float scale = this.lampsEnabled ? this.lampIntensity : 0.0f;
+		for (int idx = 0; idx < this.lampLights.size(); idx++) {
+			final Color original = this.lampOriginalColors.get(idx);
+			final Color scaled = new Color(
+					original.r() * scale,
+					original.g() * scale,
+					original.b() * scale,
+					original.a());
+			this.lampLights.get(idx).getLight().setColor(scaled);
+		}
 	}
 
 	// --- Utility ---

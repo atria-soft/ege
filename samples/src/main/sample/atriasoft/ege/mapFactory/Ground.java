@@ -62,7 +62,7 @@ public class Ground {
 				if (xxx % 2 == 1) {
 					offset = 0.5f;
 				}
-				float dist2 = position.less(xxx, yyy + offset, 0).length2();
+				float dist2 = position.less(xxx, 0, yyy + offset).length2();
 				if (dist2 < distance * distance) {
 					this.heightMap[yyy][xxx] = applyer.apply(this.heightMap[yyy][xxx], Maths.sqrt(dist2));
 				}
@@ -78,14 +78,14 @@ public class Ground {
 	public void drawDynamicElement(ResourceColored3DObject dynamicElement, Vector3f position, float distance) {
 		for (int yyy = 0; yyy < this.sizeY; yyy++) {
 			for (int xxx = 0; xxx < this.sizeX; xxx++) {
-				float dist2 = position.less(xxx, yyy, 0).length2();
+				float dist2 = position.less(xxx, 0, yyy).length2();
 				if (dist2 < distance * distance) {
 					float coneHeight = 0.6f;
 					float offset = 0.0f;
 					if (xxx % 2 == 1) {
 						offset = 0.5f;
 					}
-					Transform3D tmpTransform = new Transform3D(new Vector3f(xxx, yyy + offset, this.heightMap[yyy][xxx] + coneHeight * 0.5f));
+					Transform3D tmpTransform = new Transform3D(new Vector3f(xxx, this.heightMap[yyy][xxx] + coneHeight * 0.5f, yyy + offset));
 					dynamicElement.drawCone(coneHeight * 0.5f, coneHeight, 10, 3, tmpTransform.getOpenGLMatrix(), Color.RED);
 				}
 			}
@@ -141,11 +141,11 @@ public class Ground {
 		for (float t = 0.0f; t < maxDistance; t += step) {
 			final Vector3f point = ray.origin().add(ray.direction().multiply(t));
 			final float px = point.x();
-			final float py = point.y();
+			final float pz = point.z();
 			// Only test when within (or near) the heightmap bounds
-			if (px >= -1 && px <= this.sizeX && py >= -1 && py <= this.sizeY) {
-				final float terrainHeight = getHeightAt(px, py);
-				final boolean isAbove = point.z() > terrainHeight;
+			if (px >= -1 && px <= this.sizeX && pz >= -1 && pz <= this.sizeY) {
+				final float terrainHeight = getHeightAt(px, pz);
+				final boolean isAbove = point.y() > terrainHeight;
 				if (wasAbove && !isAbove) {
 					// Crossed the terrain — binary search between prevT and t
 					float tLow = prevT;
@@ -153,7 +153,7 @@ public class Ground {
 					for (int i = 0; i < 16; i++) {
 						final float tMid = (tLow + tHigh) * 0.5f;
 						final Vector3f midPoint = ray.origin().add(ray.direction().multiply(tMid));
-						if (midPoint.z() > getHeightAt(midPoint.x(), midPoint.y())) {
+						if (midPoint.y() > getHeightAt(midPoint.x(), midPoint.z())) {
 							tLow = tMid;
 						} else {
 							tHigh = tMid;
@@ -161,7 +161,7 @@ public class Ground {
 					}
 					final float tFinal = (tLow + tHigh) * 0.5f;
 					final Vector3f hit = ray.origin().add(ray.direction().multiply(tFinal));
-					return new Vector3f(hit.x(), hit.y(), getHeightAt(hit.x(), hit.y()));
+					return new Vector3f(hit.x(), getHeightAt(hit.x(), hit.z()), hit.z());
 				}
 				wasAbove = isAbove;
 			}

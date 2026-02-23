@@ -135,7 +135,7 @@ public class ShadowTestApplication extends GaleApplication {
 
 		// --- Ground plane (receives shadows) ---
 		final Entity ground = new Entity(this.env);
-		ground.addComponent(new ComponentPosition(new Transform3D(new Vector3f(0, 0, -0.01f))));
+		ground.addComponent(new ComponentPosition(new Transform3D(new Vector3f(0, -0.01f, 0))));
 		ground.addComponent(new ComponentStaticMesh(new Uri("DATA", "ground.obj")));
 		ground.addComponent(new ComponentTexture(new Uri("DATA", "dirt.png")));
 		ground.addComponent(new ComponentMaterial(new Material()));
@@ -144,37 +144,37 @@ public class ShadowTestApplication extends GaleApplication {
 		this.env.addEntity(ground);
 
 		// --- Shadow casting cubes ---
-		createCube(new Vector3f(0, 0, 0.5f), shadowVert, shadowFrag);
-		createCube(new Vector3f(3, 2, 0.5f), shadowVert, shadowFrag);
-		createCube(new Vector3f(-2, 3, 0.5f), shadowVert, shadowFrag);
-		createCube(new Vector3f(-3, -2, 1.0f), shadowVert, shadowFrag);
-		createCube(new Vector3f(4, -3, 0.5f), shadowVert, shadowFrag);
+		createCube(new Vector3f(0, 0.5f, 0), shadowVert, shadowFrag);
+		createCube(new Vector3f(3, 0.5f, 2), shadowVert, shadowFrag);
+		createCube(new Vector3f(-2, 0.5f, 3), shadowVert, shadowFrag);
+		createCube(new Vector3f(-3, 1.0f, -2), shadowVert, shadowFrag);
+		createCube(new Vector3f(4, 0.5f, -3), shadowVert, shadowFrag);
 		// A taller cube to see longer shadows
-		createCube(new Vector3f(0, 4, 1.5f), shadowVert, shadowFrag);
+		createCube(new Vector3f(0, 1.5f, 4), shadowVert, shadowFrag);
 
 		// --- Low-poly trees (EMF format with palette rendering) ---
 		final Uri paletteVert = new Uri("DATA", "basicPalette.vert");
 		final Uri paletteFrag = new Uri("DATA", "basicPalette.frag");
 		// tree1 variants scattered around
-		createTree(new Vector3f(-6, 5, 0), "tree1.emf", paletteVert, paletteFrag);
-		createTree(new Vector3f(8, -4, 0), "tree1.emf", paletteVert, paletteFrag);
-		createTree(new Vector3f(-10, -8, 0), "tree1.emf", paletteVert, paletteFrag);
-		createTree(new Vector3f(12, 7, 0), "tree1.emf", paletteVert, paletteFrag);
-		createTree(new Vector3f(-4, 12, 0), "tree1.emf", paletteVert, paletteFrag);
-		createTree(new Vector3f(6, -10, 0), "tree1.emf", paletteVert, paletteFrag);
+		createTree(new Vector3f(-6, 0, 5), "tree1.emf", paletteVert, paletteFrag);
+		createTree(new Vector3f(8, 0, -4), "tree1.emf", paletteVert, paletteFrag);
+		createTree(new Vector3f(-10, 0, -8), "tree1.emf", paletteVert, paletteFrag);
+		createTree(new Vector3f(12, 0, 7), "tree1.emf", paletteVert, paletteFrag);
+		createTree(new Vector3f(-4, 0, 12), "tree1.emf", paletteVert, paletteFrag);
+		createTree(new Vector3f(6, 0, -10), "tree1.emf", paletteVert, paletteFrag);
 		// tree2 variants
-		createTree(new Vector3f(5, 8, 0), "tree2.emf", paletteVert, paletteFrag);
-		createTree(new Vector3f(-8, -3, 0), "tree2.emf", paletteVert, paletteFrag);
-		createTree(new Vector3f(10, 3, 0), "tree2.emf", paletteVert, paletteFrag);
-		createTree(new Vector3f(-12, 6, 0), "tree2.emf", paletteVert, paletteFrag);
-		createTree(new Vector3f(2, -12, 0), "tree2.emf", paletteVert, paletteFrag);
-		createTree(new Vector3f(-7, -10, 0), "tree2.emf", paletteVert, paletteFrag);
+		createTree(new Vector3f(5, 0, 8), "tree2.emf", paletteVert, paletteFrag);
+		createTree(new Vector3f(-8, 0, -3), "tree2.emf", paletteVert, paletteFrag);
+		createTree(new Vector3f(10, 0, 3), "tree2.emf", paletteVert, paletteFrag);
+		createTree(new Vector3f(-12, 0, 6), "tree2.emf", paletteVert, paletteFrag);
+		createTree(new Vector3f(2, 0, -12), "tree2.emf", paletteVert, paletteFrag);
+		createTree(new Vector3f(-7, 0, -10), "tree2.emf", paletteVert, paletteFrag);
 
 		// --- Camera ---
 		final Camera mainView = new Camera();
 		this.env.addCamera("default", mainView);
-		mainView.setPitch((float) Math.PI * -0.3f);
-		mainView.setPosition(new Vector3f(0, -12, 10));
+		mainView.setPitch((float) Math.PI * 0.3f);
+		mainView.setPosition(new Vector3f(0, 10, 12));
 
 		this.simpleControl = new ControlCameraSimple(mainView);
 		this.env.addControlInterface(this.simpleControl);
@@ -315,7 +315,7 @@ public class ShadowTestApplication extends GaleApplication {
 				dir.y() * SUN_LIGHT_DISTANCE,
 				dir.z() * SUN_LIGHT_DISTANCE)));
 		// Sync the sun light color based on height (twilight = warm orange/red)
-		final Color sunColor = computeSunLightColor(dir.z());
+		final Color sunColor = computeSunLightColor(dir.y());
 		this.sunLightComponent.getLight().setColor(sunColor);
 		markDrawingIsNeeded();
 	}
@@ -338,26 +338,26 @@ public class ShadowTestApplication extends GaleApplication {
 
 		// Yellow line: origin → sun direction
 		final List<Vector3f> sunLine = List.of(
-				new Vector3f(0, 0, 0.1f),
-				new Vector3f(dir.x() * lineLen, dir.y() * lineLen, dir.z() * lineLen + 0.1f));
+				new Vector3f(0, 0.1f, 0),
+				new Vector3f(dir.x() * lineLen, dir.y() * lineLen + 0.1f, dir.z() * lineLen));
 		this.debugDraw.drawLine(sunLine, new Color(1.0f, 1.0f, 0.0f, 1.0f), Matrix4f.IDENTITY, false, true);
 
 		// Red line: origin → opposite direction (where shadow falls)
 		final List<Vector3f> shadowLine = List.of(
-				new Vector3f(0, 0, 0.1f),
-				new Vector3f(-dir.x() * shadowLen, -dir.y() * shadowLen, -dir.z() * shadowLen + 0.1f));
+				new Vector3f(0, 0.1f, 0),
+				new Vector3f(-dir.x() * shadowLen, -dir.y() * shadowLen + 0.1f, -dir.z() * shadowLen));
 		this.debugDraw.drawLine(shadowLine, new Color(1.0f, 0.0f, 0.0f, 1.0f), Matrix4f.IDENTITY, false, true);
 	}
 
 	/**
 	 * Compute the sun light color based on its height above the horizon.
 	 * <ul>
-	 *   <li>Below horizon (z &lt; 0): black — no light</li>
-	 *   <li>Near horizon (0 &lt; z &lt; 0.1): deep orange/red (twilight)</li>
-	 *   <li>Low sun (0.1 &lt; z &lt; 0.4): orange → warm white transition</li>
-	 *   <li>High sun (z &gt; 0.4): warm white (1.0, 1.0, 0.9)</li>
+	 *   <li>Below horizon (y &lt; 0): black — no light</li>
+	 *   <li>Near horizon (0 &lt; y &lt; 0.1): deep orange/red (twilight)</li>
+	 *   <li>Low sun (0.1 &lt; y &lt; 0.4): orange → warm white transition</li>
+	 *   <li>High sun (y &gt; 0.4): warm white (1.0, 1.0, 0.9)</li>
 	 * </ul>
-	 * @param height The Z component of the sun direction (height above horizon)
+	 * @param height The Y component of the sun direction (height above horizon)
 	 * @return The computed light color
 	 */
 	private static Color computeSunLightColor(final float height) {

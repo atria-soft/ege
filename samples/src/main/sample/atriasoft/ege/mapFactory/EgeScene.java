@@ -58,8 +58,8 @@ public class EgeScene extends Widget {
 		// default camera....
 		this.mainView = new Camera();
 		this.env.addCamera("default", this.mainView);
-		this.mainView.setPitch((float) Math.PI * -0.25f);
-		this.mainView.setPosition(new Vector3f(4, -5, 5));
+		this.mainView.setPitch((float) Math.PI * 0.25f);
+		this.mainView.setPosition(new Vector3f(4, 5, 5));
 
 		this.projection = new ProjectionPerspective();
 

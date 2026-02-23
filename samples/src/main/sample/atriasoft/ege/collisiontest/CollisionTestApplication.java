@@ -85,7 +85,7 @@ public class CollisionTestApplication extends GaleApplication {
 
 		// simple sun to have a global light ...
 		final Entity globalGravity = new Entity(this.env);
-		globalGravity.addComponent(new ComponentGravityStatic(new Vector3f(0, 0, -1)));
+		globalGravity.addComponent(new ComponentGravityStatic(new Vector3f(0, -1, 0)));
 		this.env.addEntity(globalGravity);
 
 		// simple sun to have a global light ...
@@ -97,7 +97,7 @@ public class CollisionTestApplication extends GaleApplication {
 
 		// add a cube to show where in the light ...
 		final Entity localLight = new Entity(this.env);
-		this.lightPosition = new ComponentPosition(new Transform3D(new Vector3f(-10, -10, 17)));
+		this.lightPosition = new ComponentPosition(new Transform3D(new Vector3f(-10, 17, -10)));
 		//		localLight.addComponent(lightPosition);
 		//		localLight.addComponent(new ComponentStaticMesh(new Uri("RES", "cube.obj")));
 		//		localLight.addComponent(new ComponentTexture(new Uri("RES", "grass.png")));
@@ -119,7 +119,7 @@ public class CollisionTestApplication extends GaleApplication {
 			final ComponentPhysics physics2 = new ComponentPhysics(this.env);
 			physics2.setBodyType(PhysicBodyType.BODY_STATIC);
 			final PhysicBox box2 = new PhysicBox();
-			box2.setSize(new Vector3f(5.0f, 5.0f, 0.5f));
+			box2.setSize(new Vector3f(5.0f, 0.5f, 5.0f));
 			box2.setOrigin(Vector3f.ZERO);
 			box2.setMass(0);
 			physics2.addShape(box2);
@@ -158,7 +158,7 @@ public class CollisionTestApplication extends GaleApplication {
 		this.env.addEntity(gird);
 
 		final Entity player = new Entity(this.env);
-		final Transform3D playerTransform = new Transform3D(new Vector3f(0, -5, 0));
+		final Transform3D playerTransform = new Transform3D(new Vector3f(0, 0, -5));
 		this.objectPosition = new ComponentPositionPlayer();
 		player.addComponent(this.objectPosition);
 		this.objectPlayer = new ComponentPlayer();
@@ -171,8 +171,8 @@ public class CollisionTestApplication extends GaleApplication {
 		this.env.addEntity(player);
 		final Camera mainView = new Camera();
 		this.env.addCamera("default", mainView);
-		mainView.setPitch((float) Math.PI * -0.25f);
-		mainView.setPosition(new Vector3f(0, -5, 5));
+		mainView.setPitch((float) Math.PI * 0.25f);
+		mainView.setPosition(new Vector3f(0, 5, 5));
 
 		this.simpleControl = new ControlCameraPlayer(mainView, player);
 		this.env.addControlInterface(this.simpleControl);
@@ -229,22 +229,22 @@ public class CollisionTestApplication extends GaleApplication {
 			if (collide) {
 				this.debugDrawProperty.drawSquare(new Vector3f(0.1f, 0.1f, 0.1f),
 						Matrix4f.IDENTITY.multiply(
-								Matrix4f.createMatrixTranslate(new Vector3f(elem.x(), elem.y(), elem.z() + 14))),
+								Matrix4f.createMatrixTranslate(new Vector3f(elem.x(), elem.y() + 14, elem.z()))),
 						new Color(1, 0, 0, 1));
 			} else if (iii == 0) {
 				this.debugDrawProperty.drawSquare(new Vector3f(0.05f, 0.05f, 0.05f),
 						Matrix4f.IDENTITY.multiply(
-								Matrix4f.createMatrixTranslate(new Vector3f(elem.x(), elem.y(), elem.z() + 14))),
+								Matrix4f.createMatrixTranslate(new Vector3f(elem.x(), elem.y() + 14, elem.z()))),
 						new Color(0, 1, 0, 1));
 			} else if (iii == 7) {
 				this.debugDrawProperty.drawSquare(new Vector3f(0.05f, 0.05f, 0.05f),
 						Matrix4f.IDENTITY.multiply(
-								Matrix4f.createMatrixTranslate(new Vector3f(elem.x(), elem.y(), elem.z() + 14))),
+								Matrix4f.createMatrixTranslate(new Vector3f(elem.x(), elem.y() + 14, elem.z()))),
 						new Color(1, 1, 0, 1));
 			} else {
 				this.debugDrawProperty.drawSquare(new Vector3f(0.1f, 0.1f, 0.1f),
 						Matrix4f.IDENTITY.multiply(
-								Matrix4f.createMatrixTranslate(new Vector3f(elem.x(), elem.y(), elem.z() + 14))),
+								Matrix4f.createMatrixTranslate(new Vector3f(elem.x(), elem.y() + 14, elem.z()))),
 						new Color(1, 1, 1, 1));
 			}
 		}
@@ -253,17 +253,17 @@ public class CollisionTestApplication extends GaleApplication {
 			if (iii == 0) {
 				this.debugDrawProperty.drawSquare(new Vector3f(0.05f, 0.05f, 0.05f),
 						Matrix4f.IDENTITY.multiply(
-								Matrix4f.createMatrixTranslate(new Vector3f(elem.x(), elem.y(), elem.z() + 14))),
+								Matrix4f.createMatrixTranslate(new Vector3f(elem.x(), elem.y() + 14, elem.z()))),
 						new Color(0, 1, 0, 1));
 			} else if (iii == 7) {
 				this.debugDrawProperty.drawSquare(new Vector3f(0.05f, 0.05f, 0.05f),
 						Matrix4f.IDENTITY.multiply(
-								Matrix4f.createMatrixTranslate(new Vector3f(elem.x(), elem.y(), elem.z() + 14))),
+								Matrix4f.createMatrixTranslate(new Vector3f(elem.x(), elem.y() + 14, elem.z()))),
 						new Color(1, 1, 0, 1));
 			} else {
 				this.debugDrawProperty.drawSquare(new Vector3f(0.1f, 0.1f, 0.1f),
 						Matrix4f.IDENTITY.multiply(
-								Matrix4f.createMatrixTranslate(new Vector3f(elem.x(), elem.y(), elem.z() + 14))),
+								Matrix4f.createMatrixTranslate(new Vector3f(elem.x(), elem.y() + 14, elem.z()))),
 						new Color(0, 0, 1, 1));
 			}
 		}
@@ -276,7 +276,7 @@ public class CollisionTestApplication extends GaleApplication {
 			final Matrix4f transformation = Matrix4f
 					.createMatrixTranslate(new Vector3f(CollisionTestApplication.testRpos.x(),
 							CollisionTestApplication.testRpos.y(), CollisionTestApplication.testRpos.z()))
-					.multiply(Matrix4f.createMatrixTranslate(new Vector3f(0, 0, 14)))
+					.multiply(Matrix4f.createMatrixTranslate(new Vector3f(0, 14, 0)))
 					.multiply(CollisionTestApplication.testQTransfert.getMatrix4());
 			// OK sans la box1 orientation ...
 			//Matrix4f transformation = Matrix4f.createMatrixTranslate(new Vector3f(testRpos.x,testRpos.y,testRpos.z)).multiply(testQTransfert.getMatrix4()).multiply(Matrix4f.createMatrixTranslate(new Vector3f(0,0,14)));
@@ -284,7 +284,7 @@ public class CollisionTestApplication extends GaleApplication {
 			this.debugDrawProperty.drawSquare(CollisionTestApplication.box2HalfSize, transformation,
 					new Color(0, 1, 0, 0.5f));
 			this.debugDrawProperty.drawSquare(CollisionTestApplication.box1HalfSize,
-					Matrix4f.createMatrixTranslate(new Vector3f(0, 0, 14)), new Color(0, 0, 1, 0.5f));
+					Matrix4f.createMatrixTranslate(new Vector3f(0, 14, 0)), new Color(0, 0, 1, 0.5f));
 		}
 
 		// Restore context of matrix
@@ -324,7 +324,7 @@ public class CollisionTestApplication extends GaleApplication {
 		//LOGGER.trace("Regenerate Gale Application");
 		this.angleLight += 0.01;
 		final Vector3f posss = this.lightPosition.getTransform().getPosition().add(new Vector3f(
-				5 + (float) Math.cos(this.angleLight) * 7.0f, 5 + (float) Math.sin(this.angleLight) * 7.0f, 0));
+				5 + (float) Math.cos(this.angleLight) * 7.0f, 0, 5 + (float) Math.sin(this.angleLight) * 7.0f));
 		this.lightPosition.setTransform(this.lightPosition.getTransform().withPosition(posss));
 		this.env.periodicCall();
 		markDrawingIsNeeded();

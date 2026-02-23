@@ -60,12 +60,12 @@ class MeshData {
 
 public class MeshGenerator {
 	public static ResourceStaticColoredMesh createGrid(final int lineCount) {
-		MeshData meshData = new MeshData();
-		Color colorRed = new Color(1, 0, 0, 1);
-		Color colorGreen = new Color(0, 1, 0, 1);
-		Color colorBlue = new Color(0, 0, 1, 1);
-		Color colorGray = new Color(0.5f, 0.5f, 0.5f, 1);
-		// create X lines
+		final MeshData meshData = new MeshData();
+		final Color colorRed = new Color(1, 0, 0, 1);
+		final Color colorGreen = new Color(0, 1, 0, 1);
+		final Color colorBlue = new Color(0, 0, 1, 1);
+		final Color colorGray = new Color(0.5f, 0.5f, 0.5f, 1);
+		// create X axis lines (red) — runs along X on the XZ ground plane
 		for (int iii = -lineCount; iii <= lineCount; ++iii) {
 			if (iii == 0) {
 				meshData.addLine(new Vector3f(-lineCount, 0, 0), new Vector3f(lineCount + 1, 0, 0), colorRed);
@@ -74,16 +74,15 @@ public class MeshGenerator {
 				meshData.addLine(new Vector3f(lineCount + 1.0f, 0, 0), new Vector3f(lineCount + 0.5f, -0.5f, 0), colorRed);
 				meshData.addLine(new Vector3f(lineCount + 1.0f, 0, 0), new Vector3f(lineCount + 0.5f, 0, 0.5f), colorRed);
 				meshData.addLine(new Vector3f(lineCount + 1.0f, 0, 0), new Vector3f(lineCount + 0.5f, 0, -0.5f), colorRed);
-				// X letter
+				// X letter (vertical plane at end of X axis)
 				meshData.addLine(new Vector3f(lineCount + 2.0f, 1.0f, -1.0f), new Vector3f(lineCount + 2.0f, -1.0f, 1.0f), colorRed);
 				meshData.addLine(new Vector3f(lineCount + 2.0f, -1.0f, -1.0f), new Vector3f(lineCount + 2.0f, 1.0f, 1.0f), colorRed);
 			} else {
-				meshData.addLine(new Vector3f(-lineCount, iii, 0), new Vector3f(lineCount, iii, 0), colorGray);
+				// gray grid line along X at Z=iii, Y=0
+				meshData.addLine(new Vector3f(-lineCount, 0, iii), new Vector3f(lineCount, 0, iii), colorGray);
 			}
-			//out.addPoint(new Vector3f(-_lineCount,iii,0), etk::color::white);
-			//out.addPoint(new Vector3f(_lineCount,iii,0), etk::color::white);
 		}
-		// create Y lines
+		// create Y axis (green) — vertical axis, goes up
 		for (int iii = -lineCount; iii <= lineCount; ++iii) {
 			if (iii == 0) {
 				meshData.addLine(new Vector3f(0, -lineCount, 0), new Vector3f(0, lineCount + 1, 0), colorGreen);
@@ -92,17 +91,21 @@ public class MeshGenerator {
 				meshData.addLine(new Vector3f(0, lineCount + 1.0f, 0), new Vector3f(-0.5f, lineCount + 0.5f, 0), colorGreen);
 				meshData.addLine(new Vector3f(0, lineCount + 1.0f, 0), new Vector3f(0, lineCount + 0.5f, 0.5f), colorGreen);
 				meshData.addLine(new Vector3f(0, lineCount + 1.0f, 0), new Vector3f(0, lineCount + 0.5f, -0.5f), colorGreen);
-				// Y letter
+				// Y letter (at top of Y axis)
 				meshData.addLine(new Vector3f(0, lineCount + 2.0f, 0), new Vector3f(0.7f, lineCount + 2.0f, 1.0f), colorGreen);
 				meshData.addLine(new Vector3f(0, lineCount + 2.0f, 0), new Vector3f(-0.7f, lineCount + 2.0f, 1.0f), colorGreen);
 				meshData.addLine(new Vector3f(0, lineCount + 2.0f, 0), new Vector3f(0, lineCount + 2.0f, -1.0f), colorGreen);
 			} else {
-				meshData.addLine(new Vector3f(iii, -lineCount, 0), new Vector3f(iii, lineCount, 0), colorGray);
+				List<Vector3f> list = new ArrayList<>();
+				list.add(new Vector3f(-1, iii, -1));
+				list.add(new Vector3f(1, iii, -1));
+				list.add(new Vector3f(1, iii, 1));
+				list.add(new Vector3f(-1, iii, 1));
+				list.add(new Vector3f(-1, iii, -1));
+				meshData.addLines(list, colorGray);
 			}
-			//out.addPoint(new Vector3f(iii,-_lineCount,0), etk::color::white);
-			//out.addPoint(new Vector3f(iii,_lineCount,0), etk::color::white);
 		}
-		// create Z lines
+		// create Z axis lines (blue) — runs along Z on the XZ ground plane
 		for (int iii = -lineCount; iii <= lineCount; ++iii) {
 			if (iii == 0) {
 				meshData.addLine(new Vector3f(0, 0, -lineCount), new Vector3f(0, 0, lineCount + 1), colorBlue);
@@ -111,22 +114,14 @@ public class MeshGenerator {
 				meshData.addLine(new Vector3f(0, 0, lineCount + 1), new Vector3f(-0.5f, 0, lineCount + 0.5f), colorBlue);
 				meshData.addLine(new Vector3f(0, 0, lineCount + 1), new Vector3f(0, 0.5f, lineCount + 0.5f), colorBlue);
 				meshData.addLine(new Vector3f(0, 0, lineCount + 1), new Vector3f(0, -0.5f, lineCount + 0.5f), colorBlue);
-				// Z letter
-				meshData.addLine(new Vector3f(1, -1, lineCount + 2.0f), new Vector3f(1, 1, lineCount + 2.0f), colorBlue);
+				// Z letter (vertical plane at end of Z axis)
+				meshData.addLine(new Vector3f(-1, 1, lineCount + 2.0f), new Vector3f(1, 1, lineCount + 2.0f), colorBlue);
 				meshData.addLine(new Vector3f(1, 1, lineCount + 2.0f), new Vector3f(-1, -1, lineCount + 2.0f), colorBlue);
-				meshData.addLine(new Vector3f(-1, -1, lineCount + 2.0f), new Vector3f(-1, 1, lineCount + 2.0f), colorBlue);
-				
+				meshData.addLine(new Vector3f(-1, -1, lineCount + 2.0f), new Vector3f(1, -1, lineCount + 2.0f), colorBlue);
 			} else {
-				List<Vector3f> list = new ArrayList<>();
-				list.add(new Vector3f(-1, -1, iii));
-				list.add(new Vector3f(1, -1, iii));
-				list.add(new Vector3f(1, 1, iii));
-				list.add(new Vector3f(-1, 1, iii));
-				list.add(new Vector3f(-1, -1, iii));
-				meshData.addLines(list, colorGray);
+				// gray grid line along Z at X=iii, Y=0
+				meshData.addLine(new Vector3f(iii, 0, -lineCount), new Vector3f(iii, 0, lineCount), colorGray);
 			}
-			//out.addPoint(_materialName, new Vector3f(iii,-_lineCount,0), etk::color::white);
-			//out.addPoint(_materialName, new Vector3f(iii,_lineCount,0), etk::color::white);
 		}
 		return ResourceStaticColoredMesh.create(meshData.getListOfVertices(), meshData.getListOfColors(), null, meshData.getListOfIndices(), RenderMode.LINE);
 	}

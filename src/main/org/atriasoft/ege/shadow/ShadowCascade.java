@@ -204,15 +204,15 @@ public class ShadowCascade {
 		}
 
 		// Continuous up-vector blending to avoid discontinuity at the zenith.
-		// When forward is horizontal, up = (0,0,1) (Z-up world).
-		// When forward approaches vertical (|fz| → 1), up blends towards (0,1,0).
-		// t=0 → Z-up, t=1 → Y-up. Smooth transition using abs(fz).
-		final float absFz = Math.abs(fz);
-		final float t = Math.max(0.0f, Math.min(1.0f, (absFz - 0.7f) / 0.25f));
-		// up = lerp((0,0,1), (0,1,0), t) then normalize
+		// When forward is horizontal, up = (0,1,0) (Y-up world).
+		// When forward approaches vertical (|fy| → 1), up blends towards (0,0,1).
+		// t=0 → Y-up, t=1 → Z fallback. Smooth transition using abs(fy).
+		final float absFy = Math.abs(fy);
+		final float t = Math.max(0.0f, Math.min(1.0f, (absFy - 0.7f) / 0.25f));
+		// up = lerp((0,1,0), (0,0,1), t) then normalize
 		float upX = 0.0f;
-		float upY = t;
-		float upZ = 1.0f - t;
+		float upY = 1.0f - t;
+		float upZ = t;
 		final float upLen = (float) Math.sqrt(upY * upY + upZ * upZ);
 		if (upLen > 0.0001f) {
 			upY /= upLen;

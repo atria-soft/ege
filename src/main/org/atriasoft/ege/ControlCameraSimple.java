@@ -78,18 +78,18 @@ public class ControlCameraSimple implements ControlInterface {
 				//angleZ += delta.x;
 				//this.camera.setYaw(this.camera.getYaw() + (float)Math.toRadians(delta.x));
 				this.camera.setPitch(this.camera.getPitch() - (float) Math.toRadians(delta.y()));
-				if (this.camera.getPitch() > 0) {
+				if (this.camera.getPitch() < 0) {
 					this.camera.setPitch(0);
 				}
-				if (this.camera.getPitch() < -Math.PI) {
-					this.camera.setPitch((float) -Math.PI);
+				if (this.camera.getPitch() > Math.PI) {
+					this.camera.setPitch((float) Math.PI);
 				}
-				this.camera.setRoll(this.camera.getRoll() + (float) Math.toRadians(delta.x()));
-				if (this.camera.getRoll() > Math.PI) {
-					this.camera.setRoll(this.camera.getRoll() - (float) Math.PI * 2.0f);
+				this.camera.setYaw(this.camera.getYaw() + (float) Math.toRadians(delta.x()));
+				if (this.camera.getYaw() > Math.PI) {
+					this.camera.setYaw(this.camera.getYaw() - (float) Math.PI * 2.0f);
 				}
-				if (this.camera.getRoll() < -Math.PI) {
-					this.camera.setRoll(this.camera.getRoll() + (float) Math.PI * 2.0f);
+				if (this.camera.getYaw() < -Math.PI) {
+					this.camera.setYaw(this.camera.getYaw() + (float) Math.PI * 2.0f);
 				}
 			}
 		}
@@ -98,18 +98,20 @@ public class ControlCameraSimple implements ControlInterface {
 	
 	@Override
 	public void periodicCall(final EventTime event) {
-		final float roll = this.camera.getRoll();
+		final float yaw = this.camera.getYaw();
 		if (this.moveLeft != this.moveRight) {
-			final Vector3f orientation = new Vector3f(-(float) Math.cos(roll), (float) Math.sin(roll), 0);
+			// Right = (cos(yaw), 0, sin(yaw)) in Y-up with camera looking along -Z
+			final Vector3f orientation = new Vector3f((float) Math.cos(yaw), 0, (float) Math.sin(yaw));
 			if (this.moveRight) {
-				this.camera.setPosition(this.camera.getPosition().add(orientation.multiply(-0.1f)));
-			} else {
 				this.camera.setPosition(this.camera.getPosition().add(orientation.multiply(0.1f)));
+			} else {
+				this.camera.setPosition(this.camera.getPosition().add(orientation.multiply(-0.1f)));
 			}
 		}
 		if (!this.ctrlIsSet) {
 			if (this.moveUp != this.moveDown) {
-				final Vector3f orientation = new Vector3f((float) Math.sin(roll), (float) Math.cos(roll), 0);
+				// Forward = (sin(yaw), 0, -cos(yaw)) in Y-up with camera looking along -Z
+				final Vector3f orientation = new Vector3f((float) Math.sin(yaw), 0, -(float) Math.cos(yaw));
 				if (this.moveUp) {
 					this.camera.setPosition(this.camera.getPosition().add(orientation.multiply(0.1f)));
 				} else {
@@ -118,9 +120,9 @@ public class ControlCameraSimple implements ControlInterface {
 			}
 		} else if (this.moveUp != this.moveDown) {
 			if (this.moveUp) {
-				this.camera.setPosition(this.camera.getPosition().add(new Vector3f(0, 0, 0.1f)));
+				this.camera.setPosition(this.camera.getPosition().add(new Vector3f(0, 0.1f, 0)));
 			} else {
-				this.camera.setPosition(this.camera.getPosition().add(new Vector3f(0, 0, -0.1f)));
+				this.camera.setPosition(this.camera.getPosition().add(new Vector3f(0, -0.1f, 0)));
 			}
 		}
 	}

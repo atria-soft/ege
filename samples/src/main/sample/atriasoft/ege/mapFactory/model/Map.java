@@ -31,7 +31,7 @@ public class Map {
 	}
 
 	/**
-	 * Update the Z position of all placed entities to match the current heightmap.
+	 * Update the Y position of all placed entities to match the current heightmap.
 	 * Call this after modifying the heightmap so objects follow the terrain.
 	 */
 	public void updateEntityPositions() {
@@ -42,9 +42,9 @@ public class Map {
 			}
 			final Transform3D current = posComp.getTransform();
 			final Vector3f pos = current.position();
-			final float newZ = this.ground.getHeightAt(pos.x(), pos.y());
-			if (pos.z() != newZ) {
-				posComp.setTransform(new Transform3D(new Vector3f(pos.x(), pos.y(), newZ), current.orientation(), current.scale()));
+			final float newY = this.ground.getHeightAt(pos.x(), pos.z());
+			if (pos.y() != newY) {
+				posComp.setTransform(new Transform3D(new Vector3f(pos.x(), newY, pos.z()), current.orientation(), current.scale()));
 			}
 		}
 	}

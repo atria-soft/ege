@@ -297,8 +297,8 @@ public class ShadowWindows extends Windows {
 			this.infoLabel.setPropertyValue(String.format(
 					"A:%.0f I:%.0f\nSun h=%.2f %s\nMoon h=%.2f %s",
 					angleDeg, inclDeg,
-					sunDir.z(), sun.isAboveHorizon() ? "above" : "BELOW",
-					moonDir.z(), moon.isAboveHorizon() ? "above" : "BELOW"));
+					sunDir.y(), sun.isAboveHorizon() ? "above" : "BELOW",
+					moonDir.y(), moon.isAboveHorizon() ? "above" : "BELOW"));
 			// Sync slider position when animating
 			if (!this.sunPaused && this.angleSlider != null) {
 				this.angleSlider.setPropertyValue(angleDeg);

@@ -66,8 +66,8 @@ public class ShadowScene extends EgeScene {
 
 	public ShadowScene() {
 		// Override default camera position for shadow test
-		this.mainView.setPitch((float) Math.PI * -0.3f);
-		this.mainView.setPosition(new Vector3f(0, -12, 10));
+		this.mainView.setPitch((float) Math.PI * 0.3f);
+		this.mainView.setPosition(new Vector3f(0, 10, 12));
 
 		addGenericGird();
 
@@ -134,7 +134,7 @@ public class ShadowScene extends EgeScene {
 
 		// --- Ground plane ---
 		final Entity ground = new Entity(this.env);
-		ground.addComponent(new ComponentPosition(new Transform3D(new Vector3f(0, 0, -0.01f))));
+		ground.addComponent(new ComponentPosition(new Transform3D(new Vector3f(0, -0.01f, 0))));
 		ground.addComponent(new ComponentStaticMesh(new Uri("DATA", "ground.obj")));
 		ground.addComponent(new ComponentTexture(new Uri("DATA", "dirt.png")));
 		ground.addComponent(new ComponentMaterial(new Material()));
@@ -143,54 +143,54 @@ public class ShadowScene extends EgeScene {
 		this.env.addEntity(ground);
 
 		// --- Cubes ---
-		createCube(new Vector3f(0, 0, 0.5f), shadowVert, shadowFrag);
-		createCube(new Vector3f(3, 2, 0.5f), shadowVert, shadowFrag);
-		createCube(new Vector3f(-2, 3, 0.5f), shadowVert, shadowFrag);
-		createCube(new Vector3f(-3, -2, 1.0f), shadowVert, shadowFrag);
-		createCube(new Vector3f(4, -3, 0.5f), shadowVert, shadowFrag);
-		createCube(new Vector3f(0, 4, 1.5f), shadowVert, shadowFrag);
+		createCube(new Vector3f(0, 0.5f, 0), shadowVert, shadowFrag);
+		createCube(new Vector3f(3, 0.5f, 2), shadowVert, shadowFrag);
+		createCube(new Vector3f(-2, 0.5f, 3), shadowVert, shadowFrag);
+		createCube(new Vector3f(-3, 1.0f, -2), shadowVert, shadowFrag);
+		createCube(new Vector3f(4, 0.5f, -3), shadowVert, shadowFrag);
+		createCube(new Vector3f(0, 1.5f, 4), shadowVert, shadowFrag);
 
 		// --- Trees (spread over a larger area) ---
 		final Uri paletteVert = new Uri("DATA", "basicPalette.vert");
 		final Uri paletteFrag = new Uri("DATA", "basicPalette.frag");
 		// Inner ring
-		createTree(new Vector3f(-4, 3, 0), "tree1.emf", paletteVert, paletteFrag);
-		createTree(new Vector3f(5, -2, 0), "tree1.emf", paletteVert, paletteFrag);
-		createTree(new Vector3f(-2, -5, 0), "tree2.emf", paletteVert, paletteFrag);
-		createTree(new Vector3f(3, 5, 0), "tree2.emf", paletteVert, paletteFrag);
+		createTree(new Vector3f(-4, 0, 3), "tree1.emf", paletteVert, paletteFrag);
+		createTree(new Vector3f(5, 0, -2), "tree1.emf", paletteVert, paletteFrag);
+		createTree(new Vector3f(-2, 0, -5), "tree2.emf", paletteVert, paletteFrag);
+		createTree(new Vector3f(3, 0, 5), "tree2.emf", paletteVert, paletteFrag);
 		// Mid ring
-		createTree(new Vector3f(-8, 6, 0), "tree1.emf", paletteVert, paletteFrag);
-		createTree(new Vector3f(9, -5, 0), "tree1.emf", paletteVert, paletteFrag);
-		createTree(new Vector3f(-6, -9, 0), "tree2.emf", paletteVert, paletteFrag);
-		createTree(new Vector3f(7, 8, 0), "tree2.emf", paletteVert, paletteFrag);
-		createTree(new Vector3f(-10, -3, 0), "tree1.emf", paletteVert, paletteFrag);
-		createTree(new Vector3f(10, 3, 0), "tree2.emf", paletteVert, paletteFrag);
-		createTree(new Vector3f(0, 10, 0), "tree1.emf", paletteVert, paletteFrag);
-		createTree(new Vector3f(0, -10, 0), "tree2.emf", paletteVert, paletteFrag);
+		createTree(new Vector3f(-8, 0, 6), "tree1.emf", paletteVert, paletteFrag);
+		createTree(new Vector3f(9, 0, -5), "tree1.emf", paletteVert, paletteFrag);
+		createTree(new Vector3f(-6, 0, -9), "tree2.emf", paletteVert, paletteFrag);
+		createTree(new Vector3f(7, 0, 8), "tree2.emf", paletteVert, paletteFrag);
+		createTree(new Vector3f(-10, 0, -3), "tree1.emf", paletteVert, paletteFrag);
+		createTree(new Vector3f(10, 0, 3), "tree2.emf", paletteVert, paletteFrag);
+		createTree(new Vector3f(0, 0, 10), "tree1.emf", paletteVert, paletteFrag);
+		createTree(new Vector3f(0, 0, -10), "tree2.emf", paletteVert, paletteFrag);
 		// Outer ring
-		createTree(new Vector3f(-14, 10, 0), "tree1.emf", paletteVert, paletteFrag);
-		createTree(new Vector3f(15, -8, 0), "tree1.emf", paletteVert, paletteFrag);
-		createTree(new Vector3f(-12, -12, 0), "tree2.emf", paletteVert, paletteFrag);
-		createTree(new Vector3f(13, 11, 0), "tree2.emf", paletteVert, paletteFrag);
-		createTree(new Vector3f(-16, -5, 0), "tree1.emf", paletteVert, paletteFrag);
-		createTree(new Vector3f(16, 2, 0), "tree2.emf", paletteVert, paletteFrag);
-		createTree(new Vector3f(-5, 15, 0), "tree1.emf", paletteVert, paletteFrag);
-		createTree(new Vector3f(4, -15, 0), "tree2.emf", paletteVert, paletteFrag);
+		createTree(new Vector3f(-14, 0, 10), "tree1.emf", paletteVert, paletteFrag);
+		createTree(new Vector3f(15, 0, -8), "tree1.emf", paletteVert, paletteFrag);
+		createTree(new Vector3f(-12, 0, -12), "tree2.emf", paletteVert, paletteFrag);
+		createTree(new Vector3f(13, 0, 11), "tree2.emf", paletteVert, paletteFrag);
+		createTree(new Vector3f(-16, 0, -5), "tree1.emf", paletteVert, paletteFrag);
+		createTree(new Vector3f(16, 0, 2), "tree2.emf", paletteVert, paletteFrag);
+		createTree(new Vector3f(-5, 0, 15), "tree1.emf", paletteVert, paletteFrag);
+		createTree(new Vector3f(4, 0, -15), "tree2.emf", paletteVert, paletteFrag);
 		// Far corners
-		createTree(new Vector3f(-18, 14, 0), "tree2.emf", paletteVert, paletteFrag);
-		createTree(new Vector3f(18, -13, 0), "tree1.emf", paletteVert, paletteFrag);
-		createTree(new Vector3f(-17, -15, 0), "tree1.emf", paletteVert, paletteFrag);
-		createTree(new Vector3f(17, 14, 0), "tree2.emf", paletteVert, paletteFrag);
+		createTree(new Vector3f(-18, 0, 14), "tree2.emf", paletteVert, paletteFrag);
+		createTree(new Vector3f(18, 0, -13), "tree1.emf", paletteVert, paletteFrag);
+		createTree(new Vector3f(-17, 0, -15), "tree1.emf", paletteVert, paletteFrag);
+		createTree(new Vector3f(17, 0, 14), "tree2.emf", paletteVert, paletteFrag);
 		createTree(new Vector3f(-20, 0, 0), "tree1.emf", paletteVert, paletteFrag);
 		createTree(new Vector3f(20, 0, 0), "tree2.emf", paletteVert, paletteFrag);
-		createTree(new Vector3f(0, 18, 0), "tree2.emf", paletteVert, paletteFrag);
-		createTree(new Vector3f(0, -18, 0), "tree1.emf", paletteVert, paletteFrag);
+		createTree(new Vector3f(0, 0, 18), "tree2.emf", paletteVert, paletteFrag);
+		createTree(new Vector3f(0, 0, -18), "tree1.emf", paletteVert, paletteFrag);
 
 		// --- Lampadaires (4 lamps around the scene, not too far from objects) ---
-		addLamp(new Vector3f(-8, 8, 0), "roadLamp.emf", paletteVert, paletteFrag);
-		addLamp(new Vector3f(8, 8, 0), "roadLamp2.emf", paletteVert, paletteFrag);
-		addLamp(new Vector3f(-8, -8, 0), "roadLamp.emf", paletteVert, paletteFrag);
-		addLamp(new Vector3f(8, -8, 0), "roadLamp2.emf", paletteVert, paletteFrag);
+		addLamp(new Vector3f(-8, 0, 8), "roadLamp.emf", paletteVert, paletteFrag);
+		addLamp(new Vector3f(8, 0, 8), "roadLamp2.emf", paletteVert, paletteFrag);
+		addLamp(new Vector3f(-8, 0, -8), "roadLamp.emf", paletteVert, paletteFrag);
+		addLamp(new Vector3f(8, 0, -8), "roadLamp2.emf", paletteVert, paletteFrag);
 
 		// --- Camera control ---
 		final ControlCameraSimple simpleControl = new ControlCameraSimple(this.mainView);
@@ -277,7 +277,7 @@ public class ShadowScene extends EgeScene {
 			LOGGER.warn("No lights found in {}, adding default point light", emfFile);
 			final ComponentLight defaultLight = new ComponentLight(
 					new Light(new Color(1.0f, 0.9f, 0.7f),
-							new Vector3f(0, 0, 3.0f),
+							new Vector3f(0, 3.0f, 0),
 							new Vector3f(1.0f, 0.09f, 0.032f)));
 			lamp.addComponent(defaultLight);
 			lights.add(defaultLight);
@@ -317,7 +317,7 @@ public class ShadowScene extends EgeScene {
 				dir.y() * SUN_LIGHT_DISTANCE,
 				dir.z() * SUN_LIGHT_DISTANCE)));
 		// Sync the sun light color based on height
-		final Color sunColor = computeSunLightColor(dir.z());
+		final Color sunColor = computeSunLightColor(dir.y());
 		this.sunLightComponent.getLight().setColor(sunColor);
 		// Sync moon position and light
 		final Vector3f moonDir = this.moon.getDirection();
@@ -325,7 +325,7 @@ public class ShadowScene extends EgeScene {
 				moonDir.x() * SUN_LIGHT_DISTANCE,
 				moonDir.y() * SUN_LIGHT_DISTANCE,
 				moonDir.z() * SUN_LIGHT_DISTANCE)));
-		final Color moonColor = computeMoonLightColor(moonDir.z());
+		final Color moonColor = computeMoonLightColor(moonDir.y());
 		this.moonLightComponent.getLight().setColor(moonColor);
 	}
 
@@ -363,13 +363,13 @@ public class ShadowScene extends EgeScene {
 		final float shadowLen = 10.0f;
 
 		final List<Vector3f> sunLine = List.of(
-				new Vector3f(0, 0, 0.1f),
-				new Vector3f(dir.x() * lineLen, dir.y() * lineLen, dir.z() * lineLen + 0.1f));
+				new Vector3f(0, 0.1f, 0),
+				new Vector3f(dir.x() * lineLen, dir.y() * lineLen + 0.1f, dir.z() * lineLen));
 		dd.drawLine(sunLine, new Color(1.0f, 1.0f, 0.0f, 1.0f), Matrix4f.IDENTITY, false, true);
 
 		final List<Vector3f> shadowLine = List.of(
-				new Vector3f(0, 0, 0.1f),
-				new Vector3f(-dir.x() * shadowLen, -dir.y() * shadowLen, -dir.z() * shadowLen + 0.1f));
+				new Vector3f(0, 0.1f, 0),
+				new Vector3f(-dir.x() * shadowLen, -dir.y() * shadowLen + 0.1f, -dir.z() * shadowLen));
 		dd.drawLine(shadowLine, new Color(1.0f, 0.0f, 0.0f, 1.0f), Matrix4f.IDENTITY, false, true);
 	}
 

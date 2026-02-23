@@ -115,39 +115,26 @@ public class ControlCameraPlayer implements ControlInterface {
 		}
 		if (event.status() == KeyStatus.move) {
 			final Vector2f delta = event.pos();
-			//angleZ += delta.x;
-			//this.camera.setYaw(this.camera.getYaw() + (float)Math.toRadians(delta.x));
 			this.camera
 					.setPitch(this.camera.getPitch() + (float) Math.toRadians(delta.y() * this.player.getTurnSpeed()));
-			if (this.camera.getPitch() > 0) {
+			if (this.camera.getPitch() < 0) {
 				this.camera.setPitch(0);
 			}
-			if (this.camera.getPitch() < -Math.PI) {
-				this.camera.setPitch((float) -Math.PI);
+			if (this.camera.getPitch() > Math.PI) {
+				this.camera.setPitch((float) Math.PI);
 			}
-			/*
-			this.camera.setRoll(this.camera.getRoll() - (float)Math.toRadians(delta.x * this.player.getTurnSpeed()));
-			LOGGER.info("Change camera: {} {}", this.camera.getYaw(), this.camera.getPitch());
-			if (this.camera.getRoll()>Math.PI) {
-				this.camera.setRoll(this.camera.getRoll()-(float)Math.PI*2.0f);
-			}
-			if (this.camera.getRoll()<-Math.PI) {
-				this.camera.setRoll(this.camera.getRoll()+(float)Math.PI*2.0f);
-			}
-			this.playerPosition.setAngles(new Vector3f(0,0,-this.camera.getRoll()));
-			*/
 			if (this.playerPosition != null) {
-				final float playerZAngle = this.playerPosition.getAngles().z();
-				float tmpAngle = playerZAngle + (float) Math.toRadians(delta.x() * this.player.getTurnSpeed());
-				
+				final float playerYAngle = this.playerPosition.getAngles().y();
+				float tmpAngle = playerYAngle - (float) Math.toRadians(delta.x() * this.player.getTurnSpeed());
+
 				if (tmpAngle > Math.PI) {
 					tmpAngle -= (float) Math.PI * 2.0f;
 				}
 				if (tmpAngle < -Math.PI) {
 					tmpAngle += (float) Math.PI * 2.0f;
 				}
-				this.playerPosition.setAngles(new Vector3f(0, 0, tmpAngle));
-				this.camera.setRoll(-playerZAngle);
+				this.playerPosition.setAngles(new Vector3f(0, tmpAngle, 0));
+				this.camera.setYaw(-tmpAngle);
 				LOGGER.info("Change camera: {} {}", this.camera.getYaw(), this.camera.getPitch());
 			}
 		}
@@ -170,14 +157,15 @@ public class ControlCameraPlayer implements ControlInterface {
 			}
 		}
 		float distance = speed * walkFactor * event.getTimeDeltaCallSecond();
-		float playerZAngle = 0;
+		float playerYAngle = 0;
 		Transform3D playerTransform = null;
 		if (this.playerPosition != null) {
-			playerZAngle = this.playerPosition.getAngles().z();
+			playerYAngle = this.playerPosition.getAngles().y();
 			playerTransform = this.playerPosition.getTransform();
 		}
-		final float dx = -(float) (distance * Math.sin(playerZAngle));
-		final float dy = (float) (distance * Math.cos(playerZAngle));
+		// Camera yaw = -playerYAngle, so world forward = (-sin(playerYAngle), 0, -cos(playerYAngle))
+		final float dx = -(float) (distance * Math.sin(playerYAngle));
+		final float dz = -(float) (distance * Math.cos(playerYAngle));
 		speed = 0;
 		if (this.moveRight != this.moveLeft) {
 			if (this.moveRight) {
@@ -187,28 +175,29 @@ public class ControlCameraPlayer implements ControlInterface {
 			}
 		}
 		distance = speed * walkFactor * event.getTimeDeltaCallSecond();
-		final float dxStraf = (float) (distance * Math.sin((float) Math.PI * 0.5f + playerZAngle));
-		final float dyStraf = -(float) (distance * Math.cos((float) Math.PI * 0.5f + playerZAngle));
+		// Camera right = (cos(playerYAngle), 0, -sin(playerYAngle))
+		final float dxStraf = (float) (distance * Math.cos(playerYAngle));
+		final float dzStraf = -(float) (distance * Math.sin(playerYAngle));
 		//LOGGER.error("update position ... {}  {}", dx, dy);
 		Vector3f tmpPos = playerTransform.getPosition();
-		tmpPos = tmpPos.add(new Vector3f(dx + dxStraf, dy + dyStraf, 0));
+		tmpPos = tmpPos.add(new Vector3f(dx + dxStraf, 0, dz + dzStraf));
 		playerTransform = playerTransform.withPosition(tmpPos);
 		if (this.playerPosition != null) {
 			this.playerPosition.setTransform(playerTransform);
 		}
 		// here the camera is behind the player, we need to move the camera ...
-		//LOGGER.info(" pitch: {}  {}", Math.toDegrees(this.camera.getPitch()), Math.toDegrees(playerZAngle));
-		final float horinzontalDistance = (float) (this.distanceFromCenter * Math.sin(this.camera.getPitch()));
+		//LOGGER.info(" pitch: {}  {}", Math.toDegrees(this.camera.getPitch()), Math.toDegrees(playerYAngle));
+		// pitch > 0 = looking down. horizontalDistance = how far behind, verticalDistance = how far above
+		final float horizontalDistance = (float) (this.distanceFromCenter * Math.sin(this.camera.getPitch()));
 		final float verticalDistance = (float) (this.distanceFromCenter * Math.cos(this.camera.getPitch()));
-		//LOGGER.info("     distanceFromCenter {}", distanceFromCenter);
-		final float tmp = -horinzontalDistance;
-		final float theta = (float) Math.PI + playerZAngle;// - (float)Math.PI*0.5f;
-		final float offsetX = (float) (tmp * Math.sin(-theta));
-		final float offsetY = (float) (tmp * Math.cos(-theta));
+		// Camera behind player: offset in +Z when playerYAngle=0 (player faces -Z)
+		final float offsetX = -(float) (horizontalDistance * Math.sin(playerYAngle));
+		final float offsetZ = (float) (horizontalDistance * Math.cos(playerYAngle));
 		//LOGGER.info("     res=({},{})", offsetX, offsetY);
 		this.camera.setPosition(
-				new Vector3f(playerTransform.getPosition().x() + offsetX, playerTransform.getPosition().y() + offsetY,
-						playerTransform.getPosition().z() + 1.6f + verticalDistance));
+				new Vector3f(playerTransform.getPosition().x() + offsetX,
+						playerTransform.getPosition().y() + 1.6f + verticalDistance,
+						playerTransform.getPosition().z() + offsetZ));
 	}
 	
 }

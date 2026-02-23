@@ -2,7 +2,7 @@ package sample.atriasoft.ege.mapFactory.tools;
 
 import org.atriasoft.ege.geometry.Ray;
 import org.atriasoft.etk.Color;
-import org.atriasoft.etk.math.Transform3D;
+import org.atriasoft.etk.math.Matrix4f;
 import org.atriasoft.etk.math.Vector2f;
 import org.atriasoft.etk.math.Vector3f;
 import org.atriasoft.ewol.event.EventEntry;
@@ -121,9 +121,11 @@ public class ToolMapHeight implements MapToolInterface {
 		if (this.positionRay != null) {
 			map.ground.drawDynamicElement(this.dynamicElement, this.positionRay, this.widthBrush);
 			final float size = this.maxBrush - this.minBrush;
-			final Transform3D tmpTransform = new Transform3D(
-					this.positionRay.add(new Vector3f(0.0f, this.minBrush + size * 0.5f, 0.0f)));
-			this.dynamicElement.drawCylinder(this.widthBrush, size, 10, 22, tmpTransform.getOpenGLMatrix(),
+			// drawCylinder is Z-axis oriented in gale; rotate -90° around X to align along Y
+			final Matrix4f transform = Matrix4f.createMatrixTranslate(
+					this.positionRay.add(new Vector3f(0.0f, this.minBrush + size * 0.5f, 0.0f)))
+					.multiply(Matrix4f.createMatrixRotate(new Vector3f(1, 0, 0), (float) (-Math.PI * 0.5)));
+			this.dynamicElement.drawCylinder(this.widthBrush, size, 10, 22, transform,
 					Color.AZURE.withA(0.5f), false, true);
 		}
 	}

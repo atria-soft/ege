@@ -13,7 +13,7 @@ import org.atriasoft.etk.math.Vector3f;
  *       0 = orbit in the XZ plane, higher values spread the path in Y.</li>
  * </ul>
  * <p>
- * When the body is below the horizon ({@code direction.z < 0}), it does not
+ * When the body is below the horizon ({@code direction.y < 0}), it does not
  * contribute light or cast shadows.
  */
 public class CelestialBody {
@@ -71,13 +71,14 @@ public class CelestialBody {
 	/**
 	 * Compute the direction vector of this body on the celestial sphere.
 	 * <p>
-	 * The world uses Z-up convention. The body orbits on a circle:
+	 * The world uses Y-up convention. The body orbits on a circle:
 	 * <ol>
-	 *   <li>Base orbit in XZ plane: {@code (cos(angle), 0, sin(angle))}</li>
-	 *   <li>Inclination tilts the orbit sideways into Y</li>
+	 *   <li>Base orbit in XZ plane: {@code (cos(angle), 0, cos(angle))}</li>
+	 *   <li>Height (Y) = sin(angle) * cos(inclination)</li>
+	 *   <li>Inclination tilts the orbit sideways into Z</li>
 	 * </ol>
 	 * The result is normalized so it stays on the unit sphere.
-	 * {@code direction.z() > 0} means the body is above the horizon.
+	 * {@code direction.y() > 0} means the body is above the horizon.
 	 * @return Normalized direction vector from world center to the body
 	 */
 	public Vector3f getDirection() {
@@ -85,10 +86,10 @@ public class CelestialBody {
 		final float sinAngle = (float) Math.sin(this.currentAngle);
 		final float cosIncl = (float) Math.cos(this.orbitalInclination);
 		final float sinIncl = (float) Math.sin(this.orbitalInclination);
-		// Base orbit in XZ plane, tilted by inclination into Y
+		// Base orbit: height in Y, depth in Z, inclination spreads into Z
 		final float x = cosAngle;
-		final float y = sinAngle * sinIncl;
-		final float z = sinAngle * cosIncl;
+		final float y = sinAngle * cosIncl;
+		final float z = sinAngle * sinIncl;
 		// Normalize (should be near unit length but ensure precision)
 		final float len = (float) Math.sqrt(x * x + y * y + z * z);
 		if (len < 1e-6f) {
@@ -101,7 +102,7 @@ public class CelestialBody {
 	 * @return true if the body is above the horizon (visible in the sky)
 	 */
 	public boolean isAboveHorizon() {
-		return getDirection().z() > 0.0f;
+		return getDirection().y() > 0.0f;
 	}
 
 	/**
@@ -109,7 +110,7 @@ public class CelestialBody {
 	 *         Returns 0 if below horizon.
 	 */
 	public float getEffectiveBrightness() {
-		final float height = getDirection().z();
+		final float height = getDirection().y();
 		if (height <= 0.0f) {
 			return 0.0f;
 		}

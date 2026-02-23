@@ -72,25 +72,23 @@ public class ControlCameraPlayerFPS implements ControlInterface {
 		}
 		if (event.status() == KeyStatus.move) {
 			final Vector2f delta = event.pos();
-			//angleZ += delta.x;
-			//this.camera.setYaw(this.camera.getYaw() + (float)Math.toRadians(delta.x));
 			this.camera
 					.setPitch(this.camera.getPitch() + (float) Math.toRadians(delta.y() * this.player.getTurnSpeed()));
-			if (this.camera.getPitch() > 0) {
+			if (this.camera.getPitch() < 0) {
 				this.camera.setPitch(0);
 			}
-			if (this.camera.getPitch() < -Math.PI) {
-				this.camera.setPitch((float) -Math.PI);
+			if (this.camera.getPitch() > Math.PI) {
+				this.camera.setPitch((float) Math.PI);
 			}
-			this.camera.setRoll(this.camera.getRoll() - (float) Math.toRadians(delta.x() * this.player.getTurnSpeed()));
+			this.camera.setYaw(this.camera.getYaw() + (float) Math.toRadians(delta.x() * this.player.getTurnSpeed()));
 			LOGGER.info("Change camera: {} {}", this.camera.getYaw(), this.camera.getPitch());
-			if (this.camera.getRoll() > Math.PI) {
-				this.camera.setRoll(this.camera.getRoll() - (float) Math.PI * 2.0f);
+			if (this.camera.getYaw() > Math.PI) {
+				this.camera.setYaw(this.camera.getYaw() - (float) Math.PI * 2.0f);
 			}
-			if (this.camera.getRoll() < -Math.PI) {
-				this.camera.setRoll(this.camera.getRoll() + (float) Math.PI * 2.0f);
+			if (this.camera.getYaw() < -Math.PI) {
+				this.camera.setYaw(this.camera.getYaw() + (float) Math.PI * 2.0f);
 			}
-			this.playerPosition.setAngles(new Vector3f(0, 0, this.camera.getRoll()));
+			this.playerPosition.setAngles(new Vector3f(0, this.camera.getYaw(), 0));
 		}
 		return false;
 	}
@@ -106,8 +104,9 @@ public class ControlCameraPlayerFPS implements ControlInterface {
 			}
 		}
 		float distance = speed * event.getTimeDeltaCallSecond();
-		final float dx = (float) (distance * Math.sin(this.playerPosition.getAngles().z()));
-		final float dy = (float) (distance * Math.cos(this.playerPosition.getAngles().z()));
+		// Forward = (sin(yaw), 0, -cos(yaw)) with camera yaw = playerAngles.y()
+		final float dx = (float) (distance * Math.sin(this.playerPosition.getAngles().y()));
+		final float dz = -(float) (distance * Math.cos(this.playerPosition.getAngles().y()));
 		speed = 0;
 		if (this.moveRight != this.moveLeft) {
 			if (this.moveRight) {
@@ -117,13 +116,12 @@ public class ControlCameraPlayerFPS implements ControlInterface {
 			}
 		}
 		distance = speed * event.getTimeDeltaCallSecond();
-		final float dxStraf = (float) (distance
-				* Math.sin((float) Math.PI * 0.5f + this.playerPosition.getAngles().z()));
-		final float dyStraf = (float) (distance
-				* Math.cos((float) Math.PI * 0.5f + this.playerPosition.getAngles().z()));
+		// Right = (cos(yaw), 0, sin(yaw))
+		final float dxStraf = (float) (distance * Math.cos(this.playerPosition.getAngles().y()));
+		final float dzStraf = (float) (distance * Math.sin(this.playerPosition.getAngles().y()));
 		//LOGGER.error("update position ... {}   {}", dx, dy);
 		this.playerPosition.setTransform(this.playerPosition.getTransform()
-				.withPosition(this.playerPosition.getTransform().getPosition().add(dx + dxStraf, dy + dyStraf, 0)));
+				.withPosition(this.playerPosition.getTransform().getPosition().add(dx + dxStraf, 0, dz + dzStraf)));
 		this.camera.setPosition(this.playerPosition.getTransform().getPosition());
 	}
 

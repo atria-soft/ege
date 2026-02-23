@@ -122,7 +122,7 @@ public class ToolMapHeight implements MapToolInterface {
 			map.ground.drawDynamicElement(this.dynamicElement, this.positionRay, this.widthBrush);
 			final float size = this.maxBrush - this.minBrush;
 			final Transform3D tmpTransform = new Transform3D(
-					this.positionRay.add(new Vector3f(0.0f, 0.0f, this.minBrush + size * 0.5f)));
+					this.positionRay.add(new Vector3f(0.0f, this.minBrush + size * 0.5f, 0.0f)));
 			this.dynamicElement.drawCylinder(this.widthBrush, size, 10, 22, tmpTransform.getOpenGLMatrix(),
 					Color.AZURE.withA(0.5f), false, true);
 		}
@@ -140,7 +140,7 @@ public class ToolMapHeight implements MapToolInterface {
 		final Vector2f relPos = widget.relativePosition(globalPos);
 		// ray-cast on the Z=0 plane (better for height editing)
 		final Ray mouseRay = widget.mainView.getRayFromScreen(widget.projection, widget.getSize(), relPos);
-		this.positionRay = mouseRay.intersectPlane(new Vector3f(0.0f, 0.0f, 1.0f), 0.0f);
+		this.positionRay = mouseRay.intersectPlane(new Vector3f(0.0f, 1.0f, 0.0f), 0.0f);
 
 		// End brush stroke on mouse up
 		if ((event.inputId() == 1 || event.inputId() == 3)

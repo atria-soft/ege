@@ -69,7 +69,7 @@ public class LightTestApplication extends GaleApplication {
 
 		// add a cube to show where in the light ...
 		final Entity localLight = new Entity(this.env);
-		this.lightPosition = new ComponentPosition(new Transform3D(new Vector3f(-10, -10, 1)));
+		this.lightPosition = new ComponentPosition(new Transform3D(new Vector3f(-10, 1, -10)));
 		localLight.addComponent(this.lightPosition);
 		localLight.addComponent(new ComponentStaticMesh(new Uri("RES", "cube-one.obj")));
 		localLight.addComponent(new ComponentTexture(new Uri("RES", "grass.png")));
@@ -102,7 +102,7 @@ public class LightTestApplication extends GaleApplication {
 		for (int xxx = -10; xxx < 10; xxx++) {
 			for (int yyy = -10; yyy < 10; yyy++) {
 				final Entity superGrass = new Entity(this.env);
-				superGrass.addComponent(new ComponentPosition(new Transform3D(new Vector3f(xxx, yyy, -1))));
+				superGrass.addComponent(new ComponentPosition(new Transform3D(new Vector3f(xxx, -1, yyy))));
 				superGrass.addComponent(new ComponentMaterial(new Material()));
 				superGrass.addComponent(new ComponentStaticMesh(new Uri("RES", "cube-one.obj")));
 				superGrass.addComponent(new ComponentTexture(new Uri("RES", "dirt.png")));
@@ -115,8 +115,8 @@ public class LightTestApplication extends GaleApplication {
 
 		final Camera mainView = new Camera();
 		this.env.addCamera("default", mainView);
-		mainView.setPitch((float) Math.PI * -0.25f);
-		mainView.setPosition(new Vector3f(0, -5, 5));
+		mainView.setPitch((float) Math.PI * 0.25f);
+		mainView.setPosition(new Vector3f(0, 5, 5));
 
 		this.simpleControl = new ControlCameraSimple(mainView);
 		this.env.addControlInterface(this.simpleControl);
@@ -185,8 +185,9 @@ public class LightTestApplication extends GaleApplication {
 		//objectPosition.getTransform().applyRotation(basicRotation2);
 		this.angleLight += 0.01;
 		this.lightPosition.setTransform(this.lightPosition.getTransform().withPosition(
-				new Vector3f((float) Math.cos(this.angleLight) * 7.0f, (float) Math.sin(this.angleLight) * 7.0f,
-						this.lightPosition.getTransform().getPosition().z())));
+				new Vector3f((float) Math.cos(this.angleLight) * 7.0f,
+						this.lightPosition.getTransform().getPosition().y(),
+						(float) Math.sin(this.angleLight) * 7.0f)));
 		this.env.periodicCall();
 		markDrawingIsNeeded();
 	}

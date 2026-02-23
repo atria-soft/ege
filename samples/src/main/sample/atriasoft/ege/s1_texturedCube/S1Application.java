@@ -57,7 +57,7 @@ public class S1Application extends GaleApplication {
 		this.env.addEntity(gird);
 
 		final Entity basicTree = new Entity(this.env);
-		this.objectPosition = new ComponentPosition(new Transform3D(new Vector3f(0, 0, -5)));
+		this.objectPosition = new ComponentPosition(new Transform3D(new Vector3f(0, -5, 0)));
 		basicTree.addComponent(this.objectPosition);
 		basicTree.addComponent(new ComponentStaticMesh(new Uri("RES", "cube.obj")));
 		basicTree.addComponent(new ComponentTexture(new Uri("DATA", "blocks/dirt.png", "loxelEngine")));
@@ -68,7 +68,7 @@ public class S1Application extends GaleApplication {
 		this.mainView = new Camera();
 		this.env.addCamera("default", this.mainView);
 		//mainView.setPitch((float) Math.PI * -0.25f);
-		//mainView.setPosition(new Vector3f(0, 0, -5));
+		//mainView.setPosition(new Vector3f(0, -5, 0));
 
 		this.simpleControl = new ControlCameraSimple(this.mainView);
 		this.env.addControlInterface(this.simpleControl);
@@ -137,21 +137,21 @@ public class S1Application extends GaleApplication {
 		//LOGGER.trace("Regenerate Gale Application");
 
 		//this.mainView.setPitch((float) Math.PI * -0.25f);
-		this.mainView.setPitch(-0.7f);
-		this.mainView.setPosition(new Vector3f(0, -10, 10));
+		this.mainView.setPitch(0.7f);
+		this.mainView.setPosition(new Vector3f(0, 10, 10));
 		//this.mainView.setPosition(Vector3f.ZERO);
 
 		//this.objectPosition.setTransform(this.objectPosition.getTransform().withPosition(new Vector3f(2, -1, -5)));
 		if (this.signe) {
 			this.objectPosition.setTransform(this.objectPosition.getTransform()
-					.withPosition(this.objectPosition.getTransform().getPosition().add(new Vector3f(0, 0, -0.1f))));
-			if (this.objectPosition.getTransform().getPosition().z() < -5) {
+					.withPosition(this.objectPosition.getTransform().getPosition().add(new Vector3f(0, -0.1f, 0))));
+			if (this.objectPosition.getTransform().getPosition().y() < -5) {
 				this.signe = false;
 			}
 		} else {
 			this.objectPosition.setTransform(this.objectPosition.getTransform()
-					.withPosition(this.objectPosition.getTransform().getPosition().add(new Vector3f(0, 0, 0.1f))));
-			if (this.objectPosition.getTransform().getPosition().z() > 5) {
+					.withPosition(this.objectPosition.getTransform().getPosition().add(new Vector3f(0, 0.1f, 0))));
+			if (this.objectPosition.getTransform().getPosition().y() > 5) {
 				this.signe = true;
 			}
 		}

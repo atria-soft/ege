@@ -74,7 +74,7 @@ public class CelestialSystem {
 		float totalG = NIGHT_AMBIENT.g();
 		float totalB = NIGHT_AMBIENT.b();
 		for (final CelestialBody body : this.bodies) {
-			final float height = body.getDirection().z();
+			final float height = body.getDirection().y();
 			if (height <= 0.0f) {
 				continue;
 			}
@@ -95,7 +95,7 @@ public class CelestialSystem {
 		float maxSunHeight = -1.0f;
 		for (final CelestialBody body : this.bodies) {
 			if (body.getType() == CelestialBodyType.SUN) {
-				final float height = body.getDirection().z();
+				final float height = body.getDirection().y();
 				if (height > maxSunHeight) {
 					maxSunHeight = height;
 				}

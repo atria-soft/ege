@@ -70,7 +70,7 @@ public class LowPolyApplication extends GaleApplication {
 		
 		// add a cube to show where in the light ...
 		final Entity localLight = new Entity(this.env);
-		this.lightPosition = new ComponentPosition(new Transform3D(new Vector3f(-10, -10, 1)));
+		this.lightPosition = new ComponentPosition(new Transform3D(new Vector3f(-10, 1, -10)));
 		localLight.addComponent(this.lightPosition);
 		localLight.addComponent(new ComponentStaticMesh(new Uri("DATA", "cube-one.obj")));
 		localLight.addComponent(new ComponentTexture(new Uri("DATA", "grass.png")));
@@ -102,7 +102,7 @@ public class LowPolyApplication extends GaleApplication {
 		this.env.addEntity(basicTree);
 
 		basicTree = new Entity(this.env);
-		this.objectPosition = new ComponentPosition(new Transform3D(new Vector3f(3, 2, 0)));
+		this.objectPosition = new ComponentPosition(new Transform3D(new Vector3f(3, 0, 2)));
 		basicTree.addComponent(this.objectPosition);
 		//this.materialCube = new Material();
 		//basicTree.addComponent(new ComponentMaterial(this.materialCube));
@@ -114,7 +114,7 @@ public class LowPolyApplication extends GaleApplication {
 		this.env.addEntity(basicTree);
 
 		basicTree = new Entity(this.env);
-		this.objectPosition = new ComponentPosition(new Transform3D(new Vector3f(-3, -2, 0)));
+		this.objectPosition = new ComponentPosition(new Transform3D(new Vector3f(-3, 0, -2)));
 		basicTree.addComponent(this.objectPosition);
 		basicTree.addComponent(new ComponentMesh(new Uri("DATA", "tree1.emf")));
 		basicTree.addComponent(new ComponentTexturePalette(new Uri("DATA", "tree1.emf")));
@@ -137,8 +137,8 @@ public class LowPolyApplication extends GaleApplication {
 		
 		final Camera mainView = new Camera();
 		this.env.addCamera("default", mainView);
-		mainView.setPitch((float) Math.PI * -0.25f);
-		mainView.setPosition(new Vector3f(0, -5, 5));
+		mainView.setPitch((float) Math.PI * 0.25f);
+		mainView.setPosition(new Vector3f(0, 5, 5));
 		
 		this.simpleControl = new ControlCameraSimple(mainView);
 		this.env.addControlInterface(this.simpleControl);
@@ -207,8 +207,9 @@ public class LowPolyApplication extends GaleApplication {
 		//objectPosition.getTransform().applyRotation(basicRotation2);
 		this.angleLight += 0.01;
 		this.lightPosition.setTransform(this.lightPosition.getTransform().withPosition(
-				new Vector3f((float) Math.cos(this.angleLight) * 7.0f, (float) Math.sin(this.angleLight) * 7.0f,
-						this.lightPosition.getTransform().getPosition().z())));
+				new Vector3f((float) Math.cos(this.angleLight) * 7.0f,
+						this.lightPosition.getTransform().getPosition().y(),
+						(float) Math.sin(this.angleLight) * 7.0f)));
 		this.env.periodicCall();
 		markDrawingIsNeeded();
 	}

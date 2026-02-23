@@ -69,7 +69,7 @@ public class ToolObjectSelector implements MapToolInterface {
 			}
 			final Transform3D current = self.selectedPosition.getTransform();
 			final Quaternion rot = Quaternion.fromEulerAngles(
-					new Vector3f(0, 0, value * (float) Math.PI / 180.0f));
+					new Vector3f(0, value * (float) Math.PI / 180.0f, 0));
 			self.selectedPosition.setTransform(new Transform3D(current.position(), rot, current.scale()));
 		}
 	}
@@ -250,7 +250,7 @@ public class ToolObjectSelector implements MapToolInterface {
 				this.objectRotation = (this.objectRotation + delta + 360.0f) % 360.0f;
 				final Transform3D current = this.selectedPosition.getTransform();
 				final Quaternion rot = Quaternion.fromEulerAngles(
-						new Vector3f(0, 0, this.objectRotation * (float) Math.PI / 180.0f));
+						new Vector3f(0, this.objectRotation * (float) Math.PI / 180.0f, 0));
 				this.selectedPosition.setTransform(new Transform3D(current.position(), rot, current.scale()));
 			}
 			return true;

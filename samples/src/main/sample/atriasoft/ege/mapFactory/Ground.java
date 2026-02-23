@@ -4,6 +4,7 @@ import java.util.function.BiFunction;
 
 import org.atriasoft.ege.geometry.Ray;
 import org.atriasoft.etk.Color;
+import org.atriasoft.etk.math.Matrix4f;
 import org.atriasoft.etk.math.Transform3D;
 import org.atriasoft.etk.math.Vector3f;
 import org.atriasoft.etk.math.Vector4f;
@@ -85,8 +86,11 @@ public class Ground {
 					if (xxx % 2 == 1) {
 						offset = 0.5f;
 					}
-					Transform3D tmpTransform = new Transform3D(new Vector3f(xxx, this.heightMap[yyy][xxx] + coneHeight * 0.5f, yyy + offset));
-					dynamicElement.drawCone(coneHeight * 0.5f, coneHeight, 10, 3, tmpTransform.getOpenGLMatrix(), Color.RED);
+					// drawCone is Z-axis oriented in gale; rotate -90° around X to point along Y
+					Matrix4f transform = Matrix4f.createMatrixTranslate(
+							new Vector3f(xxx, this.heightMap[yyy][xxx] + coneHeight * 0.5f, yyy + offset))
+							.multiply(Matrix4f.createMatrixRotate(new Vector3f(1, 0, 0), (float) (-Math.PI * 0.5)));
+					dynamicElement.drawCone(coneHeight * 0.5f, coneHeight, 10, 3, transform, Color.RED);
 				}
 			}
 		}

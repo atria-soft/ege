@@ -37,8 +37,8 @@ public class ControlCameraMapEditor implements ControlInterface {
 
 	public ControlCameraMapEditor(final Camera camera) {
 		this.camera = camera;
-		this.targetPoint = new Vector3f(32, 0, 32);
-		this.distance = 50.0f;
+		this.targetPoint = new Vector3f(0, 0, 0);
+		this.distance = 20.0f;
 		this.azimuth = 0.0f;
 		this.elevation = (float) Math.PI * 0.25f;
 		updateCamera();
@@ -126,27 +126,22 @@ public class ControlCameraMapEditor implements ControlInterface {
 				this.lastMousePosition = event.pos();
 
 				if (this.shiftHeld) {
-					// Pan: move target point in screen-aligned plane
+					// Pan: move target point on XZ ground plane
 					final float panSpeed = this.distance * 0.002f;
 					final float cosAz = (float) Math.cos(this.azimuth);
 					final float sinAz = (float) Math.sin(this.azimuth);
 
-					// Screen right direction projected on XZ plane
-					final Vector3f right = new Vector3f(cosAz, 0, sinAz);
-					// Screen up direction
-					final float cosElev = (float) Math.cos(this.elevation);
-					final float sinElev = (float) Math.sin(this.elevation);
-					final Vector3f up = new Vector3f(
-							sinElev * sinAz,
-							cosElev,
-							-sinElev * cosAz);
+					// Camera right projected on XZ ground plane
+					final Vector3f right = new Vector3f(cosAz, 0, -sinAz);
+					// Camera forward projected on XZ ground plane
+					final Vector3f forward = new Vector3f(-sinAz, 0, -cosAz);
 
 					this.targetPoint = this.targetPoint
 							.add(right.multiply(-delta.x() * panSpeed))
-							.add(up.multiply(delta.y() * panSpeed));
+							.add(forward.multiply(-delta.y() * panSpeed));
 				} else {
 					// Orbit: rotate around target
-					this.azimuth += (float) Math.toRadians(delta.x());
+					this.azimuth -= (float) Math.toRadians(delta.x());
 					this.elevation += (float) Math.toRadians(delta.y());
 					this.elevation = Math.max(0.01f,
 							Math.min((float) Math.PI * 0.499f, this.elevation));

@@ -4,27 +4,10 @@ Atria-soft ege (JAVA)
 `Ege` (Ewol Game Engine) is a FREE software.
 
 
-Install blender exporter emf file
-=================================
+Blender EMF exporter
+====================
 
-get blender version
-
-	blender --version | grep "Blender "
-
-create user addon directory: (replace 2.xx with the blender version)
-
-	mkdir -p ~/.config/blender/2.xx/scripts/addons/
-	ln -s $(pwd)/blender/io_scene_emf ~/.config/blender/2.xx/scripts/addons/
-
-- Launch Blender
-- File -> User Preferences
-- Select "Addons" tab
-- Enable "Import-export: Ewol Mesh file format emf"
-
-Some error classile with awesome and blender
-============================================
-
-- file -> user preferences -> system -> Windows draw methode: triple bufferings
+The Blender EMF exporter has moved to the `loader3d` module. See `loader3d/blender/io_scene_emf/readme.md` for installation and usage instructions.
 
 
 License (MPL v2.0)

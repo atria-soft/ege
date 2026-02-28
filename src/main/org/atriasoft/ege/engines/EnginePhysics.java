@@ -7,10 +7,7 @@ import org.atriasoft.ege.Engine;
 import org.atriasoft.ege.Environement;
 import org.atriasoft.ege.camera.Camera;
 import org.atriasoft.ege.components.ComponentPhysics;
-import org.atriasoft.ege.components.PhysicBodyType;
 import org.atriasoft.gale.resource.ResourceColored3DObject;
-import org.atriasoft.phyligram.DebugDisplay;
-import org.atriasoft.phyligram.shape.AABB;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -20,42 +17,24 @@ public class EnginePhysics extends Engine {
 	private static final float TIME_STEP = 0.005f;
 	private float accumulator = 0;
 	private final EngineGravity gravity;
-	protected EnginePhysics engine;
 	private final Vector<ComponentPhysics> components = new Vector<>();
-	private final Vector<ComponentPhysics> componentsWithCollision = new Vector<>();
 	private final ResourceColored3DObject debugDrawProperty = ResourceColored3DObject.create();
-	
+
 	public EnginePhysics(final Environement env) {
 		super(env);
 		this.gravity = (EngineGravity) env.getEngine("gravity");
 		if (this.gravity == null) {
-			LOGGER.error("[CRITICAL] Must initialyse Gravity before physics...");
+			LOGGER.error("[CRITICAL] Must initialise Gravity before physics...");
 			System.exit(-1);
 		}
 	}
-	
-	private void addIncomponentWithCollision(final ComponentPhysics elem) {
-		if (this.componentsWithCollision.contains(elem)) {
-			return;
-		}
-		this.componentsWithCollision.add(elem);
-	}
-	
+
 	private void applyForces(final float timeStep) {
 		for (final ComponentPhysics it : this.components) {
 			it.applyForces(timeStep, this.gravity);
 		}
 	}
-	
-	/**
-	 *  Clear the previous data of collision.
-	 */
-	private void clearPreviousCycle() {
-		for (final ComponentPhysics it : this.components) {
-			it.clearPreviousCollision();
-		}
-	}
-	
+
 	@Override
 	public void componentAdd(final Component ref) {
 		if (!(ref instanceof ComponentPhysics)) {
@@ -63,128 +42,37 @@ public class EnginePhysics extends Engine {
 		}
 		this.components.add((ComponentPhysics) ref);
 	}
-	
+
 	@Override
 	public void componentRemove(final Component ref) {
 		this.components.remove(ref);
 	}
-	
-	/**
-	 * Collision Detection STEP 4: apply all calculated forces (with containts)
-	 * @param timeStep
-	 */
-	private void generateResultCollisionsForces(final float timeStep) {
-		for (final ComponentPhysics it : this.componentsWithCollision) {
-			it.applyColisionForce(timeStep);
-		}
-	}
-	
+
 	@Override
 	public String getType() {
-		// TODO Auto-generated method stub
 		return ENGINE_NAME;
 	}
-	
+
 	@Override
 	public void render(final long deltaMili, final Camera camera) {
-		// TODO Auto-generated method stub
 		for (final ComponentPhysics it : this.components) {
-			//LOGGER.info("Render {}", it);
 			it.renderDebug(this.debugDrawProperty);
 		}
-		//debugDrawProperty.drawCone(2, 5, 9, 12, Matrix4f.identity(), new Color(1,1,0,1));
-		//debugDrawProperty.drawSquare(new Vector3f(1,1,1), Matrix4f.identity(), new Color(1,1,0,1));
-		//debugDrawProperty.drawCubeLine(new Vector3f(1,1,1), new Vector3f(5,5,5), new Color(1,0,1,1), Matrix4f.identity(), true, true);
-		//debugDrawProperty.drawCubeLine(new Vector3f(0,0,0), new Vector3f(32,32,32), new Color(1,0,1,1), Matrix4f.identity(), true, true);
 	}
-	
+
 	@Override
 	public void renderDebug(final long deltaMili, final Camera camera) {
-		DebugDisplay.onDraw();
-		DebugDisplay.clear();
+		// TODO: render debug display when ephysics is integrated
 	}
-	
+
 	@Override
 	public void update(final long deltaMili) {
-		// Add the time difference in the accumulator
 		this.accumulator += deltaMili * 0.0001f;
-		// While there is enough accumulated time to take one or several physics steps
 		while (this.accumulator >= TIME_STEP) {
 			LOGGER.trace("update physic ... {}", this.accumulator);
-			clearPreviousCycle();
 			applyForces(TIME_STEP);
-			// update AABB after because in rotation force, the Bounding box change...
-			updateAABB(TIME_STEP);
-			// update the collision tree between each object in the room
-			updateCollisionsAABB(TIME_STEP);
-			updateCollisionsNarrowPhase(TIME_STEP);
-			generateResultCollisionsForces(TIME_STEP);
-			// Decrease the accumulated time
+			// TODO: integrate ephysics collision detection here
 			this.accumulator -= TIME_STEP;
 		}
-		
 	}
-	
-	/**
-	 * Collision detection STEP 1: Upadte the AABB positioning of each elements
-	 * @param timeStep Delta time since the last check
-	 */
-	private void updateAABB(final float timeStep) {
-		for (final ComponentPhysics it : this.components) {
-			it.updateAABB();
-		}
-	}
-	
-	/**
-	 * Collision Detection STEP 2: update the list of each element that collide together in the AABB Boxs (update is done between each boxes)
-	 * @param timeStep Delta time since the last check
-	 */
-	// TODO : generate a B-TREE to manage collision, it is faster, but now, this is not the purpose ...
-	private void updateCollisionsAABB(final float timeStep) {
-		this.componentsWithCollision.clear();
-		// clear all object intersection
-		for (final ComponentPhysics it : this.components) {
-			it.clearAABBIntersection();
-		}
-		// update the current object intersection...
-		for (int iii = 0; iii < this.components.size(); iii++) {
-			final ComponentPhysics current = this.components.get(iii);
-			final AABB currentAABB = current.getAABB();
-			for (int jjj = iii + 1; jjj < this.components.size(); jjj++) {
-				final ComponentPhysics remote = this.components.get(jjj);
-				if (current.getBodyType() != PhysicBodyType.BODY_DYNAMIC
-						&& remote.getBodyType() != PhysicBodyType.BODY_DYNAMIC) {
-					continue;
-				}
-				// prefer checking the collision, this a time-constant operation, check if collision already exist is a unpredictable time.
-				if (currentAABB.intersect(this.components.get(jjj).getAABB())) {
-					current.addIntersection(remote);
-					remote.addIntersection(current);
-					addIncomponentWithCollision(remote);
-					addIncomponentWithCollision(current);
-				}
-			}
-		}
-	}
-	
-	/**
-	 * Collision Detection STEP 3: Narrow phase: process the collision between every OBB boxes (or other..)
-	 * @param timeStep Delta time since the last check
-	 */
-	private void updateCollisionsNarrowPhase(final float timeStep) {
-		// clear all object intersection
-		for (final ComponentPhysics it : this.componentsWithCollision) {
-			it.updateForNarrowCollision();
-		}
-		// check for every component if the narrow collision is available.
-		for (final ComponentPhysics current : this.componentsWithCollision) {
-			final boolean collide = current.checkNarrowCollision();
-			
-		}
-		// update the force of collision available.
-		for (final ComponentPhysics current : this.components) {
-			current.narrowCollisionCreateContactAndForce();
-		}
-	}
-	
 }

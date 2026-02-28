@@ -43,7 +43,6 @@ import org.atriasoft.gale.key.KeySpecial;
 import org.atriasoft.gale.key.KeyStatus;
 import org.atriasoft.gale.key.KeyType;
 import org.atriasoft.gale.resource.ResourceColored3DObject;
-import org.atriasoft.phyligram.PhysicBox;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -118,11 +117,7 @@ public class CollisionTestApplication extends GaleApplication {
 			localBox.addComponent(new ComponentPosition(new Transform3D(Vector3f.ZERO, orientation)));
 			final ComponentPhysics physics2 = new ComponentPhysics(this.env);
 			physics2.setBodyType(PhysicBodyType.BODY_STATIC);
-			final PhysicBox box2 = new PhysicBox();
-			box2.setSize(new Vector3f(5.0f, 0.5f, 5.0f));
-			box2.setOrigin(Vector3f.ZERO);
-			box2.setMass(0);
-			physics2.addShape(box2);
+			// TODO: add ephysics collision shape here
 			localBox.addComponent(physics2);
 			this.env.addEntity(localBox);
 		}

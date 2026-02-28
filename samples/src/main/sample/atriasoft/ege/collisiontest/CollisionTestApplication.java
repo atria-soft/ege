@@ -24,6 +24,7 @@ import org.atriasoft.ege.components.ComponentStaticMesh;
 import org.atriasoft.ege.components.ComponentTexture;
 import org.atriasoft.ege.components.PhysicBodyType;
 import org.atriasoft.ege.engines.EnginePhysics;
+import org.atriasoft.ephysics.collision.shapes.BoxShape;
 import org.atriasoft.ege.map.MapVoxel;
 import org.atriasoft.ege.tools.MeshGenerator;
 import org.atriasoft.etk.Color;
@@ -115,9 +116,9 @@ public class CollisionTestApplication extends GaleApplication {
 			localBox.addComponent(new ComponentRenderTexturedStaticMesh(new Uri("DATA", "basic.vert", "loxelEngine"),
 					new Uri("DATA", "basic.frag", "loxelEngine")));
 			localBox.addComponent(new ComponentPosition(new Transform3D(Vector3f.ZERO, orientation)));
-			final ComponentPhysics physics2 = new ComponentPhysics(this.env);
+			final ComponentPhysics physics2 = new ComponentPhysics();
 			physics2.setBodyType(PhysicBodyType.BODY_STATIC);
-			// TODO: add ephysics collision shape here
+			physics2.addShape(new BoxShape(new Vector3f(0.5f, 0.5f, 0.5f), 0.0f), 1.0f);
 			localBox.addComponent(physics2);
 			this.env.addEntity(localBox);
 		}
@@ -130,7 +131,7 @@ public class CollisionTestApplication extends GaleApplication {
 			localBox.addComponent(new ComponentLight(new Light(new Vector3f(0, 1, 0), Vector3f.ZERO, new Vector3f(0.8f, 0.03f, 0.002f))));
 			localBox.addComponent(new ComponentRenderTexturedStaticMesh(new Uri("DATA", "basic.vert", "loxelEngine"), new Uri("DATA", "basic.frag", "loxelEngine")));
 			if (false) {
-				final ComponentPhysics physics2 = new ComponentPhysics(this.env);
+				final ComponentPhysics physics2 = new ComponentPhysics();
 				//physics2.setTransform(new Transform3D(new Vector3f(0, 0, 0.90f)));
 				physics2.setTransform(new Transform3D(new Vector3f(0, 0, 1.20f)));
 				final Box box2 = new Box();

@@ -70,7 +70,7 @@ public class MapVoxel extends EngineMap {
 		tmpEntity.addComponent(new ComponentRenderTexturedMaterialsDynamicMeshs(
 				new Uri("DATA", "basicMaterial.vert"),
 				new Uri("DATA", "basicMaterial.frag")));
-		ComponentPhysics physics = new ComponentPhysics(this.env);
+		ComponentPhysics physics = new ComponentPhysics();
 		//PhysicMapVoxel box = new PhysicMapVoxel(tmpVoxelChunk);
 		//physics.addShape(box);
 		//physics.setStaticObject(true);

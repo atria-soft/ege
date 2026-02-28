@@ -1,12 +1,15 @@
 package org.atriasoft.ege.engines;
 
-import java.util.Vector;
+import java.util.ArrayList;
+import java.util.List;
 
 import org.atriasoft.ege.Component;
 import org.atriasoft.ege.Engine;
 import org.atriasoft.ege.Environement;
 import org.atriasoft.ege.camera.Camera;
 import org.atriasoft.ege.components.ComponentPhysics;
+import org.atriasoft.ephysics.engine.DynamicsWorld;
+import org.atriasoft.etk.math.Vector3f;
 import org.atriasoft.gale.resource.ResourceColored3DObject;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -14,11 +17,12 @@ import org.slf4j.LoggerFactory;
 public class EnginePhysics extends Engine {
 	static final Logger LOGGER = LoggerFactory.getLogger(EnginePhysics.class);
 	public static final String ENGINE_NAME = "physics";
-	private static final float TIME_STEP = 0.005f;
+	private static final float TIME_STEP = 1.0f / 60.0f;
 	private float accumulator = 0;
 	private final EngineGravity gravity;
-	private final Vector<ComponentPhysics> components = new Vector<>();
+	private final List<ComponentPhysics> components = new ArrayList<>();
 	private final ResourceColored3DObject debugDrawProperty = ResourceColored3DObject.create();
+	private final DynamicsWorld dynamicsWorld;
 
 	public EnginePhysics(final Environement env) {
 		super(env);
@@ -27,11 +31,34 @@ public class EnginePhysics extends Engine {
 			LOGGER.error("[CRITICAL] Must initialise Gravity before physics...");
 			System.exit(-1);
 		}
+		final Vector3f initialGravity = this.gravity.getGravityAtPosition(Vector3f.ZERO);
+		this.dynamicsWorld = new DynamicsWorld(initialGravity);
 	}
 
-	private void applyForces(final float timeStep) {
-		for (final ComponentPhysics it : this.components) {
-			it.applyForces(timeStep, this.gravity);
+	/**
+	 * Get the ephysics dynamics world.
+	 * @return The dynamics world instance
+	 */
+	public DynamicsWorld getDynamicsWorld() {
+		return this.dynamicsWorld;
+	}
+
+	private void updateGravity() {
+		final Vector3f currentGravity = this.gravity.getGravityAtPosition(Vector3f.ZERO);
+		if (!currentGravity.isEqual(this.dynamicsWorld.getGravity())) {
+			this.dynamicsWorld.setGravity(currentGravity);
+		}
+	}
+
+	private void syncTransformsFromPhysics() {
+		for (final ComponentPhysics comp : this.components) {
+			comp.syncFromPhysics();
+		}
+	}
+
+	private void syncTransformsToPhysics() {
+		for (final ComponentPhysics comp : this.components) {
+			comp.syncToPhysics();
 		}
 	}
 
@@ -40,12 +67,19 @@ public class EnginePhysics extends Engine {
 		if (!(ref instanceof ComponentPhysics)) {
 			return;
 		}
-		this.components.add((ComponentPhysics) ref);
+		final ComponentPhysics physics = (ComponentPhysics) ref;
+		this.components.add(physics);
+		physics.createBody(this.dynamicsWorld);
 	}
 
 	@Override
 	public void componentRemove(final Component ref) {
-		this.components.remove(ref);
+		if (!(ref instanceof ComponentPhysics)) {
+			return;
+		}
+		final ComponentPhysics physics = (ComponentPhysics) ref;
+		physics.destroyBody(this.dynamicsWorld);
+		this.components.remove(physics);
 	}
 
 	@Override
@@ -62,17 +96,19 @@ public class EnginePhysics extends Engine {
 
 	@Override
 	public void renderDebug(final long deltaMili, final Camera camera) {
-		// TODO: render debug display when ephysics is integrated
+		// Could render AABB wireframes, contact points, etc.
 	}
 
 	@Override
 	public void update(final long deltaMili) {
-		this.accumulator += deltaMili * 0.0001f;
+		updateGravity();
+		syncTransformsToPhysics();
+		this.accumulator += deltaMili * 0.001f;
 		while (this.accumulator >= TIME_STEP) {
 			LOGGER.trace("update physic ... {}", this.accumulator);
-			applyForces(TIME_STEP);
-			// TODO: integrate ephysics collision detection here
+			this.dynamicsWorld.update(TIME_STEP);
 			this.accumulator -= TIME_STEP;
 		}
+		syncTransformsFromPhysics();
 	}
 }

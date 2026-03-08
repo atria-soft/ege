@@ -131,18 +131,20 @@ public class EngineShadow extends Engine {
 		for (int casterIdx = 0; casterIdx < casterCount; casterIdx++) {
 			final CelestialBody caster = casters.get(casterIdx);
 			final Vector3f lightDir = caster.getDirection();
-			
+			final float orbitalAngle = caster.getCurrentAngle();
+			final float orbitalInclination = caster.getOrbitalInclination();
+
 			for (int cascadeIdx = 0; cascadeIdx < cascadeCount; cascadeIdx++) {
 				final ShadowCascade cascade = ensureCascade(casterIdx, cascadeIdx);
-				
+
 				// Set cascade split range
 				final float near = this.config.getCascadeNear(cascadeIdx);
 				final float far = this.config.getCascadeFar(cascadeIdx);
 				cascade.setSplitRange(near, far);
-				
+
 				// Compute light-space matrix fitted to this frustum slice
-				final Matrix4f lightSpaceMatrix = cascade.computeLightSpaceMatrix(lightDir, camera, this.cameraFovY,
-						this.cameraAspectRatio);
+				final Matrix4f lightSpaceMatrix = cascade.computeLightSpaceMatrix(lightDir, orbitalAngle,
+						orbitalInclination, camera, this.cameraFovY, this.cameraAspectRatio);
 				
 				// Render depth pass
 				cascade.getResources().beginDepthPass(this.config.getShadowMapResolution(), lightSpaceMatrix);

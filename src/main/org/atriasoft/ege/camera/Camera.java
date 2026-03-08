@@ -12,18 +12,32 @@ public class Camera {
 	private Vector3f position = new Vector3f(0, 0, 0);
 	private float roll = 0;
 	private float yaw = 0;
-	
+	private Matrix4f viewMatrix = null;
+
 	public Camera() {
-		
+
 	}
-	
+
 	public Matrix4f getConvertionMatrix() {
+		if (this.viewMatrix != null) {
+			return this.viewMatrix;
+		}
 		Matrix4f matrix = Matrix4f.IDENTITY;
 		matrix = matrix.rotate(new Vector3f(1, 0, 0), getPitch());
 		matrix = matrix.rotate(new Vector3f(0, 1, 0), getYaw());
 		matrix = matrix.rotate(new Vector3f(0, 0, 1), getRoll());
 		matrix = matrix.translate(new Vector3f(-this.position.x(), -this.position.y(), -this.position.z()));
 		return matrix;
+	}
+
+	/**
+	 * Set a direct view matrix, bypassing Euler angle computation.
+	 * When set (non-null), getConvertionMatrix() returns this matrix directly.
+	 * Set to null to revert to Euler-angle-based computation.
+	 * @param viewMatrix the view matrix, or null to use Euler angles
+	 */
+	public void setViewMatrix(final Matrix4f viewMatrix) {
+		this.viewMatrix = viewMatrix;
 	}
 	
 	public float getPitch() {
@@ -44,23 +58,15 @@ public class Camera {
 
 	/**
 	 * Get the camera's forward direction vector in world space.
-	 * Computed by transforming the -Z view-space direction through the inverse
-	 * of the rotation part of the view matrix (= its transpose, since rotations
-	 * are orthogonal).
+	 * When a direct view matrix is set, extracts forward from it.
+	 * Otherwise computed from Euler angles.
 	 * @return Normalized forward direction
 	 */
 	public Vector3f getForward() {
-		// Build rotation matrix then transpose it, then multiply by (0,0,-1)
-		Matrix4f rotation = Matrix4f.IDENTITY;
-		rotation = rotation.rotate(new Vector3f(1, 0, 0), this.pitch);
-		rotation = rotation.rotate(new Vector3f(0, 1, 0), this.yaw);
-		rotation = rotation.rotate(new Vector3f(0, 0, 1), this.roll);
-		// Inverse = transpose for rotation. Forward = R^T * (0,0,-1)
-		// Row 3 of R = column 3 of R^T. Forward = -column3 of R^T = -row3 of R.
-		// R row3 = (a3, b3, c3) in the record layout
-		final Matrix4f inv = rotation.transpose();
-		// forward = inv * (0,0,-1) = (-inv.c1, -inv.c2, -inv.c3)
-		return new Vector3f(-inv.c1(), -inv.c2(), -inv.c3());
+		final Matrix4f m = getConvertionMatrix();
+		// Row 3 of the view matrix = forward axis (OpenGL: camera looks along -Z).
+		// World-space forward = negated row 3: (-a3, -b3, -c3)
+		return new Vector3f(-m.a3(), -m.b3(), -m.c3());
 	}
 
 	/**
@@ -68,13 +74,9 @@ public class Camera {
 	 * @return Normalized right direction
 	 */
 	public Vector3f getRight() {
-		Matrix4f rotation = Matrix4f.IDENTITY;
-		rotation = rotation.rotate(new Vector3f(1, 0, 0), this.pitch);
-		rotation = rotation.rotate(new Vector3f(0, 1, 0), this.yaw);
-		rotation = rotation.rotate(new Vector3f(0, 0, 1), this.roll);
-		final Matrix4f inv = rotation.transpose();
-		// right = inv * (1,0,0) = (inv.a1, inv.a2, inv.a3)
-		return new Vector3f(inv.a1(), inv.a2(), inv.a3());
+		final Matrix4f m = getConvertionMatrix();
+		// Row 1 of the view matrix = right axis: (a1, b1, c1)
+		return new Vector3f(m.a1(), m.b1(), m.c1());
 	}
 
 	/**
@@ -82,13 +84,9 @@ public class Camera {
 	 * @return Normalized up direction
 	 */
 	public Vector3f getUp() {
-		Matrix4f rotation = Matrix4f.IDENTITY;
-		rotation = rotation.rotate(new Vector3f(1, 0, 0), this.pitch);
-		rotation = rotation.rotate(new Vector3f(0, 1, 0), this.yaw);
-		rotation = rotation.rotate(new Vector3f(0, 0, 1), this.roll);
-		final Matrix4f inv = rotation.transpose();
-		// up = inv * (0,1,0) = (inv.b1, inv.b2, inv.b3)
-		return new Vector3f(inv.b1(), inv.b2(), inv.b3());
+		final Matrix4f m = getConvertionMatrix();
+		// Row 2 of the view matrix = up axis: (a2, b2, c2)
+		return new Vector3f(m.a2(), m.b2(), m.c2());
 	}
 	
 	public void setPitch(final float pitch) {

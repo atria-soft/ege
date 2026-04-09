@@ -9,7 +9,7 @@ public class ProjectionPerspective implements ProjectionInterface {
 	Matrix4f lastMatrix = Matrix4f.IDENTITY;
 	float angleViewRad = 3.14f * 0.5f;
 	float nearView = 0.1f;
-	float farView = 5000.0f;
+	float farView = 100000.0f;
 
 	protected float getAspectRatio(Vector2f size) {
 		return size.x() / size.y();

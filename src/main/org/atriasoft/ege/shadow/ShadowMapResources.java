@@ -1,6 +1,7 @@
 package org.atriasoft.ege.shadow;
 
 import org.atriasoft.ege.engines.EngineShadow.MeshPositionPair;
+import org.atriasoft.ege.engines.ShadowCaster;
 import org.atriasoft.etk.Uri;
 import org.atriasoft.etk.math.Matrix4f;
 import org.atriasoft.etk.math.Vector2i;
@@ -143,6 +144,21 @@ public class ShadowMapResources {
 		OpenGL.updateAllFlags();
 		pair.render.run();
 		pair.unbind.run();
+	}
+
+	/**
+	 * Draw the depth of a registered {@link ShadowCaster} into the pass begun
+	 * by a successful {@link #beginDepthPass}.
+	 *
+	 * @param caster the geometry to draw
+	 */
+	public void renderCasterDepth(final ShadowCaster caster) {
+		if (this.depthProgram == null || caster == null) {
+			return;
+		}
+		this.depthProgram.uniformMatrix(this.depthMatTransform, caster.getShadowTransform());
+		OpenGL.updateAllFlags();
+		caster.renderShadowDepth();
 	}
 
 	/**

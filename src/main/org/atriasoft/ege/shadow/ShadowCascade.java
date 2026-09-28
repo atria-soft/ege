@@ -177,24 +177,25 @@ public class ShadowCascade {
 		
 		this.lightSpaceMatrix = lightProjection.multiply(lightView);
 		
-		// Temporary debug logging (throttled to every 120 frames)
-		if (logCounter % 120 == 0) {
-			LOGGER.info("=== ShadowCascade debug (frame {}) ===", logCounter);
-			LOGGER.info("  lightDir=({}, {}, {})", lightDir.x(), lightDir.y(), lightDir.z());
-			LOGGER.info("  camPos=({}, {}, {})", camera.getPosition().x(), camera.getPosition().y(),
+		// Dump of the fit for debugging, every 120 fits, at TRACE only: at a higher level it floods the logs
+		// of an application whose root logger is at DEBUG (16 lines every 120 fits of each cascade).
+		if (LOGGER.isTraceEnabled() && logCounter % 120 == 0) {
+			LOGGER.trace("=== ShadowCascade debug (frame {}) ===", logCounter);
+			LOGGER.trace("  lightDir=({}, {}, {})", lightDir.x(), lightDir.y(), lightDir.z());
+			LOGGER.trace("  camPos=({}, {}, {})", camera.getPosition().x(), camera.getPosition().y(),
 					camera.getPosition().z());
-			LOGGER.info("  camForward=({}, {}, {})", camera.getForward().x(), camera.getForward().y(),
+			LOGGER.trace("  camForward=({}, {}, {})", camera.getForward().x(), camera.getForward().y(),
 					camera.getForward().z());
-			LOGGER.info("  camUp=({}, {}, {})", camera.getUp().x(), camera.getUp().y(), camera.getUp().z());
-			LOGGER.info("  splitNear={}, splitFar={}", this.splitNear, this.splitFar);
-			LOGGER.info("  frustumCenter=({}, {}, {})", center.x(), center.y(), center.z());
-			LOGGER.info("  radius={}, lightPos=({}, {}, {})", radius, lightPos.x(), lightPos.y(), lightPos.z());
-			LOGGER.info("  AABB in light space: X=[{}, {}], Y=[{}, {}], Z=[{}, {}]", minX, maxX, minY, maxY, minZ,
+			LOGGER.trace("  camUp=({}, {}, {})", camera.getUp().x(), camera.getUp().y(), camera.getUp().z());
+			LOGGER.trace("  splitNear={}, splitFar={}", this.splitNear, this.splitFar);
+			LOGGER.trace("  frustumCenter=({}, {}, {})", center.x(), center.y(), center.z());
+			LOGGER.trace("  radius={}, lightPos=({}, {}, {})", radius, lightPos.x(), lightPos.y(), lightPos.z());
+			LOGGER.trace("  AABB in light space: X=[{}, {}], Y=[{}, {}], Z=[{}, {}]", minX, maxX, minY, maxY, minZ,
 					maxZ);
-			LOGGER.info("  Ortho near={}, far={}, depth range={}", -maxZ, -minZ, (-minZ) - (-maxZ));
+			LOGGER.trace("  Ortho near={}, far={}, depth range={}", -maxZ, -minZ, (-minZ) - (-maxZ));
 			for (int ci = 0; ci < frustumCorners.length; ci++) {
 				final Vector3f tc = lightView.multiply(frustumCorners[ci]);
-				LOGGER.info("  corner[{}] world=({},{},{}) light=({},{},{})", ci, frustumCorners[ci].x(),
+				LOGGER.trace("  corner[{}] world=({},{},{}) light=({},{},{})", ci, frustumCorners[ci].x(),
 						frustumCorners[ci].y(), frustumCorners[ci].z(), tc.x(), tc.y(), tc.z());
 			}
 		}

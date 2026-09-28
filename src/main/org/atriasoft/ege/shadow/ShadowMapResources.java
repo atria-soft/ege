@@ -3,6 +3,7 @@ package org.atriasoft.ege.shadow;
 import org.atriasoft.ege.engines.EngineShadow.MeshPositionPair;
 import org.atriasoft.etk.Uri;
 import org.atriasoft.etk.math.Matrix4f;
+import org.atriasoft.etk.math.Vector2i;
 import org.atriasoft.gale.backend3d.OpenGL;
 import org.atriasoft.gale.backend3d.OpenGL.Flag;
 import org.atriasoft.gale.resource.ResourceProgram;
@@ -37,6 +38,12 @@ public class ShadowMapResources {
 
 	// The light-space matrix computed for this shadow map
 	private Matrix4f lightSpaceMatrix = Matrix4f.IDENTITY;
+	/** Framebuffer bound before the depth pass (0 = the window, or an off-screen scene target). */
+	private int savedFramebuffer = 0;
+	/** Viewport before the depth pass: x, y, width, height. */
+	private final int[] savedViewport = new int[4];
+	/** Whether {@link #savedFramebuffer} and {@link #savedViewport} hold the state to restore. */
+	private boolean stateSaved = false;
 
 	public ShadowMapResources() {
 	}
@@ -155,6 +162,11 @@ public class ShadowMapResources {
 			return;
 		}
 
+		// The caller may be drawing into an off-screen target or a sub-rectangle of the window:
+		// remember both so that endDepthPass() gives them back instead of assuming the window.
+		this.savedFramebuffer = GL11.glGetInteger(GL30.GL_FRAMEBUFFER_BINDING);
+		GL11.glGetIntegerv(GL11.GL_VIEWPORT, this.savedViewport);
+		this.stateSaved = true;
 		OpenGL.bindFramebuffer(this.fboId);
 		OpenGL.setViewPort(
 				new org.atriasoft.etk.math.Vector2f(0, 0),
@@ -175,9 +187,13 @@ public class ShadowMapResources {
 	}
 
 	/**
-	 * End the depth pass: unbind shader and restore default framebuffer.
+	 * End the depth pass: unbind the shader and give back the framebuffer and
+	 * the viewport that were current when {@link #beginDepthPass} was called
+	 * (an off-screen scene target or a sub-rectangle of the window survive the
+	 * shadow pass).
 	 *
-	 * @param viewportSize The original viewport size to restore
+	 * @param viewportSize viewport size restored at the origin of the window when no state was saved
+	 *                     (the pass was skipped because the frame buffer could not be created)
 	 */
 	public void endDepthPass(final org.atriasoft.etk.math.Vector2f viewportSize) {
 		if (this.depthProgram != null) {
@@ -187,6 +203,13 @@ public class ShadowMapResources {
 		OpenGL.disable(Flag.flag_polygonOffsetFill);
 		GL11.glPolygonOffset(0.0f, 0.0f);
 		OpenGL.updateAllFlags();
+		if (this.stateSaved) {
+			this.stateSaved = false;
+			OpenGL.bindFramebuffer(this.savedFramebuffer);
+			OpenGL.setViewPort(new Vector2i(this.savedViewport[0], this.savedViewport[1]),
+					new Vector2i(this.savedViewport[2], this.savedViewport[3]));
+			return;
+		}
 		OpenGL.bindFramebuffer(0);
 		OpenGL.setViewPort(
 				new org.atriasoft.etk.math.Vector2f(0, 0),

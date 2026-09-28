@@ -46,6 +46,10 @@ import org.slf4j.LoggerFactory;
  * {@link ShadowCaster} registered with {@link #addShadowCaster} (geometry
  * that is no entity mesh).
  * <p>
+ * The state the passes change (framebuffers, viewport, depth test, depth
+ * clear value, polygon offset, program) is given back to the caller after
+ * them, even when a pass fails with an exception.
+ * <p>
  * The shadow data (per-cascade depth textures, light-space matrices, split distances)
  * is accessed by {@link org.atriasoft.ege.components.part.ShadowRender}
  * during the main render pass.
@@ -142,9 +146,12 @@ public class EngineShadow extends Engine {
 		
 		this.activeCascadeSplitDistances = this.config.getCascadeSplitDistances();
 		boolean allReady = true;
-		// The caller may draw into an off-screen target or a sub-rectangle of the window:
-		// its framebuffers and viewport are captured once and given back after the last pass.
+		// The caller may draw into an off-screen target or a sub-rectangle of the window: its framebuffers,
+		// viewport, depth test, depth clear value, polygon offset and program are captured once and given
+		// back after the last pass.
 		final ShadowMapResources.RenderTarget target = ShadowMapResources.RenderTarget.capture();
+		// The pass begun and not ended yet: ended in the finally when a draw throws.
+		ShadowMapResources openPass = null;
 		try {
 			for (int casterIdx = 0; casterIdx < casterCount; casterIdx++) {
 				final CelestialBody caster = casters.get(casterIdx);
@@ -167,6 +174,7 @@ public class EngineShadow extends Engine {
 					// Render depth pass
 					final ShadowMapResources resources = cascade.getResources();
 					if (resources.beginDepthPass(this.config.getShadowMapResolution(), lightSpaceMatrix)) {
+						openPass = resources;
 						for (final MeshPositionPair pair : meshPairs) {
 							resources.renderMeshDepth(pair);
 						}
@@ -174,6 +182,7 @@ public class EngineShadow extends Engine {
 							resources.renderCasterDepth(shadowCaster);
 						}
 						resources.endDepthPass();
+						openPass = null;
 					} else {
 						allReady = false;
 					}
@@ -185,6 +194,10 @@ public class EngineShadow extends Engine {
 				}
 			}
 		} finally {
+			if (openPass != null) {
+				// A draw threw in the middle of a pass: its program and its polygon offset go too.
+				openPass.endDepthPass();
+			}
 			target.restore();
 		}
 		// A shadow map that could not be drawn: no shadow at all rather than sampling nothing.

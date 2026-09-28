@@ -38,12 +38,6 @@ public class ShadowMapResources {
 
 	// The light-space matrix computed for this shadow map
 	private Matrix4f lightSpaceMatrix = Matrix4f.IDENTITY;
-	/** Framebuffer bound before the depth pass (0 = the window, or an off-screen scene target). */
-	private int savedFramebuffer = 0;
-	/** Viewport before the depth pass: x, y, width, height. */
-	private final int[] savedViewport = new int[4];
-	/** Whether {@link #savedFramebuffer} and {@link #savedViewport} hold the state to restore. */
-	private boolean stateSaved = false;
 
 	public ShadowMapResources() {
 	}
@@ -109,10 +103,12 @@ public class ShadowMapResources {
 			LOGGER.error("Failed to create shadow map FBO ({}x{})", width, height);
 			destroyFbo();
 			OpenGL.bindFramebuffer(0);
+			OpenGL.bindTexture2D(0);
 			return;
 		}
 
 		OpenGL.bindFramebuffer(0);
+		OpenGL.bindTexture2D(0);
 		this.fboWidth = width;
 		this.fboHeight = height;
 		LOGGER.debug("Created shadow map FBO: {}x{}", width, height);
@@ -150,27 +146,27 @@ public class ShadowMapResources {
 	}
 
 	/**
-	 * Begin a shadow depth pass: bind FBO, set viewport, clear depth, enable depth test.
+	 * Begin a shadow depth pass: bind the FBO, set the viewport, clear the
+	 * depth, enable the depth test and the depth program.
+	 * <p>
+	 * The framebuffer and the viewport of the caller are NOT saved here:
+	 * capture them once with {@link RenderTarget#capture()} before the depth
+	 * passes of a frame (creating the FBO binds framebuffer 0) and restore
+	 * them once after the last {@link #endDepthPass()}.
 	 *
 	 * @param resolution       Shadow map resolution (width = height)
 	 * @param lightSpaceMatrix The light's view-projection matrix
+	 * @return whether the pass is ready (the FBO exists): only then draw the meshes and call
+	 *         {@link #endDepthPass()}
 	 */
-	public void beginDepthPass(final int resolution, final Matrix4f lightSpaceMatrix) {
+	public boolean beginDepthPass(final int resolution, final Matrix4f lightSpaceMatrix) {
 		this.lightSpaceMatrix = lightSpaceMatrix;
 		ensureFbo(resolution, resolution);
-		if (this.fboId == -1) {
-			return;
+		if (this.fboId == -1 || this.depthProgram == null) {
+			return false;
 		}
-
-		// The caller may be drawing into an off-screen target or a sub-rectangle of the window:
-		// remember both so that endDepthPass() gives them back instead of assuming the window.
-		this.savedFramebuffer = GL11.glGetInteger(GL30.GL_FRAMEBUFFER_BINDING);
-		GL11.glGetIntegerv(GL11.GL_VIEWPORT, this.savedViewport);
-		this.stateSaved = true;
 		OpenGL.bindFramebuffer(this.fboId);
-		OpenGL.setViewPort(
-				new org.atriasoft.etk.math.Vector2f(0, 0),
-				new org.atriasoft.etk.math.Vector2f(resolution, resolution));
+		OpenGL.setViewPort(new Vector2i(0, 0), new Vector2i(resolution, resolution));
 		OpenGL.clearDepth(1.0f);
 		OpenGL.clear(OpenGL.ClearFlag.clearFlag_depthBuffer);
 		OpenGL.enable(Flag.flag_depthTest);
@@ -179,23 +175,17 @@ public class ShadowMapResources {
 		OpenGL.enable(Flag.flag_polygonOffsetFill);
 		GL11.glPolygonOffset(1.0f, 1.0f);
 		OpenGL.updateAllFlags();
-
-		if (this.depthProgram != null) {
-			this.depthProgram.use();
-			this.depthProgram.uniformMatrix(this.depthLightSpaceMatrix, lightSpaceMatrix);
-		}
+		this.depthProgram.use();
+		this.depthProgram.uniformMatrix(this.depthLightSpaceMatrix, lightSpaceMatrix);
+		return true;
 	}
 
 	/**
-	 * End the depth pass: unbind the shader and give back the framebuffer and
-	 * the viewport that were current when {@link #beginDepthPass} was called
-	 * (an off-screen scene target or a sub-rectangle of the window survive the
-	 * shadow pass).
-	 *
-	 * @param viewportSize viewport size restored at the origin of the window when no state was saved
-	 *                     (the pass was skipped because the frame buffer could not be created)
+	 * End a depth pass begun by a successful {@link #beginDepthPass}: unbind
+	 * the depth program and turn the polygon offset off. The framebuffer and
+	 * the viewport stay those of the pass (see {@link RenderTarget}).
 	 */
-	public void endDepthPass(final org.atriasoft.etk.math.Vector2f viewportSize) {
+	public void endDepthPass() {
 		if (this.depthProgram != null) {
 			this.depthProgram.unUse();
 		}
@@ -203,17 +193,6 @@ public class ShadowMapResources {
 		OpenGL.disable(Flag.flag_polygonOffsetFill);
 		GL11.glPolygonOffset(0.0f, 0.0f);
 		OpenGL.updateAllFlags();
-		if (this.stateSaved) {
-			this.stateSaved = false;
-			OpenGL.bindFramebuffer(this.savedFramebuffer);
-			OpenGL.setViewPort(new Vector2i(this.savedViewport[0], this.savedViewport[1]),
-					new Vector2i(this.savedViewport[2], this.savedViewport[3]));
-			return;
-		}
-		OpenGL.bindFramebuffer(0);
-		OpenGL.setViewPort(
-				new org.atriasoft.etk.math.Vector2f(0, 0),
-				viewportSize);
 	}
 
 	/**
@@ -236,5 +215,40 @@ public class ShadowMapResources {
 	/** @return true if the FBO is valid and ready */
 	public boolean isReady() {
 		return this.fboId != -1 && this.depthProgram != null;
+	}
+
+	/**
+	 * Draw and read framebuffers and viewport of the caller of the depth
+	 * passes (0 = the window, or an off-screen scene target, possibly a
+	 * sub-rectangle of it): captured once before the passes of a frame and
+	 * given back once after, so that the shadow maps never leave the caller
+	 * drawing into the window or into the wrong rectangle.
+	 */
+	public static final class RenderTarget {
+		private final int drawFramebuffer;
+		private final int readFramebuffer;
+		private final int[] viewport;
+
+		private RenderTarget(final int drawFramebuffer, final int readFramebuffer, final int[] viewport) {
+			this.drawFramebuffer = drawFramebuffer;
+			this.readFramebuffer = readFramebuffer;
+			this.viewport = viewport;
+		}
+
+		/** The framebuffers and the viewport bound now. */
+		public static RenderTarget capture() {
+			final int[] viewport = new int[4];
+			GL11.glGetIntegerv(GL11.GL_VIEWPORT, viewport);
+			return new RenderTarget(GL11.glGetInteger(GL30.GL_DRAW_FRAMEBUFFER_BINDING),
+					GL11.glGetInteger(GL30.GL_READ_FRAMEBUFFER_BINDING), viewport);
+		}
+
+		/** Bind the captured framebuffers and viewport again. */
+		public void restore() {
+			GL30.glBindFramebuffer(GL30.GL_DRAW_FRAMEBUFFER, this.drawFramebuffer);
+			GL30.glBindFramebuffer(GL30.GL_READ_FRAMEBUFFER, this.readFramebuffer);
+			OpenGL.setViewPort(new Vector2i(this.viewport[0], this.viewport[1]),
+					new Vector2i(this.viewport[2], this.viewport[3]));
+		}
 	}
 }

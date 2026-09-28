@@ -1,7 +1,5 @@
 package org.atriasoft.ege.engines;
 
-import java.util.ArrayList;
-import java.util.List;
 import java.util.Vector;
 
 import org.atriasoft.ege.Component;
@@ -24,6 +22,12 @@ public class EngineLight extends Engine {
 	public static final float DEFAULT_LIGHT_RANGE = 50.0f;
 	private final Vector<ComponentLight> componentLights = new Vector<>();
 	private float lightRange = DEFAULT_LIGHT_RANGE;
+	/** Scratch of {@link #getNearest}: nearest local lights (rendering thread only). */
+	private final ComponentLight[] nearestLights = new ComponentLight[MAX_LIGHTS];
+	/** Scratch of {@link #getNearest}: their positions. */
+	private final Vector3f[] nearestPositions = new Vector3f[MAX_LIGHTS];
+	/** Scratch of {@link #getNearest}: their squared distances. */
+	private final float[] nearestDistances = new float[MAX_LIGHTS];
 	private final Vector<ComponentLightSun> componentSuns = new Vector<>();
 	
 	public EngineLight(final Environement env) {
@@ -106,27 +110,43 @@ public class EngineLight extends Engine {
 			out[count].setRadius(elem.getLight().getRadius());
 			count++;
 		}
-		final float maxDistance2 = this.lightRange * this.lightRange;
-		final List<ComponentLight> inRange = new ArrayList<>();
-		final List<Float> distances = new ArrayList<>();
-		for (final ComponentLight elem : this.componentLights) {
-			final float distance2 = elem.getPosition().distance2(position);
-			if (distance2 < maxDistance2) {
-				int index = distances.size();
-				while (index > 0 && distances.get(index - 1) > distance2) {
-					index--;
-				}
-				inRange.add(index, elem);
-				distances.add(index, distance2);
-			}
+		final int free = MAX_LIGHTS - count;
+		if (free <= 0 || this.componentLights.isEmpty()) {
+			return out;
 		}
-		for (final ComponentLight elem : inRange) {
-			if (count >= MAX_LIGHTS) {
-				break;
+		// The nearest local lights so far, nearest first, in fixed arrays (no allocation, no boxing).
+		final ComponentLight[] nearest = this.nearestLights;
+		final Vector3f[] positions = this.nearestPositions;
+		final float[] distances = this.nearestDistances;
+		final float maxDistance2 = this.lightRange * this.lightRange;
+		int kept = 0;
+		for (final ComponentLight elem : this.componentLights) {
+			final Vector3f where = elem.getPosition();
+			if (where == null) {
+				continue;
 			}
-			final Light src = elem.getLight();
-			out[count] = new Light(src.getColor(), elem.getPosition(), src.getAttenuation(), src.getDirection(), 0.0f,
+			final float distance2 = where.distance2(position);
+			if (!(distance2 < maxDistance2) || (kept == free && distance2 >= distances[kept - 1])) {
+				continue;
+			}
+			// Insert after the lights at the same distance (the first added stays first); drop the farthest when full.
+			int index = kept < free ? kept++ : free - 1;
+			while (index > 0 && distances[index - 1] > distance2) {
+				distances[index] = distances[index - 1];
+				positions[index] = positions[index - 1];
+				nearest[index] = nearest[index - 1];
+				index--;
+			}
+			distances[index] = distance2;
+			positions[index] = where;
+			nearest[index] = elem;
+		}
+		for (int iii = 0; iii < kept; iii++) {
+			final Light src = nearest[iii].getLight();
+			out[count] = new Light(src.getColor(), positions[iii], src.getAttenuation(), src.getDirection(), 0.0f,
 					0.0f);
+			nearest[iii] = null;
+			positions[iii] = null;
 			// Pass cutoff cosines directly (already computed)
 			out[count].setCutoffCos(src.getCutoffCos());
 			out[count].setCutoffCosInner(src.getCutoffCosInner());

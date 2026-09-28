@@ -3,6 +3,13 @@ package org.atriasoft.ege.engines;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+
+import java.util.concurrent.Callable;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
 
 import org.atriasoft.ege.Light;
 import org.atriasoft.ege.components.ComponentLight;
@@ -11,7 +18,7 @@ import org.atriasoft.etk.Color;
 import org.atriasoft.etk.math.Vector3f;
 import org.junit.jupiter.api.Test;
 
-/** The lights given to a drawn object: nearest first, within a configurable range. */
+/** The lights given to a drawn object: nearest first, within a configurable range, from any thread. */
 class TestEngineLightNearest {
 
 	/** A local light standing at a fixed place (no position component needed). */
@@ -115,5 +122,61 @@ class TestEngineLightNearest {
 		final Light[] alone = engine.getNearest(new Vector3f(75.0f, 0.0f, 0.0f));
 		assertEquals(far, alone[0].getColor(), "the near lamp is out of range from there");
 		assertNull(alone[1]);
+	}
+
+	@Test
+	void aLightWithARangeOfItsOwnReachesOnlyThatFar() {
+		final EngineLight engine = new EngineLight(null);
+		final Color scoped = new Color(0.9f, 0.0f, 0.0f, 1.0f);
+		final Color other = new Color(0.1f, 0.0f, 0.0f, 1.0f);
+		final ComponentLight scopedLamp = lampAt(20.0f, 0.0f, scoped);
+		engine.componentAdd(scopedLamp);
+		engine.componentAdd(lampAt(-20.0f, 0.0f, other));
+		engine.setLightRange(scopedLamp, 7.0f);
+		assertEquals(7.0f, engine.getLightRange(scopedLamp));
+		assertEquals(EngineLight.DEFAULT_LIGHT_RANGE, engine.getLightRange(), "the others keep the engine range");
+		final Light[] fromOrigin = engine.getNearest(Vector3f.ZERO);
+		assertEquals(other, fromOrigin[0].getColor(), "20 m: within the engine range");
+		assertNull(fromOrigin[1], "20 m: beyond its own 7 m");
+		assertEquals(scoped, engine.getNearest(new Vector3f(15.0f, 0.0f, 0.0f))[0].getColor(), "within 7 m of it");
+		assertThrows(IllegalArgumentException.class, () -> engine.setLightRange(scopedLamp, -1.0f));
+		engine.componentRemove(scopedLamp);
+		assertEquals(EngineLight.DEFAULT_LIGHT_RANGE, engine.getLightRange(scopedLamp), "forgotten with the light");
+	}
+
+	@Test
+	void callsFromSeveralThreadsDoNotMixTheirLights() throws InterruptedException, ExecutionException {
+		final EngineLight engine = new EngineLight(null);
+		final Color left = new Color(0.9f, 0.0f, 0.0f, 1.0f);
+		final Color right = new Color(0.1f, 0.0f, 0.0f, 1.0f);
+		engine.componentAdd(lampAt(-10.0f, 0.0f, left));
+		engine.componentAdd(lampAt(10.0f, 0.0f, right));
+		final ExecutorService pool = Executors.newFixedThreadPool(2);
+		try {
+			final Callable<Boolean> fromLeft = () -> {
+				for (int i = 0; i < 20_000; i++) {
+					final Light[] lights = engine.getNearest(new Vector3f(-9.0f, 0.0f, 0.0f));
+					if (!left.equals(lights[0].getColor()) || !right.equals(lights[1].getColor())) {
+						return false;
+					}
+				}
+				return true;
+			};
+			final Callable<Boolean> fromRight = () -> {
+				for (int i = 0; i < 20_000; i++) {
+					final Light[] lights = engine.getNearest(new Vector3f(9.0f, 0.0f, 0.0f));
+					if (!right.equals(lights[0].getColor()) || !left.equals(lights[1].getColor())) {
+						return false;
+					}
+				}
+				return true;
+			};
+			final Future<Boolean> a = pool.submit(fromLeft);
+			final Future<Boolean> b = pool.submit(fromRight);
+			assertTrue(a.get(), "the calls from the left always get the left lamp first");
+			assertTrue(b.get(), "the calls from the right always get the right lamp first");
+		} finally {
+			pool.shutdownNow();
+		}
 	}
 }

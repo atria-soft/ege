@@ -10,6 +10,7 @@ import org.atriasoft.gale.backend3d.OpenGL.Flag;
 import org.atriasoft.gale.resource.ResourceProgram;
 import org.lwjgl.opengl.GL11;
 import org.lwjgl.opengl.GL14;
+import org.lwjgl.opengl.GL20;
 import org.lwjgl.opengl.GL30;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -61,7 +62,8 @@ public class ShadowMapResources {
 
 	/**
 	 * Ensure the depth FBO exists and matches the requested dimensions.
-	 * Creates or resizes as needed.
+	 * Creates or resizes as needed; the framebuffers and the 2D texture of
+	 * the active unit bound by the caller are bound again afterwards.
 	 *
 	 * @param width  Shadow map width in pixels
 	 * @param height Shadow map height in pixels
@@ -73,6 +75,10 @@ public class ShadowMapResources {
 		if (this.fboId != -1) {
 			destroyFbo();
 		}
+		// Creating binds a framebuffer and a texture: those of the caller are given back afterwards.
+		final int callerDrawFramebuffer = GL11.glGetInteger(GL30.GL_DRAW_FRAMEBUFFER_BINDING);
+		final int callerReadFramebuffer = GL11.glGetInteger(GL30.GL_READ_FRAMEBUFFER_BINDING);
+		final int callerTexture = GL11.glGetInteger(GL11.GL_TEXTURE_BINDING_2D);
 
 		this.fboId = OpenGL.glGenFramebuffers();
 		OpenGL.bindFramebuffer(this.fboId);
@@ -100,16 +106,15 @@ public class ShadowMapResources {
 		OpenGL.glDrawBuffer(GL11.GL_NONE);
 		OpenGL.glReadBuffer(GL11.GL_NONE);
 
-		if (!OpenGL.checkFramebufferStatus()) {
+		final boolean complete = OpenGL.checkFramebufferStatus();
+		GL30.glBindFramebuffer(GL30.GL_DRAW_FRAMEBUFFER, callerDrawFramebuffer);
+		GL30.glBindFramebuffer(GL30.GL_READ_FRAMEBUFFER, callerReadFramebuffer);
+		OpenGL.bindTexture2D(callerTexture);
+		if (!complete) {
 			LOGGER.error("Failed to create shadow map FBO ({}x{})", width, height);
 			destroyFbo();
-			OpenGL.bindFramebuffer(0);
-			OpenGL.bindTexture2D(0);
 			return;
 		}
-
-		OpenGL.bindFramebuffer(0);
-		OpenGL.bindTexture2D(0);
 		this.fboWidth = width;
 		this.fboHeight = height;
 		LOGGER.debug("Created shadow map FBO: {}x{}", width, height);
@@ -163,12 +168,12 @@ public class ShadowMapResources {
 
 	/**
 	 * Begin a shadow depth pass: bind the FBO, set the viewport, clear the
-	 * depth, enable the depth test and the depth program.
+	 * depth, enable the depth test, the polygon offset and the depth program.
 	 * <p>
-	 * The framebuffer and the viewport of the caller are NOT saved here:
-	 * capture them once with {@link RenderTarget#capture()} before the depth
-	 * passes of a frame (creating the FBO binds framebuffer 0) and restore
-	 * them once after the last {@link #endDepthPass()}.
+	 * The state of the caller is NOT saved here: capture it once with
+	 * {@link RenderTarget#capture()} before the depth passes of a frame and
+	 * restore it once after the last {@link #endDepthPass()} (in a
+	 * {@code finally}, after ending a pass left open by an exception).
 	 *
 	 * @param resolution       Shadow map resolution (width = height)
 	 * @param lightSpaceMatrix The light's view-projection matrix
@@ -198,8 +203,9 @@ public class ShadowMapResources {
 
 	/**
 	 * End a depth pass begun by a successful {@link #beginDepthPass}: unbind
-	 * the depth program and turn the polygon offset off. The framebuffer and
-	 * the viewport stay those of the pass (see {@link RenderTarget}).
+	 * the depth program and turn the polygon offset off. The framebuffer, the
+	 * viewport and the rest of the state stay those of the pass (see
+	 * {@link RenderTarget}). Calling it again changes nothing more.
 	 */
 	public void endDepthPass() {
 		if (this.depthProgram != null) {
@@ -234,37 +240,72 @@ public class ShadowMapResources {
 	}
 
 	/**
-	 * Draw and read framebuffers and viewport of the caller of the depth
-	 * passes (0 = the window, or an off-screen scene target, possibly a
-	 * sub-rectangle of it): captured once before the passes of a frame and
-	 * given back once after, so that the shadow maps never leave the caller
-	 * drawing into the window or into the wrong rectangle.
+	 * The state of the caller of the depth passes that they change: draw and
+	 * read framebuffers (0 = the window, or an off-screen scene target),
+	 * viewport (possibly a sub-rectangle of it), depth test, depth clear
+	 * value, polygon offset (fill flag, factor, units) and program in use.
+	 * Captured once before the passes of a frame and given back once after,
+	 * so that the shadow maps never leave the caller drawing into the window,
+	 * into the wrong rectangle or with the state of a depth pass.
 	 */
 	public static final class RenderTarget {
 		private final int drawFramebuffer;
 		private final int readFramebuffer;
 		private final int[] viewport;
+		private final boolean depthTest;
+		private final float clearDepth;
+		private final boolean polygonOffsetFill;
+		private final float polygonOffsetFactor;
+		private final float polygonOffsetUnits;
+		private final int program;
 
-		private RenderTarget(final int drawFramebuffer, final int readFramebuffer, final int[] viewport) {
+		private RenderTarget(final int drawFramebuffer, final int readFramebuffer, final int[] viewport,
+				final boolean depthTest, final float clearDepth, final boolean polygonOffsetFill,
+				final float polygonOffsetFactor, final float polygonOffsetUnits, final int program) {
 			this.drawFramebuffer = drawFramebuffer;
 			this.readFramebuffer = readFramebuffer;
 			this.viewport = viewport;
+			this.depthTest = depthTest;
+			this.clearDepth = clearDepth;
+			this.polygonOffsetFill = polygonOffsetFill;
+			this.polygonOffsetFactor = polygonOffsetFactor;
+			this.polygonOffsetUnits = polygonOffsetUnits;
+			this.program = program;
 		}
 
-		/** The framebuffers and the viewport bound now. */
+		/** The state bound now (the flags gale still had to apply are applied first). */
 		public static RenderTarget capture() {
+			// gale applies its flags lazily: once applied, OpenGL tells the state the caller asked for.
+			OpenGL.updateAllFlags();
 			final int[] viewport = new int[4];
 			GL11.glGetIntegerv(GL11.GL_VIEWPORT, viewport);
 			return new RenderTarget(GL11.glGetInteger(GL30.GL_DRAW_FRAMEBUFFER_BINDING),
-					GL11.glGetInteger(GL30.GL_READ_FRAMEBUFFER_BINDING), viewport);
+					GL11.glGetInteger(GL30.GL_READ_FRAMEBUFFER_BINDING), viewport, GL11.glIsEnabled(GL11.GL_DEPTH_TEST),
+					GL11.glGetFloat(GL11.GL_DEPTH_CLEAR_VALUE), GL11.glIsEnabled(GL11.GL_POLYGON_OFFSET_FILL),
+					GL11.glGetFloat(GL11.GL_POLYGON_OFFSET_FACTOR), GL11.glGetFloat(GL11.GL_POLYGON_OFFSET_UNITS),
+					GL11.glGetInteger(GL20.GL_CURRENT_PROGRAM));
 		}
 
-		/** Bind the captured framebuffers and viewport again. */
+		/** Bind the captured framebuffers, viewport, depth and polygon offset state and program again. */
 		public void restore() {
 			GL30.glBindFramebuffer(GL30.GL_DRAW_FRAMEBUFFER, this.drawFramebuffer);
 			GL30.glBindFramebuffer(GL30.GL_READ_FRAMEBUFFER, this.readFramebuffer);
 			OpenGL.setViewPort(new Vector2i(this.viewport[0], this.viewport[1]),
 					new Vector2i(this.viewport[2], this.viewport[3]));
+			setFlag(Flag.flag_depthTest, this.depthTest);
+			setFlag(Flag.flag_polygonOffsetFill, this.polygonOffsetFill);
+			OpenGL.updateAllFlags();
+			GL11.glPolygonOffset(this.polygonOffsetFactor, this.polygonOffsetUnits);
+			OpenGL.clearDepth(this.clearDepth);
+			OpenGL.programUse(this.program);
+		}
+
+		private static void setFlag(final Flag flag, final boolean enabled) {
+			if (enabled) {
+				OpenGL.enable(flag);
+			} else {
+				OpenGL.disable(flag);
+			}
 		}
 	}
 }

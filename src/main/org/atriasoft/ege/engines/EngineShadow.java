@@ -1,7 +1,10 @@
 package org.atriasoft.ege.engines;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
+import java.util.concurrent.CopyOnWriteArrayList;
+import java.util.function.Predicate;
 
 import org.atriasoft.ege.Component;
 import org.atriasoft.ege.Engine;
@@ -36,6 +39,13 @@ import org.slf4j.LoggerFactory;
  * (one per cascade level), each covering a progressively larger slice of the
  * camera frustum.
  * <p>
+ * What casts: the mesh of every entity that has a mesh and a position
+ * component, unless the mesh caster filter ({@link #setMeshCasterFilter})
+ * leaves it out (a terrain drawn into every cascade costs much and may
+ * shadow what the application wants lit by other means), then every
+ * {@link ShadowCaster} registered with {@link #addShadowCaster} (geometry
+ * that is no entity mesh).
+ * <p>
  * The shadow data (per-cascade depth textures, light-space matrices, split distances)
  * is accessed by {@link org.atriasoft.ege.components.part.ShadowRender}
  * during the main render pass.
@@ -63,6 +73,11 @@ public class EngineShadow extends Engine {
 	private final int[] activeShadowTextureIds = new int[MAX_SHADOW_CASTERS * MAX_CASCADES];
 	private float[] activeCascadeSplitDistances = new float[0];
 	
+	/** Geometry registered by the application, drawn by every depth pass after the entity meshes. */
+	private final List<ShadowCaster> shadowCasters = new CopyOnWriteArrayList<>();
+	/** Entities whose mesh casts, {@code null} for all of them. */
+	private Predicate<Entity> meshCasterFilter = null;
+
 	// Camera FOV — set by the application (default PI/2 = 90 degrees)
 	private float cameraFovY = (float) (Math.PI * 0.5);
 	private float cameraAspectRatio = 1.333f;
@@ -154,6 +169,9 @@ public class EngineShadow extends Engine {
 					if (resources.beginDepthPass(this.config.getShadowMapResolution(), lightSpaceMatrix)) {
 						for (final MeshPositionPair pair : meshPairs) {
 							resources.renderMeshDepth(pair);
+						}
+						for (final ShadowCaster shadowCaster : this.shadowCasters) {
+							resources.renderCasterDepth(shadowCaster);
 						}
 						resources.endDepthPass();
 					} else {
@@ -267,7 +285,11 @@ public class EngineShadow extends Engine {
 	private List<MeshPositionPair> collectMeshPairs() {
 		final List<Entity> entities = this.env.getEntity();
 		final List<MeshPositionPair> meshPairs = new ArrayList<>();
+		final Predicate<Entity> filter = this.meshCasterFilter;
 		for (final Entity entity : entities) {
+			if (filter != null && !filter.test(entity)) {
+				continue;
+			}
 			ComponentStaticMesh staticMesh = null;
 			ComponentMesh dynamicMesh = null;
 			PositionningInterface position = null;
@@ -312,6 +334,52 @@ public class EngineShadow extends Engine {
 		return this.cascades[casterIndex][cascadeIndex];
 	}
 	
+	// --- What casts ---
+
+	/**
+	 * Draw {@code caster} into the shadow maps from the next frame on, after
+	 * the entity meshes (once, however many times it is added).
+	 *
+	 * @param caster geometry that is no entity mesh
+	 */
+	public void addShadowCaster(final ShadowCaster caster) {
+		if (caster != null && !this.shadowCasters.contains(caster)) {
+			this.shadowCasters.add(caster);
+		}
+	}
+
+	/**
+	 * Stop drawing {@code caster} into the shadow maps (before releasing its
+	 * vertices).
+	 *
+	 * @return whether it was registered
+	 */
+	public boolean removeShadowCaster(final ShadowCaster caster) {
+		return this.shadowCasters.remove(caster);
+	}
+
+	/** @return the geometry registered with {@link #addShadowCaster}, read-only */
+	public List<ShadowCaster> getShadowCasters() {
+		return Collections.unmodifiableList(this.shadowCasters);
+	}
+
+	/**
+	 * Choose the entities whose mesh casts: those {@code filter} accepts, or
+	 * every entity with a mesh and a position for {@code null} (the default).
+	 * Tested for each entity at every frame, on the rendering thread: keep it
+	 * cheap (a set lookup).
+	 *
+	 * @param filter entities whose mesh casts, {@code null} for all
+	 */
+	public void setMeshCasterFilter(final Predicate<Entity> filter) {
+		this.meshCasterFilter = filter;
+	}
+
+	/** @return the filter of the entities whose mesh casts, {@code null} for all */
+	public Predicate<Entity> getMeshCasterFilter() {
+		return this.meshCasterFilter;
+	}
+
 	// --- Accessors for ShadowRender ---
 	
 	/** @return Number of active shadow casters this frame */

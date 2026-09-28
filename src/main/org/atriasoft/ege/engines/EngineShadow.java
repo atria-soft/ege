@@ -15,6 +15,7 @@ import org.atriasoft.ege.components.ComponentStaticMesh;
 import org.atriasoft.ege.components.part.PositionningInterface;
 import org.atriasoft.ege.shadow.ShadowCascade;
 import org.atriasoft.ege.shadow.ShadowConfig;
+import org.atriasoft.ege.shadow.ShadowMapResources;
 import org.atriasoft.etk.Uri;
 import org.atriasoft.etk.math.Matrix4f;
 import org.atriasoft.etk.math.Vector2f;
@@ -124,41 +125,52 @@ public class EngineShadow extends Engine {
 		// Collect mesh+position pairs from all entities
 		final List<MeshPositionPair> meshPairs = collectMeshPairs();
 		
-		final Vector2f viewportSize = OpenGL.getViewportSize();
-		this.activeShadowCasterCount = casterCount;
 		this.activeCascadeSplitDistances = this.config.getCascadeSplitDistances();
-		
-		for (int casterIdx = 0; casterIdx < casterCount; casterIdx++) {
-			final CelestialBody caster = casters.get(casterIdx);
-			final Vector3f lightDir = caster.getDirection();
-			final float orbitalAngle = caster.getCurrentAngle();
-			final float orbitalInclination = caster.getOrbitalInclination();
+		boolean allReady = true;
+		// The caller may draw into an off-screen target or a sub-rectangle of the window:
+		// its framebuffers and viewport are captured once and given back after the last pass.
+		final ShadowMapResources.RenderTarget target = ShadowMapResources.RenderTarget.capture();
+		try {
+			for (int casterIdx = 0; casterIdx < casterCount; casterIdx++) {
+				final CelestialBody caster = casters.get(casterIdx);
+				final Vector3f lightDir = caster.getDirection();
+				final float orbitalAngle = caster.getCurrentAngle();
+				final float orbitalInclination = caster.getOrbitalInclination();
 
-			for (int cascadeIdx = 0; cascadeIdx < cascadeCount; cascadeIdx++) {
-				final ShadowCascade cascade = ensureCascade(casterIdx, cascadeIdx);
+				for (int cascadeIdx = 0; cascadeIdx < cascadeCount; cascadeIdx++) {
+					final ShadowCascade cascade = ensureCascade(casterIdx, cascadeIdx);
 
-				// Set cascade split range
-				final float near = this.config.getCascadeNear(cascadeIdx);
-				final float far = this.config.getCascadeFar(cascadeIdx);
-				cascade.setSplitRange(near, far);
+					// Set cascade split range
+					final float near = this.config.getCascadeNear(cascadeIdx);
+					final float far = this.config.getCascadeFar(cascadeIdx);
+					cascade.setSplitRange(near, far);
 
-				// Compute light-space matrix fitted to this frustum slice
-				final Matrix4f lightSpaceMatrix = cascade.computeLightSpaceMatrix(lightDir, orbitalAngle,
-						orbitalInclination, camera, this.cameraFovY, this.cameraAspectRatio);
-				
-				// Render depth pass
-				cascade.getResources().beginDepthPass(this.config.getShadowMapResolution(), lightSpaceMatrix);
-				for (final MeshPositionPair pair : meshPairs) {
-					cascade.getResources().renderMeshDepth(pair);
+					// Compute light-space matrix fitted to this frustum slice
+					final Matrix4f lightSpaceMatrix = cascade.computeLightSpaceMatrix(lightDir, orbitalAngle,
+							orbitalInclination, camera, this.cameraFovY, this.cameraAspectRatio);
+
+					// Render depth pass
+					final ShadowMapResources resources = cascade.getResources();
+					if (resources.beginDepthPass(this.config.getShadowMapResolution(), lightSpaceMatrix)) {
+						for (final MeshPositionPair pair : meshPairs) {
+							resources.renderMeshDepth(pair);
+						}
+						resources.endDepthPass();
+					} else {
+						allReady = false;
+					}
+
+					// Store results for the main render pass
+					final int flatIndex = casterIdx * cascadeCount + cascadeIdx;
+					this.activeLightSpaceMatrices[flatIndex] = lightSpaceMatrix;
+					this.activeShadowTextureIds[flatIndex] = resources.getDepthTextureId();
 				}
-				cascade.getResources().endDepthPass(viewportSize);
-				
-				// Store results for the main render pass
-				final int flatIndex = casterIdx * cascadeCount + cascadeIdx;
-				this.activeLightSpaceMatrices[flatIndex] = lightSpaceMatrix;
-				this.activeShadowTextureIds[flatIndex] = cascade.getResources().getDepthTextureId();
 			}
+		} finally {
+			target.restore();
 		}
+		// A shadow map that could not be drawn: no shadow at all rather than sampling nothing.
+		this.activeShadowCasterCount = allReady ? casterCount : 0;
 	}
 	
 	@Override

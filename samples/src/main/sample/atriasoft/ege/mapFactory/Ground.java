@@ -5,7 +5,6 @@ import java.util.function.BiFunction;
 import org.atriasoft.ege.geometry.Ray;
 import org.atriasoft.etk.Color;
 import org.atriasoft.etk.math.Matrix4f;
-import org.atriasoft.etk.math.Transform3D;
 import org.atriasoft.etk.math.Vector3f;
 import org.atriasoft.etk.math.Vector4f;
 import org.atriasoft.gale.resource.ResourceColored3DObject;
@@ -24,7 +23,7 @@ public class Ground {
 	public String baseNamePalette2 = "palette:grass_2";
 	public String baseNamePalette3 = "palette:grass_3";
 	public String baseNamePalette4 = "palette:grass_4";
-	
+
 	public Ground() {
 		for (int yyy = 0; yyy < this.sizeY; yyy++) {
 			for (int xxx = 0; xxx < this.sizeX; xxx++) {
@@ -39,7 +38,7 @@ public class Ground {
 			}
 		}
 	}
-	
+
 	public void reset() {
 		for (int yyy = 0; yyy < this.sizeY; yyy++) {
 			for (int xxx = 0; xxx < this.sizeX; xxx++) {
@@ -55,15 +54,18 @@ public class Ground {
 		}
 		updateMesh();
 	}
-
-	public void changeHeightOfElement(Vector3f position, float distance, BiFunction<Float, Float, Float> applyer) {
+	
+	public void changeHeightOfElement(
+			final Vector3f position,
+			final float distance,
+			final BiFunction<Float, Float, Float> applyer) {
 		for (int yyy = 0; yyy < this.sizeY; yyy++) {
 			for (int xxx = 0; xxx < this.sizeX; xxx++) {
 				float offset = 0.0f;
 				if (xxx % 2 == 1) {
 					offset = 0.5f;
 				}
-				float dist2 = position.less(xxx, 0, yyy + offset).length2();
+				final float dist2 = position.less(xxx, 0, yyy + offset).length2();
 				if (dist2 < distance * distance) {
 					this.heightMap[yyy][xxx] = applyer.apply(this.heightMap[yyy][xxx], Maths.sqrt(dist2));
 				}
@@ -71,32 +73,36 @@ public class Ground {
 		}
 		updateMesh();
 	}
-	
+
 	public ResourceMeshHeightMap createMesh() {
 		return this.mesh;
 	}
-	
-	public void drawDynamicElement(ResourceColored3DObject dynamicElement, Vector3f position, float distance) {
+
+	public void drawDynamicElement(
+			final ResourceColored3DObject dynamicElement,
+			final Vector3f position,
+			final float distance) {
 		for (int yyy = 0; yyy < this.sizeY; yyy++) {
 			for (int xxx = 0; xxx < this.sizeX; xxx++) {
-				float dist2 = position.less(xxx, 0, yyy).length2();
+				final float dist2 = position.less(xxx, 0, yyy).length2();
 				if (dist2 < distance * distance) {
-					float coneHeight = 0.6f;
+					final float coneHeight = 0.6f;
 					float offset = 0.0f;
 					if (xxx % 2 == 1) {
 						offset = 0.5f;
 					}
 					// drawCone is Z-axis oriented in gale; rotate -90° around X to point along Y
-					Matrix4f transform = Matrix4f.createMatrixTranslate(
-							new Vector3f(xxx, this.heightMap[yyy][xxx] + coneHeight * 0.5f, yyy + offset))
+					final Matrix4f transform = Matrix4f
+							.createMatrixTranslate(
+									new Vector3f(xxx, this.heightMap[yyy][xxx] + coneHeight * 0.5f, yyy + offset))
 							.multiply(Matrix4f.createMatrixRotate(new Vector3f(1, 0, 0), (float) (-Math.PI * 0.5)));
 					dynamicElement.drawCone(coneHeight * 0.5f, coneHeight, 10, 3, transform, Color.RED);
 				}
 			}
 		}
-		
+
 	}
-	
+
 	/**
 	 * Get the height at a given X,Y position using bilinear interpolation.
 	 * @param x X coordinate
@@ -107,29 +113,29 @@ public class Ground {
 		// Clamp to valid range
 		final float clampedX = Math.max(0, Math.min(x, this.sizeX - 1));
 		final float clampedY = Math.max(0, Math.min(y, this.sizeY - 1));
-
+		
 		// Get integer coordinates
 		final int x0 = (int) Math.floor(clampedX);
 		final int y0 = (int) Math.floor(clampedY);
 		final int x1 = Math.min(x0 + 1, this.sizeX - 1);
 		final int y1 = Math.min(y0 + 1, this.sizeY - 1);
-
+		
 		// Get fractional part
 		final float fx = clampedX - x0;
 		final float fy = clampedY - y0;
-
+		
 		// Bilinear interpolation
 		final float h00 = this.heightMap[y0][x0];
 		final float h10 = this.heightMap[y0][x1];
 		final float h01 = this.heightMap[y1][x0];
 		final float h11 = this.heightMap[y1][x1];
-
+		
 		final float h0 = h00 * (1 - fx) + h10 * fx;
 		final float h1 = h01 * (1 - fx) + h11 * fx;
-
+		
 		return h0 * (1 - fy) + h1 * fy;
 	}
-
+	
 	/**
 	 * Find the intersection point between a ray and the heightmap using ray marching.
 	 * Walks along the ray and detects when it crosses below the terrain surface,
@@ -173,7 +179,7 @@ public class Ground {
 		}
 		return null;
 	}
-
+	
 	public void updateMesh() {
 		this.mesh.clearData();
 		Material mat = new Material();
@@ -189,11 +195,11 @@ public class Ground {
 		this.mesh.addMaterial(this.baseNamePalette4, mat);
 		mat.setAmbientFactor(new Vector4f(1, 1, 0, 1.0f));
 		try {
-			this.mesh.udateData(this.heightMap, this.colorMap, this.sizeX, this.sizeY);
-		} catch (Exception e) {
+			this.mesh.udateData(this.heightMap, this.colorMap, this.sizeX, this.sizeY, false);
+		} catch (final Exception e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
 	}
-	
+
 }

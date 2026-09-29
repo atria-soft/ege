@@ -17,7 +17,6 @@ import entities.Light;
 import models.TexturedModel;
 import shaders.StaticShader;
 import shaders.TerrainShader;
-import skybox.SkyboxRenderer;
 import terrains.Terrain;
 
 public class MasterRenderer {
@@ -48,8 +47,6 @@ public class MasterRenderer {
 	
 	private List<Terrain> terrains = new ArrayList<>();
 	
-	private SkyboxRenderer skyboxRenderer;
-	
 	public MasterRenderer(final Loader loader) {
 		//enableCulling();
 		OpenGL.enable(OpenGL.Flag.flag_blend);
@@ -57,7 +54,6 @@ public class MasterRenderer {
 		createProjectionMatrix();
 		this.renderer = new EntityRenderer(this.shader, this.projectionMatrix);
 		this.terrainRenderer = new TerrainRenderer(this.terrainShader, this.projectionMatrix);
-		this.skyboxRenderer = new SkyboxRenderer(loader, this.projectionMatrix);
 	}
 	
 	public void cleanUp() {
@@ -96,7 +92,6 @@ public class MasterRenderer {
 	
 	public void render(final List<Light> lights, final Camera camera) {
 		prepare();
-		this.skyboxRenderer.render(camera, SKY_COLOUR);
 		this.shader.start();
 		this.shader.loadSkyColour(SKY_COLOUR);
 		this.shader.loadLights(lights);

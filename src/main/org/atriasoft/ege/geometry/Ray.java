@@ -2,8 +2,6 @@ package org.atriasoft.ege.geometry;
 
 import org.atriasoft.etk.math.Vector3f;
 
-import toolbox.Maths;
-
 public record Ray(Vector3f origin, Vector3f direction) {
 	public static Ray createFromPoint(final Vector3f origin, final Vector3f destination) {
 		return new Ray(origin, destination.less(origin).safeNormalize());

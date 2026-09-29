@@ -78,11 +78,11 @@ public class ControlCameraSimple implements ControlInterface {
 				//angleZ += delta.x;
 				//this.camera.setYaw(this.camera.getYaw() + (float)Math.toRadians(delta.x));
 				this.camera.setPitch(this.camera.getPitch() - (float) Math.toRadians(delta.y()));
-				if (this.camera.getPitch() < 0) {
-					this.camera.setPitch(0);
+				if (this.camera.getPitch() < -(float) Math.PI * 0.49f) {
+					this.camera.setPitch(-(float) Math.PI * 0.49f);
 				}
-				if (this.camera.getPitch() > Math.PI) {
-					this.camera.setPitch((float) Math.PI);
+				if (this.camera.getPitch() > (float) Math.PI * 0.49f) {
+					this.camera.setPitch((float) Math.PI * 0.49f);
 				}
 				this.camera.setYaw(this.camera.getYaw() + (float) Math.toRadians(delta.x()));
 				if (this.camera.getYaw() > Math.PI) {

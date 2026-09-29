@@ -18,6 +18,8 @@ import org.atriasoft.ege.engines.EnginePlayer;
 import org.atriasoft.ege.engines.EnginePostProcess;
 import org.atriasoft.ege.engines.EngineRender;
 import org.atriasoft.ege.engines.EngineShadow;
+import org.atriasoft.ege.engines.EngineSkybox;
+import org.atriasoft.ege.skybox.SkyboxConfig;
 import org.atriasoft.ege.celestial.CelestialSystem;
 //import org.atriasoft.ege.resource.Mesh;
 import org.atriasoft.etk.math.Vector2f;
@@ -71,6 +73,7 @@ public class Environement {
 
 	private final CelestialSystem celestialSystem = new CelestialSystem();
 	private EngineShadow engineShadow;
+	private EngineSkybox engineSkybox;
 
 	//protected List<Mesh> listMeshToDrawFirst = new ArrayList<Mesh>();
 	public Environement() {
@@ -81,6 +84,9 @@ public class Environement {
 		// Shadow engine must run before EngineRender so shadow maps are ready
 		this.engineShadow = new EngineShadow(this, this.celestialSystem);
 		addEngine(this.engineShadow);
+		// Skybox engine renders after shadows but before scene geometry
+		this.engineSkybox = new EngineSkybox(this);
+		addEngine(this.engineSkybox);
 		addEngine(new EngineRender(this));
 		addEngine(new EnginePostProcess(this));
 		addEngine(new EnginePhysics(this));
@@ -104,6 +110,22 @@ public class Environement {
 	 */
 	public EngineShadow getEngineShadow() {
 		return this.engineShadow;
+	}
+
+	/**
+	 * Get the skybox engine.
+	 * @return The skybox engine instance
+	 */
+	public EngineSkybox getEngineSkybox() {
+		return this.engineSkybox;
+	}
+
+	/**
+	 * Configure a cubemap skybox for this environment.
+	 * @param config Skybox configuration (null to disable)
+	 */
+	public void setSkybox(final SkyboxConfig config) {
+		this.engineSkybox.setConfig(config);
 	}
 
 	/**

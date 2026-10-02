@@ -53,7 +53,11 @@ public class ComponentRenderMeshFlatColor extends ComponentRender {
 
 	@Override
 	public void render(final RenderContext context) {
-		if (!this.lightInitialized && context.getEngineLight() != null && this.program != null) {
+		if (this.program == null || this.mesh == null) {
+			// Shader not loaded, or no mesh component on the entity (yet): nothing to draw.
+			return;
+		}
+		if (!this.lightInitialized && context.getEngineLight() != null) {
 			this.renderLight = new LightRender();
 			this.renderLight.init(this.program);
 			if (this.renderTransform.getPositionning() != null) {
@@ -61,7 +65,7 @@ public class ComponentRenderMeshFlatColor extends ComponentRender {
 			}
 			this.lightInitialized = true;
 		}
-		if (!this.shadowInitialized && context.getEngineShadow() != null && this.program != null) {
+		if (!this.shadowInitialized && context.getEngineShadow() != null) {
 			this.renderShadow = new ShadowRender();
 			this.renderShadow.init(this.program);
 			this.shadowInitialized = true;

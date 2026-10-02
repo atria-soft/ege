@@ -24,6 +24,11 @@
  * // 3. (Optional) Enable slow rotation
  * config.setRotationSpeed(0.02f);  // radians per second around Y axis
  * }</pre>
+ * <p>
+ * The rotation is driven by {@link org.atriasoft.ege.Environement#periodicCall()}
+ * (game time): the sky turns counter-clockwise seen from above for a positive
+ * speed, and the speed can be changed on the configuration at any time.
+ * Setting another configuration starts again from an unrotated sky.
  *
  * <h2>Cubemap Face Order</h2>
  * <p>

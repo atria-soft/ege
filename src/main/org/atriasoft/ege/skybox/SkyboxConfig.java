@@ -96,7 +96,10 @@ public class SkyboxConfig {
 
 	/**
 	 * Set the rotation speed in radians per second around the Y axis.
-	 * @param rotationSpeed Rotation speed (0 = no rotation)
+	 * Read by the skybox engine at each update: it can be changed while the
+	 * sky is displayed.
+	 * @param rotationSpeed Rotation speed (0 = no rotation, positive =
+	 *        counter-clockwise seen from above)
 	 */
 	public void setRotationSpeed(final float rotationSpeed) {
 		this.rotationSpeed = rotationSpeed;

@@ -10,6 +10,7 @@ import org.atriasoft.ege.camera.Camera;
 import org.atriasoft.ege.skybox.SkyboxConfig;
 import org.atriasoft.etk.Uri;
 import org.atriasoft.etk.math.Matrix4f;
+import org.atriasoft.etk.math.Vector3f;
 import org.atriasoft.gale.backend3d.OpenGL;
 import org.atriasoft.gale.resource.ResourceProgram;
 import org.atriasoft.gale.resource.ResourceTextureCubeMap;
@@ -70,6 +71,8 @@ public class EngineSkybox extends Engine {
 
 	private static final Uri VERTEX_SHADER = new Uri("DATA", "skybox.vert", "ege");
 	private static final Uri FRAGMENT_SHADER = new Uri("DATA", "skybox.frag", "ege");
+	private static final Vector3f ROTATION_AXIS = new Vector3f(0.0f, 1.0f, 0.0f);
+	private static final float FULL_TURN = (float) (2.0 * Math.PI);
 
 	private SkyboxConfig config;
 	/** Cube map of the current configuration, loaded by {@link #render} on its first use. */
@@ -86,6 +89,8 @@ public class EngineSkybox extends Engine {
 	private int uniformView;
 	private int uniformCubeMap;
 	private boolean cubeInitialized = false;
+	/** Rotation of the sky around the Y axis, in radians, in [0, 2 PI). */
+	private float rotationAngle = 0.0f;
 
 	public EngineSkybox(final Environement env) {
 		super(env);
@@ -106,6 +111,7 @@ public class EngineSkybox extends Engine {
 			this.cubeMap = null;
 		}
 		this.cubeMapLoaded = false;
+		this.rotationAngle = 0.0f;
 	}
 
 	/**
@@ -114,6 +120,14 @@ public class EngineSkybox extends Engine {
 	 */
 	public synchronized SkyboxConfig getConfig() {
 		return this.config;
+	}
+
+	/**
+	 * Get the current rotation of the sky around the Y axis.
+	 * @return Angle in radians, in [0, 2 PI)
+	 */
+	public synchronized float getRotationAngle() {
+		return this.rotationAngle;
 	}
 
 	/**
@@ -206,7 +220,12 @@ public class EngineSkybox extends Engine {
 		this.program.use();
 
 		final Matrix4f projectionMatrix = OpenGL.getMatrix();
-		final Matrix4f viewMatrix = OpenGL.getCameraMatrix();
+		Matrix4f viewMatrix = OpenGL.getCameraMatrix();
+		final float angle = getRotationAngle();
+		if (angle != 0.0f) {
+			// Turn the cube itself: the shader only keeps the rotation part of the view.
+			viewMatrix = viewMatrix.multiply(Matrix4f.createMatrixRotate(ROTATION_AXIS, angle));
+		}
 		this.program.uniformMatrix(this.uniformProjection, projectionMatrix);
 		this.program.uniformMatrix(this.uniformView, viewMatrix);
 
@@ -243,8 +262,17 @@ public class EngineSkybox extends Engine {
 	}
 
 	@Override
-	public void update(final long deltaMili) {
-		// No per-frame updates needed
+	public synchronized void update(final long deltaMili) {
+		if (this.config == null) {
+			return;
+		}
+		// Read at each update: the speed can be changed on the configuration at any time.
+		final float speed = this.config.getRotationSpeed();
+		if (speed == 0.0f) {
+			return;
+		}
+		final float angle = (this.rotationAngle + speed * deltaMili / 1000.0f) % FULL_TURN;
+		this.rotationAngle = angle < 0.0f ? angle + FULL_TURN : angle;
 	}
 
 	@Override

@@ -1,5 +1,8 @@
 package org.atriasoft.ege.engines;
 
+import java.util.ArrayList;
+import java.util.List;
+
 import org.atriasoft.ege.Component;
 import org.atriasoft.ege.Engine;
 import org.atriasoft.ege.Environement;
@@ -65,14 +68,24 @@ public class EngineSkybox extends Engine {
 	};
 	//@formatter:on
 
+	private static final Uri VERTEX_SHADER = new Uri("DATA", "skybox.vert", "ege");
+	private static final Uri FRAGMENT_SHADER = new Uri("DATA", "skybox.frag", "ege");
+
 	private SkyboxConfig config;
+	/** Cube map of the current configuration, loaded by {@link #render} on its first use. */
 	private ResourceTextureCubeMap cubeMap;
+	private boolean cubeMapLoaded = false;
+	/** Cube maps of the replaced configurations, waiting for {@link #render} to release them. */
+	private final List<ResourceTextureCubeMap> cubeMapsToRelease = new ArrayList<>();
+	/** Cube maps whose texture this engine deleted: gale keeps them in its cache, without texture. */
+	private final List<ResourceTextureCubeMap> cubeMapsDeleted = new ArrayList<>();
+	// The cube and its shader do not depend on the configuration: created once, kept across sky changes.
 	private ResourceVirtualArrayObject cubeVao;
 	private ResourceProgram program;
 	private int uniformProjection;
 	private int uniformView;
 	private int uniformCubeMap;
-	private boolean initialized = false;
+	private boolean cubeInitialized = false;
 
 	public EngineSkybox(final Environement env) {
 		super(env);
@@ -80,62 +93,111 @@ public class EngineSkybox extends Engine {
 
 	/**
 	 * Configure the skybox with the given configuration.
-	 * Can be called at any time; the GPU resources are created lazily.
+	 * Can be called at any time and from any thread: the GPU resources are
+	 * created lazily by {@link #render}, which also releases the cube map of
+	 * the previous configuration (OpenGL objects can only be deleted on the
+	 * rendering thread).
 	 * @param config Skybox configuration (null to disable)
 	 */
-	public void setConfig(final SkyboxConfig config) {
+	public synchronized void setConfig(final SkyboxConfig config) {
 		this.config = config;
-		this.initialized = false;
-		this.cubeMap = null;
-		this.program = null;
-		this.cubeVao = null;
+		if (this.cubeMap != null) {
+			this.cubeMapsToRelease.add(this.cubeMap);
+			this.cubeMap = null;
+		}
+		this.cubeMapLoaded = false;
 	}
 
 	/**
 	 * Get the current skybox configuration.
 	 * @return Current config, or null if no skybox is set
 	 */
-	public SkyboxConfig getConfig() {
+	public synchronized SkyboxConfig getConfig() {
 		return this.config;
 	}
 
-	private void initResources() {
-		if (this.config == null) {
+	/**
+	 * Load the cube map of the current configuration if needed and release
+	 * the ones it replaced. Rendering thread only.
+	 * @return The cube map to draw, or null when there is no sky to draw
+	 */
+	private synchronized ResourceTextureCubeMap prepareCubeMap() {
+		if (this.config != null && !this.cubeMapLoaded) {
+			this.cubeMap = loadCubeMap(this.config);
+			this.cubeMapLoaded = true;
+		}
+		// After the load: a sky that is set again keeps its texture.
+		releaseReplacedCubeMaps();
+		return this.config == null ? null : this.cubeMap;
+	}
+
+	private ResourceTextureCubeMap loadCubeMap(final SkyboxConfig skybox) {
+		LOGGER.debug("Loading skybox cube map");
+		// Face order: +X, -X, +Y, -Y, +Z, -Z
+		final ResourceTextureCubeMap loaded = ResourceTextureCubeMap.create(
+				skybox.getRight(),
+				skybox.getLeft(),
+				skybox.getTop(),
+				skybox.getBottom(),
+				skybox.getFront(),
+				skybox.getBack());
+		if (loaded == null) {
+			return null;
+		}
+		if (this.cubeMapsToRelease.remove(loaded)) {
+			// Same faces as a configuration that was just replaced: still in use.
+			return loaded;
+		}
+		final boolean deletedHere = this.cubeMapsDeleted.remove(loaded);
+		if (deletedHere || loaded.getCount() <= 0) {
+			// gale gave back a cached resource whose texture was deleted: use it again.
+			if (loaded.getCount() <= 0) {
+				loaded.keep();
+			}
+			loaded.updateContext();
+		}
+		return loaded;
+	}
+
+	private void releaseReplacedCubeMaps() {
+		for (final ResourceTextureCubeMap replaced : this.cubeMapsToRelease) {
+			replaced.release();
+			if (replaced.getCount() <= 0) {
+				// Last user: delete the OpenGL texture.
+				replaced.cleanUp();
+				this.cubeMapsDeleted.add(replaced);
+			}
+		}
+		this.cubeMapsToRelease.clear();
+	}
+
+	/** Create the cube and its shader on the first frame that draws a sky. */
+	private void initCube() {
+		if (this.cubeInitialized) {
 			return;
 		}
+		this.cubeInitialized = true;
 		LOGGER.debug("Initializing skybox resources");
-		// Create cubemap texture (face order: +X, -X, +Y, -Y, +Z, -Z)
-		this.cubeMap = ResourceTextureCubeMap.create(
-				this.config.getRight(),
-				this.config.getLeft(),
-				this.config.getTop(),
-				this.config.getBottom(),
-				this.config.getFront(),
-				this.config.getBack());
 		// Create cube VAO with indexed geometry
 		this.cubeVao = ResourceVirtualArrayObject.create(CUBE_VERTICES, null, null, null, CUBE_INDICES);
 		this.cubeVao.updateContext();
 		// Create shader program
-		final Uri vertexUri = new Uri("DATA", "skybox.vert", "ege");
-		final Uri fragmentUri = new Uri("DATA", "skybox.frag", "ege");
-		this.program = ResourceProgram.create(vertexUri, fragmentUri);
+		this.program = ResourceProgram.create(VERTEX_SHADER, FRAGMENT_SHADER);
 		if (this.program != null) {
 			this.uniformProjection = this.program.getUniform("in_matrixProjection");
 			this.uniformView = this.program.getUniform("in_matrixView");
 			this.uniformCubeMap = this.program.getUniform("cubeMap");
 		}
-		this.initialized = true;
 	}
 
 	@Override
 	public void render(final long deltaMili, final Camera camera) {
-		if (this.config == null) {
+		final ResourceTextureCubeMap sky = prepareCubeMap();
+		if (sky == null) {
 			return;
 		}
-		if (!this.initialized) {
-			initResources();
-		}
-		if (this.program == null || this.cubeMap == null || this.cubeVao == null) {
+		initCube();
+		if (this.program == null || this.cubeVao == null) {
 			return;
 		}
 		// Use GL_LEQUAL so fragments at depth 1.0 (from xyww trick) pass
@@ -149,7 +211,7 @@ public class EngineSkybox extends Engine {
 		this.program.uniformMatrix(this.uniformView, viewMatrix);
 
 		// Bind cubemap texture to unit 0
-		this.cubeMap.bindForRendering(0);
+		sky.bindForRendering(0);
 		this.program.uniformInt(this.uniformCubeMap, 0);
 
 		// Draw cube
@@ -158,7 +220,7 @@ public class EngineSkybox extends Engine {
 		this.cubeVao.render(OpenGL.RenderMode.TRIANGLE);
 		this.cubeVao.unBindForRendering();
 
-		this.cubeMap.unBindForRendering();
+		sky.unBindForRendering();
 		this.program.unUse();
 
 		// Restore default depth function

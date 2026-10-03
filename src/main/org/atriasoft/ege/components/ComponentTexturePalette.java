@@ -1,10 +1,7 @@
 package org.atriasoft.ege.components;
 
 import java.awt.image.BufferedImage;
-import java.io.IOException;
-import java.nio.file.Path;
 
-import javax.imageio.ImageIO;
 
 import org.atriasoft.ege.Component;
 import org.atriasoft.etk.Uri;
@@ -36,11 +33,6 @@ public class ComponentTexturePalette extends Component {
 	public void updateFromPalette() {
 		LOGGER.debug("update palet environnement");
 		final BufferedImage img = this.palette.getImage();
-		try {
-			ImageIO.write(img, "png", Path.of("/home/heero/00000_palette_" + this.palette.getId() + ".png").toFile());
-		} catch (final IOException ex) {
-			LOGGER.error("Failed to store palette debug image", ex);
-		}
 		this.texture.set(img);
 	}
 	

@@ -34,7 +34,7 @@ public class ComponentTexturePalette extends Component {
 	}
 	
 	public void updateFromPalette() {
-		LOGGER.warn("update palet environnement");
+		LOGGER.debug("update palet environnement");
 		final BufferedImage img = this.palette.getImage();
 		try {
 			ImageIO.write(img, "png", Path.of("/home/heero/00000_palette_" + this.palette.getId() + ".png").toFile());

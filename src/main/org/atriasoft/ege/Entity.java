@@ -36,14 +36,14 @@ public class Entity {
 		}
 		// Remove component with the same name.
 		this.removeComponent(ref.getType());
-		LOGGER.info("Entity: Add New component ... [START]");
+		LOGGER.trace("Entity: Add New component ... [START]");
 		this.component.add(ref);
 		this.env.engineComponentAdd(ref);
 		for (final Component it : this.component) {
 			ref.addFriendComponent(it);
 			it.addFriendComponent(ref);
 		}
-		LOGGER.info("Entity: Add New component ... [END]");
+		LOGGER.trace("Entity: Add New component ... [END]");
 	}
 	
 	/**

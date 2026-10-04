@@ -11,6 +11,7 @@ import org.atriasoft.ege.skybox.SkyboxConfig;
 import org.atriasoft.etk.Uri;
 import org.atriasoft.etk.math.Matrix4f;
 import org.atriasoft.etk.math.Vector3f;
+import org.atriasoft.ewol.resource.OwnedResources;
 import org.atriasoft.gale.backend3d.OpenGL;
 import org.atriasoft.gale.resource.ResourceProgram;
 import org.atriasoft.gale.resource.ResourceTextureCubeMap;
@@ -74,14 +75,17 @@ public class EngineSkybox extends Engine {
 	private static final Vector3f ROTATION_AXIS = new Vector3f(0.0f, 1.0f, 0.0f);
 	private static final float FULL_TURN = (float) (2.0 * Math.PI);
 
+	/** The OpenGL resources of the engine, released once (by gale) when the engine is collected. */
+	private final OwnedResources resources = new OwnedResources(this);
 	private SkyboxConfig config;
 	/** Cube map of the current configuration, loaded by {@link #render} on its first use. */
 	private ResourceTextureCubeMap cubeMap;
 	private boolean cubeMapLoaded = false;
-	/** Cube maps of the replaced configurations, waiting for {@link #render} to release them. */
+	/**
+	 * Cube maps of the replaced configurations, released by {@link #render} after
+	 * the load of the new one: a sky set again is kept by gale, with its texture.
+	 */
 	private final List<ResourceTextureCubeMap> cubeMapsToRelease = new ArrayList<>();
-	/** Cube maps whose texture this engine deleted: gale keeps them in its cache, without texture. */
-	private final List<ResourceTextureCubeMap> cubeMapsDeleted = new ArrayList<>();
 	// The cube and its shader do not depend on the configuration: created once, kept across sky changes.
 	private ResourceVirtualArrayObject cubeVao;
 	private ResourceProgram program;
@@ -147,40 +151,20 @@ public class EngineSkybox extends Engine {
 
 	private ResourceTextureCubeMap loadCubeMap(final SkyboxConfig skybox) {
 		LOGGER.debug("Loading skybox cube map");
-		// Face order: +X, -X, +Y, -Y, +Z, -Z
-		final ResourceTextureCubeMap loaded = ResourceTextureCubeMap.create(
+		// Face order: +X, -X, +Y, -Y, +Z, -Z. A cube map still living (same faces) is kept by gale.
+		return this.resources.own(ResourceTextureCubeMap.create(
 				skybox.getRight(),
 				skybox.getLeft(),
 				skybox.getTop(),
 				skybox.getBottom(),
 				skybox.getFront(),
-				skybox.getBack());
-		if (loaded == null) {
-			return null;
-		}
-		if (this.cubeMapsToRelease.remove(loaded)) {
-			// Same faces as a configuration that was just replaced: still in use.
-			return loaded;
-		}
-		final boolean deletedHere = this.cubeMapsDeleted.remove(loaded);
-		if (deletedHere || loaded.getCount() <= 0) {
-			// gale gave back a cached resource whose texture was deleted: use it again.
-			if (loaded.getCount() <= 0) {
-				loaded.keep();
-			}
-			loaded.updateContext();
-		}
-		return loaded;
+				skybox.getBack()));
 	}
 
+	/** Release the cube maps replaced: gale deletes the texture of the last user's. */
 	private void releaseReplacedCubeMaps() {
 		for (final ResourceTextureCubeMap replaced : this.cubeMapsToRelease) {
-			replaced.release();
-			if (replaced.getCount() <= 0) {
-				// Last user: delete the OpenGL texture.
-				replaced.cleanUp();
-				this.cubeMapsDeleted.add(replaced);
-			}
+			this.resources.releaseOwned(replaced);
 		}
 		this.cubeMapsToRelease.clear();
 	}
@@ -193,10 +177,11 @@ public class EngineSkybox extends Engine {
 		this.cubeInitialized = true;
 		LOGGER.debug("Initializing skybox resources");
 		// Create cube VAO with indexed geometry
-		this.cubeVao = ResourceVirtualArrayObject.create(CUBE_VERTICES, null, null, null, CUBE_INDICES);
+		this.cubeVao = this.resources.own(
+				ResourceVirtualArrayObject.create(CUBE_VERTICES, null, null, null, CUBE_INDICES));
 		this.cubeVao.updateContext();
 		// Create shader program
-		this.program = ResourceProgram.create(VERTEX_SHADER, FRAGMENT_SHADER);
+		this.program = this.resources.own(ResourceProgram.create(VERTEX_SHADER, FRAGMENT_SHADER));
 		if (this.program != null) {
 			this.uniformProjection = this.program.getUniform("in_matrixProjection");
 			this.uniformView = this.program.getUniform("in_matrixView");

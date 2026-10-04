@@ -10,6 +10,7 @@ import org.atriasoft.ege.camera.Camera;
 import org.atriasoft.ege.components.ComponentPhysics;
 import org.atriasoft.ephysics.engine.DynamicsWorld;
 import org.atriasoft.etk.math.Vector3f;
+import org.atriasoft.ewol.resource.OwnedResources;
 import org.atriasoft.gale.resource.ResourceColored3DObject;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -21,7 +22,10 @@ public class EnginePhysics extends Engine {
 	private float accumulator = 0;
 	private final EngineGravity gravity;
 	private final List<ComponentPhysics> components = new ArrayList<>();
-	private final ResourceColored3DObject debugDrawProperty = ResourceColored3DObject.create();
+	/** The OpenGL resources of the engine, released once (by gale) when the engine is collected. */
+	private final OwnedResources resources = new OwnedResources(this);
+	/** Debug drawing of the bodies, created at the first frame drawn. */
+	private ResourceColored3DObject debugDrawProperty = null;
 	private final DynamicsWorld dynamicsWorld;
 
 	public EnginePhysics(final Environement env) {
@@ -89,6 +93,12 @@ public class EnginePhysics extends Engine {
 
 	@Override
 	public void render(final long deltaMili, final Camera camera) {
+		if (this.components.isEmpty()) {
+			return;
+		}
+		if (this.debugDrawProperty == null) {
+			this.debugDrawProperty = this.resources.own(ResourceColored3DObject.create());
+		}
 		for (final ComponentPhysics it : this.components) {
 			it.renderDebug(this.debugDrawProperty);
 		}

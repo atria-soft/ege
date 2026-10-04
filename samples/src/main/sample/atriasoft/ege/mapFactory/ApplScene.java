@@ -76,21 +76,30 @@ public class ApplScene extends EgeScene {
 		}
 	}
 
+	/**
+	 * Whether a character typed with Control is the letter {@code letter}
+	 * (lower case): gale hands the letter (Ctrl+Z comes as a z, as a Z with
+	 * Shift), its older versions the control code of the letter (U+001A).
+	 *
+	 * @param typed  the character of the event, null if none
+	 * @param letter the letter, from a to z
+	 */
+	static boolean isControlLetter(final Character typed, final char letter) {
+		return typed != null && (Character.toLowerCase(typed) == letter || typed == letter - 'a' + 1);
+	}
+
 	@Override
 	public boolean onEventEntry(final EventEntry event) {
 		// Ctrl+Z = undo, Ctrl+Y = redo
 		if (event.type() == KeyKeyboard.CHARACTER && event.status() == KeyStatus.down
-				&& event.specialKey() != null && event.specialKey().getCtrlLeft()) {
-			final Character ch = event.getChar();
-			if (ch != null) {
-				if (ch == '\u001a') { // Ctrl+Z
-					this.undoManager.undo();
-					return true;
-				}
-				if (ch == '\u0019') { // Ctrl+Y
-					this.undoManager.redo();
-					return true;
-				}
+				&& event.specialKey() != null && event.specialKey().getCtrl()) {
+			if (isControlLetter(event.getChar(), 'z')) {
+				this.undoManager.undo();
+				return true;
+			}
+			if (isControlLetter(event.getChar(), 'y')) {
+				this.undoManager.redo();
+				return true;
 			}
 		}
 		if (this.currentTool != null) {

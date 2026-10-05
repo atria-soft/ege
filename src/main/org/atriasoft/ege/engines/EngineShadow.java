@@ -169,7 +169,8 @@ public class EngineShadow extends Engine {
 
 					// Compute light-space matrix fitted to this frustum slice
 					final Matrix4f lightSpaceMatrix = cascade.computeLightSpaceMatrix(lightDir, orbitalAngle,
-							orbitalInclination, camera, this.cameraFovY, this.cameraAspectRatio);
+							orbitalInclination, camera, this.cameraFovY, this.cameraAspectRatio,
+							this.config.isStabilized() ? this.config.getShadowMapResolution() : 0);
 
 					// Render depth pass
 					final ShadowMapResources resources = cascade.getResources();

@@ -100,6 +100,35 @@ public class ShadowCascade {
 			final Camera camera,
 			final float fovY,
 			final float aspectRatio) {
+		return computeLightSpaceMatrix(lightDir, orbitalAngle, orbitalInclination, camera, fovY, aspectRatio, 0);
+	}
+
+	/**
+	 * Compute the light-space matrix, stabilised when {@code stableResolution}
+	 * is positive ({@link ShadowConfig#setStabilized}): the orthographic box is
+	 * a square around the bounding sphere of the frustum slice (its radius
+	 * rounded up to 1/16 m, so its size does not change while the camera turns)
+	 * and its centre is snapped, along the light's right and up axes, to the
+	 * texels of a shadow map of {@code stableResolution} pixels: a point of the
+	 * world falls on the same texel whatever the camera does, and the shadow
+	 * edges stop shimmering. 0 gives the tight fit of
+	 * {@link #computeLightSpaceMatrix(Vector3f, float, float, Camera, float, float)}.
+	 *
+	 * @param stableResolution side of the shadow map in pixels to snap to, or 0 for the tight fit
+	 * @return The computed light-space matrix (lightProjection * lightView)
+	 */
+	public Matrix4f computeLightSpaceMatrix(
+			final Vector3f lightDir,
+			final float orbitalAngle,
+			final float orbitalInclination,
+			final Camera camera,
+			final float fovY,
+			final float aspectRatio,
+			final int stableResolution) {
+		if (stableResolution > 0) {
+			return computeStableLightSpaceMatrix(lightDir, orbitalAngle, orbitalInclination, camera, fovY,
+					aspectRatio, stableResolution);
+		}
 		// 1. Compute the 8 corners of the frustum slice [splitNear, splitFar]
 		final Vector3f[] frustumCorners = computeFrustumCorners(camera, fovY, aspectRatio);
 		
@@ -204,6 +233,86 @@ public class ShadowCascade {
 		return this.lightSpaceMatrix;
 	}
 	
+	/**
+	 * Radius of the bounding sphere of a frustum slice {@code [near, far]}
+	 * around its centre on the axis, at depth {@code (near + far) / 2}: the
+	 * corners of the far plane are the farthest,
+	 * {@code sqrt(((far - near) / 2)^2 + far^2 tan^2(fovY / 2) (1 + aspect^2))}.
+	 * Found from the parameters alone, in double: the same for every view,
+	 * however the camera turns (the corners, rotated in float, would not be).
+	 */
+	static double sliceRadius(final float near, final float far, final float fovY, final float aspectRatio) {
+		final double halfDepth = (far - (double) near) * 0.5;
+		final double tan = Math.tan(fovY * 0.5);
+		final double lateral = far * tan;
+		return Math.sqrt(halfDepth * halfDepth + lateral * lateral * (1.0 + aspectRatio * (double) aspectRatio));
+	}
+
+	/**
+	 * Stabilised fit: see {@link #computeLightSpaceMatrix(Vector3f, float, float, Camera, float, float, int)}.
+	 * The centre of the slice and the radius of its sphere come from the
+	 * camera and the slice parameters ({@link #sliceRadius}); the orthographic
+	 * box is the square of that sphere plus two texels of room, its depth the
+	 * depth of the sphere plus the same room for the casters as the tight fit:
+	 * nothing of it changes while the camera turns, and a camera that moves
+	 * moves it by whole texels.
+	 */
+	private Matrix4f computeStableLightSpaceMatrix(
+			final Vector3f lightDir,
+			final float orbitalAngle,
+			final float orbitalInclination,
+			final Camera camera,
+			final float fovY,
+			final float aspectRatio,
+			final int resolution) {
+		final Vector3f[] frustumCorners = computeFrustumCorners(camera, fovY, aspectRatio);
+		final Vector3f eye = camera.getPosition();
+		final Vector3f forward = camera.getForward();
+		final float middle = (this.splitNear + this.splitFar) * 0.5f;
+		final Vector3f center = new Vector3f(eye.x() + forward.x() * middle, eye.y() + forward.y() * middle,
+				eye.z() + forward.z() * middle);
+		// Rounded up to 1/16 m from a value of the parameters alone: the same size for every view.
+		final float radius = (float) (Math.ceil(sliceRadius(this.splitNear, this.splitFar, fovY, aspectRatio) * 16.0)
+				/ 16.0);
+		// Axes of the light, the ones its view matrix will have (they depend on the light alone).
+		final Matrix4f rotation = buildLookAtMatrix(lightDir, Vector3f.ZERO, orbitalAngle, orbitalInclination);
+		final Vector3f right = new Vector3f(rotation.a1(), rotation.b1(), rotation.c1());
+		final Vector3f up = new Vector3f(rotation.a2(), rotation.b2(), rotation.c2());
+		// The square: the sphere plus two texels of room on each side (the snapped centre moves by less than one);
+		// its texels are those the centre is snapped to.
+		final float half = radius * (1.0f + 4.0f / resolution);
+		final float texel = 2.0f * half / resolution;
+		final float alongRight = right.dot(center);
+		final float alongUp = up.dot(center);
+		final float shiftRight = (float) Math.floor(alongRight / texel) * texel - alongRight;
+		final float shiftUp = (float) Math.floor(alongUp / texel) * texel - alongUp;
+		final Vector3f snapped = new Vector3f(center.x() + right.x() * shiftRight + up.x() * shiftUp,
+				center.y() + right.y() * shiftRight + up.y() * shiftUp,
+				center.z() + right.z() * shiftRight + up.z() * shiftUp);
+		final Vector3f lightPos = new Vector3f(snapped.x() + lightDir.x() * radius * 2.0f,
+				snapped.y() + lightDir.y() * radius * 2.0f, snapped.z() + lightDir.z() * radius * 2.0f);
+		final Matrix4f lightView = buildLookAtMatrix(lightPos, snapped, orbitalAngle, orbitalInclination);
+		this.debugFrustumCorners = frustumCorners;
+		this.debugLightPos = lightPos;
+		this.debugLightView = lightView;
+		// The snapped centre moved across the light only: the sphere lies between -3r and -r along the view.
+		float minZ = -3.0f * radius;
+		float maxZ = -radius;
+		// As the tight fit: room for the casters behind the slice (towards the light) and just beyond it.
+		final float zRange = maxZ - minZ;
+		minZ -= Math.max(zRange * 0.5f, 10.0f);
+		maxZ += Math.max(zRange * 2.0f, 50.0f);
+		this.debugMinX = -half;
+		this.debugMaxX = half;
+		this.debugMinY = -half;
+		this.debugMaxY = half;
+		this.debugMinZ = minZ;
+		this.debugMaxZ = maxZ;
+		final Matrix4f lightProjection = Matrix4f.createMatrixOrtho(-half, half, -half, half, -maxZ, -minZ);
+		this.lightSpaceMatrix = lightProjection.multiply(lightView);
+		return this.lightSpaceMatrix;
+	}
+
 	/**
 	 * Build a proper lookAt view matrix (standard OpenGL convention).
 	 * <p>

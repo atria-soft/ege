@@ -23,6 +23,15 @@ public class ShadowConfig {
 	private int maxShadowCasters = 2;
 	/** PCF kernel size: 1 = hard shadows, 3 = medium, 5 = soft. */
 	private int pcfKernelSize = 3;
+	/**
+	 * Whether the cascades are stabilised: each one a square fitted to the
+	 * bounding sphere of its slice (the same size whatever the camera looks
+	 * at), its origin snapped to the texels of its shadow map. The edges of
+	 * the shadows then stay still while the camera moves or turns, instead of
+	 * shimmering, at the cost of some resolution. Off by default: the tight
+	 * fit of before.
+	 */
+	private boolean stabilized = false;
 
 	public ShadowConfig() {
 	}
@@ -117,6 +126,21 @@ public class ShadowConfig {
 
 	public void setMaxShadowCasters(final int maxShadowCasters) {
 		this.maxShadowCasters = maxShadowCasters;
+	}
+
+	/** @return whether the cascades are stabilised (see {@link #setStabilized}) */
+	public boolean isStabilized() {
+		return this.stabilized;
+	}
+
+	/**
+	 * Stabilise the cascades: each one fitted to the bounding sphere of its
+	 * slice and snapped to the texels of its shadow map, so that the shadow
+	 * edges do not shimmer while the camera moves ({@code false}, the default:
+	 * the tight fit to the slice).
+	 */
+	public void setStabilized(final boolean stabilized) {
+		this.stabilized = stabilized;
 	}
 
 	public int getPcfKernelSize() {

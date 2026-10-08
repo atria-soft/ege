@@ -23,6 +23,7 @@ import org.atriasoft.etk.Uri;
 import org.atriasoft.etk.math.Matrix4f;
 import org.atriasoft.etk.math.Vector2f;
 import org.atriasoft.etk.math.Vector3f;
+import org.atriasoft.gale.Gale;
 import org.atriasoft.gale.backend3d.OpenGL;
 import org.atriasoft.gale.resource.ResourceProgram;
 import org.atriasoft.gale.resource.ResourceVirtualArrayObject;
@@ -66,6 +67,8 @@ public class EngineShadow extends Engine {
 	private final CelestialSystem celestialSystem;
 	private final ShadowConfig config;
 	private boolean initialized = false;
+	/** Whether {@link #release()} ran: nothing is drawn nor made afterwards. */
+	private boolean released = false;
 	
 	// Cascades: [casterIndex][cascadeIndex]
 	private final ShadowCascade[][] cascades = new ShadowCascade[MAX_SHADOW_CASTERS][MAX_CASCADES];
@@ -127,7 +130,7 @@ public class EngineShadow extends Engine {
 	@Override
 	public void render(final long deltaMili, final Camera camera) {
 		final List<CelestialBody> casters = this.celestialSystem.getActiveShadowCasters();
-		if (casters.isEmpty()) {
+		if (casters.isEmpty() || this.released) {
 			this.activeShadowCasterCount = 0;
 			return;
 		}
@@ -218,7 +221,7 @@ public class EngineShadow extends Engine {
 	 * Call from the application's onDraw after the main render pass.
 	 */
 	public void renderDebugThumbnails() {
-		if (this.activeShadowCasterCount == 0) {
+		if (this.activeShadowCasterCount == 0 || this.released) {
 			return;
 		}
 		initDebugResources();
@@ -348,6 +351,53 @@ public class EngineShadow extends Engine {
 		return this.cascades[casterIndex][cascadeIndex];
 	}
 	
+	/**
+	 * Give back what the shadows hold on the GPU, once, from any thread: the
+	 * framebuffer and the depth texture of every cascade (deleted on the
+	 * OpenGL thread), the references to the depth and debug programs and the
+	 * quad of the thumbnails. The engine draws no shadow afterwards: release
+	 * it when its environment is dropped (a scene closed, a window that
+	 * stays open).
+	 */
+	public void release() {
+		if (this.released) {
+			return;
+		}
+		this.released = true;
+		this.activeShadowCasterCount = 0;
+		final List<ShadowCascade> made = new ArrayList<>();
+		for (final ShadowCascade[] byCaster : this.cascades) {
+			for (int i = 0; i < byCaster.length; i++) {
+				if (byCaster[i] != null) {
+					made.add(byCaster[i]);
+					byCaster[i] = null;
+				}
+			}
+		}
+		final ResourceProgram debug = this.debugProgram;
+		final ResourceVirtualArrayObject quad = this.debugQuadVao;
+		this.debugProgram = null;
+		this.debugQuadVao = null;
+		if (debug != null) {
+			debug.release();
+		}
+		if (quad != null) {
+			quad.release();
+		}
+		if (!made.isEmpty()) {
+			Gale.getContext().getResourcesManager().runOnGlThread(() -> {
+				for (final ShadowCascade cascade : made) {
+					cascade.destroy();
+				}
+			});
+		}
+	}
+
+	/** Whether {@link #release()} ran. */
+	public boolean isReleased() {
+		return this.released;
+	}
+
 	// --- What casts ---
 
 	/**

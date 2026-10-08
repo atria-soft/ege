@@ -218,10 +218,16 @@ public class ShadowMapResources {
 	}
 
 	/**
-	 * Release all GPU resources.
+	 * Release all GPU resources: the framebuffer and the depth texture
+	 * (deleted at once: call on the OpenGL thread) and the reference to the
+	 * depth program. Nothing is drawn afterwards ({@link #isReady()} is false).
 	 */
 	public void destroy() {
 		destroyFbo();
+		if (this.depthProgram != null) {
+			this.depthProgram.release();
+			this.depthProgram = null;
+		}
 	}
 
 	/** @return The OpenGL texture ID of the depth texture (for sampling in shaders) */

@@ -47,6 +47,30 @@ Any `ComponentRender` that wants shadows must:
 
 Currently supported: `ComponentRenderTexturedMaterialsStaticMesh`, `ComponentRenderMeshPalette`.
 
+## Lab kit (`org.atriasoft.ege.lab`)
+
+A small kit to write a standalone lab window for a library (eFlora's trees: `eFlora/lab`; eArchi's buildings
+later). Nothing in it knows about trees or buildings. Overview and example: `package-info.java`.
+
+| Class | Role |
+|-------|------|
+| `Lab` | What a lab implements: `title()`, `start(view)` (declare controls, watch files, first build), `update(view, seconds)` (each frame: take results, `setContent`, `setInfo`), `close()` |
+| `LabApplication.run(args, factory)` | Starts Gale/Ewol/Ege and opens the window (`LabWindow`: 3D view left, control panel right) |
+| `LabView` | The 3D view: ground ruled 1/5/25 m (X red, Z blue), sky, sun with ege's cascaded shadows, human figure of 1.80 m (`placeHuman`), info panel (`setInfo`), F1 help, errors (`report`), file watching (`watch`), `frame()` |
+| `LabControls` | The single source of the actions: `group(heading)`, `action`, `toggle`, `choice`, `stepper`; each gives a widget of the panel (`LabPanelWidgets`), a key (`LabKey`, refused when bound twice) and a help line |
+| `LabMesh` / `LabShapes` | Content: opaque flat-shaded triangles (cast shadows), translucent ones (alpha < 1), lines hidden or on top; boxes, cylinders, polygons, wire boxes, crosses, the human |
+| `LabCamera` | Orbit (drag turns, right/middle or Shift drag pans, wheel zooms) or flight (F3; arrows, Page up/down); `frame(box, fovX, aspect, leftShare)` fits a box beside a panel |
+| `LabWorkshop<R, M>` | Build thread, newest request wins, a throwable becomes a `Result` that carries it |
+| `LabWatcher` | Data files polled each second; a change is read once it stayed still for a poll |
+
+Kit keys: `F` frame, `F1` help, `F2` human, `F3` free flight; the arrows and Page up/down drive the camera.
+Labs must not bind those. **Tab never reaches the application** (AWT keeps it for focus traversal), and Escape
+is left to ewol (it closes a drop-down list). `LabWindow.onEventShortCut` sees every key first, whatever widget
+has the focus. `LabRenderer` draws with `data/lab/labLit.*` (the CSM code copied from dementia's `surface.frag`)
+and `labLine.*`, casts through a `ShadowCaster`, refills its buffers per content and releases everything on the
+GL thread. Tests: `src/test/org/atriasoft/ege/lab/` (headless). See it only through a virtual X server
+(`eFlora/tools/lab-smoke.sh`), never on the real display.
+
 ## Common Pitfalls
 
 ### Shadow mapping

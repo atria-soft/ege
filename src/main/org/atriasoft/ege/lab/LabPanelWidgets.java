@@ -171,11 +171,11 @@ final class LabPanelWidgets implements LabControlPanel.Factory<Widget> {
 		row.subWidgetAdd(next);
 		block.subWidgetAdd(row);
 		this.syncs.add(() -> {
-			final List<String> items = control.items().get();
+			final List<String> items = this.controls.items(control);
 			if (!items.equals(select.getItems())) {
 				select.setItems(items);
 			}
-			final int index = control.selected().getAsInt();
+			final int index = this.controls.selected(control);
 			if (select.getPropertySelectedIndex() != index) {
 				select.setPropertySelectedIndex(index);
 			}
@@ -200,7 +200,7 @@ final class LabPanelWidgets implements LabControlPanel.Factory<Widget> {
 		more.signalClick.connectAuto(this, (final LabPanelWidgets self) -> self.controls.step(control, 1));
 		row.subWidgetAdd(more);
 		this.syncs.add(() -> {
-			final String shown = LabText.ascii(control.value().get());
+			final String shown = LabText.ascii(this.controls.text(control));
 			if (!shown.equals(value.getPropertyValue())) {
 				value.setPropertyValue(shown);
 			}

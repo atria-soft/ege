@@ -1,40 +1,92 @@
 package org.atriasoft.ege.lab;
 
+import java.util.function.Supplier;
+
 import org.atriasoft.etk.math.Vector2b;
 import org.atriasoft.ewol.widget.Sizer;
 import org.atriasoft.ewol.widget.Windows;
 import org.atriasoft.gale.key.KeyKeyboard;
 import org.atriasoft.gale.key.KeySpecial;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * The window of a lab: the 3D view ({@link LabView}) and the control panel
  * docked on its right ({@link LabPanelWidgets}), side by side, so the clicks
  * on the panel go to its widgets and the drags over the view to the camera.
- * Every key goes through the window first, whatever widget has the focus: the
- * arrows and Page up/down drive the camera, a key of a control runs it
- * (without Control, Alt or Meta), any other key goes on to the focused widget.
+ * <p>
+ * Every key goes through the window first, whatever widget has the focus:
+ * the arrows and Page up/down drive the camera, a key of a control runs it
+ * (without Control, Alt or Meta; the auto-repeat of a held key only steps
+ * the steppers and choices, {@link LabKeyRepeat}), any other key goes on to
+ * the focused widget. While a drop-down list is open it has the keys (a
+ * release still lets a camera key go).
+ * <p>
+ * Nothing a lab does while the window opens kills it: a lab that cannot be
+ * made, a {@link Lab#start} that throws, a control the kit cannot add, a
+ * first state that cannot be read are all reported in the info panel.
  */
 final class LabWindow extends Windows {
+
+	private static final Logger LOGGER = LoggerFactory.getLogger(LabWindow.class);
+
+	/** What runs when the lab could not be made: an empty view and its problem. */
+	private static final class NoLab implements Lab {
+		@Override
+		public String title() {
+			return "Lab";
+		}
+
+		@Override
+		public void start(final LabView view) {
+			// Nothing to declare.
+		}
+
+		@Override
+		public void update(final LabView view, final float seconds) {
+			// Nothing to show.
+		}
+
+		@Override
+		public void close() {
+			// Nothing to stop.
+		}
+	}
 
 	private final Lab lab;
 	private final LabView view = new LabView();
 	private final LabPanelWidgets panel;
+	private final LabKeyRepeat repeats = new LabKeyRepeat();
 	private boolean closed;
 
-	LabWindow(final Lab lab) {
-		this.lab = lab;
-		setPropertyTitle(LabText.ascii(lab.title()));
+	LabWindow(final Supplier<Lab> factory) {
 		this.view.setPropertyExpand(Vector2b.TRUE);
 		this.view.setPropertyFill(Vector2b.TRUE);
+		Lab made = null;
 		try {
-			lab.start(this.view);
+			made = factory.get();
+		} catch (final Throwable e) {
+			this.view.report("opening the lab", e);
+		}
+		this.lab = made != null ? made : new NoLab();
+		setPropertyTitle(LabText.ascii(title(this.lab)));
+		try {
+			this.lab.start(this.view);
 		} catch (final Throwable e) {
 			this.view.report("start", e);
 		}
-		this.view.addViewControls();
-		this.view.attach(lab);
+		try {
+			this.view.addViewControls();
+		} catch (final Throwable e) {
+			this.view.report("the controls of the view", e);
+		}
+		this.view.attach(this.lab);
 		this.panel = new LabPanelWidgets(this.view.controls());
-		this.panel.sync();
+		try {
+			this.panel.sync();
+		} catch (final Throwable e) {
+			this.view.report(LabView.PANEL, e);
+		}
 		this.view.setAfterUpdate(this.panel::sync);
 		final Sizer row = new Sizer(Sizer.DisplayMode.HORIZONTAL);
 		row.setPropertyExpand(Vector2b.TRUE);
@@ -44,6 +96,15 @@ final class LabWindow extends Windows {
 		setSubWidget(row);
 	}
 
+	private String title(final Lab made) {
+		try {
+			return made.title();
+		} catch (final Throwable e) {
+			this.view.report("title", e);
+			return "Lab";
+		}
+	}
+
 	LabView view() {
 		return this.view;
 	}
@@ -51,12 +112,20 @@ final class LabWindow extends Windows {
 	@Override
 	public boolean onEventShortCut(final KeySpecial special, final Character value, final KeyKeyboard type,
 			final boolean isDown) {
-		if (this.view.holdKey(type, isDown)) {
-			return true;
+		final LabKeyRepeat.Press press = this.repeats.onKey(type, value, isDown, System.nanoTime() * 1.0e-9);
+		if (!isDown) {
+			// A release always lets a camera key go, a list open or not.
+			this.view.holdKey(type, false);
 		}
-		final boolean plain = special == null || !special.getCtrl() && !special.getAlt() && !special.getMeta();
-		if (plain && isDown && this.view.controls().press(type, value)) {
-			return true;
+		if (popUpCount() == 0) {
+			if (LabView.isCameraKey(type)) {
+				this.view.holdKey(type, isDown);
+				return true;
+			}
+			final boolean plain = special == null || !special.getCtrl() && !special.getAlt() && !special.getMeta();
+			if (plain && isDown && this.view.controls().press(type, value, press == LabKeyRepeat.Press.REPEAT)) {
+				return true;
+			}
 		}
 		if (value == null) {
 			// Widget.onEventShortCut takes the character for granted.
@@ -65,7 +134,7 @@ final class LabWindow extends Windows {
 		return super.onEventShortCut(special, value, type, isDown);
 	}
 
-	/** Stop the lab and give the view back. Idempotent. */
+	/** Stop the lab and give the view back. Idempotent; whatever the lab throws is logged. */
 	void close() {
 		if (this.closed) {
 			return;
@@ -73,6 +142,8 @@ final class LabWindow extends Windows {
 		this.closed = true;
 		try {
 			this.lab.close();
+		} catch (final Throwable e) {
+			LOGGER.error("The lab did not close cleanly: {}", e.toString(), e);
 		} finally {
 			this.view.release();
 		}

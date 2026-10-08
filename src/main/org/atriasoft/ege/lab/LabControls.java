@@ -1,11 +1,11 @@
 package org.atriasoft.ege.lab;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
-import java.util.function.BiConsumer;
 import java.util.function.BooleanSupplier;
 import java.util.function.Consumer;
 import java.util.function.IntConsumer;
@@ -13,35 +13,100 @@ import java.util.function.IntSupplier;
 import java.util.function.Supplier;
 
 import org.atriasoft.gale.key.KeyKeyboard;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * The actions of a lab, the single source of its control panel, of its keys
  * and of its F1 help: each one declared once ({@link #action},
  * {@link #toggle}, {@link #choice}, {@link #stepper}) under the heading set
- * by {@link #group}. A key bound twice is refused when it is declared.
+ * by {@link #group}.
  * <p>
- * {@link #press} (a key) and the widgets of the panel run the same methods
- * ({@link #activate}, {@link #set}, {@link #select}, {@link #step}); a
- * throwable of a callback goes to the error handler ({@link #onError}), never
- * further. Not thread-safe: declared and run on the GUI thread. Pure Java,
- * tested headless.
+ * A key that cannot run the control is dropped from it, the control kept
+ * (clickable) and the reason reported ({@link #setReporter}): a key already
+ * bound, a key of the kit ({@code F}, {@code F1} to {@code F3}, reserved
+ * before the lab declares its controls), a key the window keeps or never
+ * receives ({@link #refusal}). {@link #press} (a key) and the widgets of the
+ * panel run the same methods ({@link #activate}, {@link #set},
+ * {@link #select}, {@link #step}); the state the widgets show is asked
+ * through {@link #value}, {@link #items}, {@link #selected}, {@link #text}.
+ * Whatever a callback or a supplier throws is reported, never further, and
+ * cleared once it succeeds again. Not thread-safe: declared and run on the
+ * GUI thread. Pure Java, tested headless.
  */
 public final class LabControls {
 
+	private static final Logger LOGGER = LoggerFactory.getLogger(LabControls.class);
 	/** The heading of the controls declared before any {@link #group}. */
 	public static final String DEFAULT_GROUP = "Lab";
+	/** What a supplier of a control is reported under, after its label: {@code Proxies (state)}. */
+	static final String STATE = " (state)";
+	static final String ITEMS = " (items)";
+	static final String SELECTED = " (item chosen)";
+	static final String VALUE = " (value)";
 
-	private final List<LabControl> controls = new ArrayList<>();
-	private String group = DEFAULT_GROUP;
-	/** Changes with every control declared: the panel lays itself out again. */
-	private int version;
-	private BiConsumer<String, Throwable> onError = (what, error) -> {
-		throw new IllegalStateException(what + ": " + error, error);
+	/** The keys a lab cannot bind, and why. */
+	private static final Map<LabKey, String> REFUSED = new HashMap<>();
+	static {
+		for (final KeyKeyboard camera : new KeyKeyboard[] { KeyKeyboard.UP, KeyKeyboard.DOWN, KeyKeyboard.LEFT,
+				KeyKeyboard.RIGHT, KeyKeyboard.PAGE_UP, KeyKeyboard.PAGE_DOWN }) {
+			REFUSED.put(LabKey.of(camera), "it drives the camera");
+		}
+		REFUSED.put(LabKey.of(KeyKeyboard.F12), "it opens the widget inspector of ewol");
+		REFUSED.put(LabKey.of('\t'), "AWT keeps it to move the focus: it never reaches the lab");
+		REFUSED.put(LabKey.of('\u001b'), "it is left to the drop-down lists");
+	}
+
+	private static final LabReporter LOG = new LabReporter() {
+		@Override
+		public void report(final String what, final Throwable error) {
+			LOGGER.error("Lab: {} failed: {}", what, error.toString(), error);
+		}
+
+		@Override
+		public void report(final String what, final String message) {
+			LOGGER.warn("Lab: {}: {}", what, message);
+		}
+
+		@Override
+		public void clear(final String what) {
+			// Nothing shown.
+		}
 	};
 
-	/** Where a throwable of a callback goes: what failed ({@code Proxies}) and the throwable. */
-	public void onError(final BiConsumer<String, Throwable> handler) {
-		this.onError = Objects.requireNonNull(handler);
+	private final List<LabControl> controls = new ArrayList<>();
+	/** The keys of the kit, by the label of the control of the kit that takes each. */
+	private final Map<LabKey, String> reserved = new LinkedHashMap<>();
+	private String group = DEFAULT_GROUP;
+	/** Whether the kit declares its own controls (its reserved keys accepted). */
+	private boolean kit;
+	/** Changes with every control declared: the panel lays itself out again. */
+	private int version;
+	private LabReporter reporter = LOG;
+
+	/** Where the problems go (the info panel of the view); the log until it is set. */
+	public void setReporter(final LabReporter next) {
+		this.reporter = Objects.requireNonNull(next);
+	}
+
+	/** Why {@code key} cannot run a control of a lab, {@code null} when it can (if it is free). */
+	public static String refusal(final LabKey key) {
+		return REFUSED.get(key);
+	}
+
+	/** Keep {@code key} for the control {@code label} of the kit: a lab declaring it loses it. */
+	void reserve(final LabKey key, final String label) {
+		this.reserved.put(key, label);
+	}
+
+	/** Run {@code declarations} of the kit's own controls, which take the keys reserved for them. */
+	void declareAsKit(final Runnable declarations) {
+		this.kit = true;
+		try {
+			declarations.run();
+		} finally {
+			this.kit = false;
+		}
 	}
 
 	/** The controls declared from now on go under {@code heading}. */
@@ -69,7 +134,7 @@ public final class LabControls {
 				Objects.requireNonNull(selected), Objects.requireNonNull(select)));
 	}
 
-	/** A number stepped down or up (two buttons around the value shown). */
+	/** A number stepped down or up (two buttons around the value shown); its keys repeat while held. */
 	public LabControls stepper(final String label, final LabKey less, final LabKey more, final Supplier<String> value,
 			final Runnable decrease, final Runnable increase) {
 		return add(new LabControl.Stepper(this.group, label, less, more, Objects.requireNonNull(value),
@@ -77,25 +142,52 @@ public final class LabControls {
 	}
 
 	private LabControls add(final LabControl control) {
+		LabControl kept = control;
 		for (final LabKey key : control.keys()) {
-			final LabControl bound = boundTo(key);
-			if (bound != null) {
-				throw new IllegalArgumentException(
-						"the key " + key.name() + " of '" + control.label() + "' already runs '" + bound.label() + "'");
+			final String why = whyNot(key);
+			if (why != null) {
+				this.reporter.report("Key " + key.name() + " of '" + control.label() + "'",
+						"not bound: " + why + " (the control is still in the panel)");
+				kept = without(kept, key);
 			}
 		}
-		this.controls.add(control);
+		this.controls.add(kept);
 		this.version++;
 		return this;
 	}
 
-	private LabControl boundTo(final LabKey key) {
+	/** Why {@code key} cannot be bound now, {@code null} when it can. */
+	private String whyNot(final LabKey key) {
+		final String refused = refusal(key);
+		if (refused != null) {
+			return refused;
+		}
+		final String kitControl = this.reserved.get(key);
+		if (kitControl != null && !this.kit) {
+			return "the kit keeps it for '" + kitControl + "'";
+		}
 		for (final LabControl control : this.controls) {
 			if (control.keys().contains(key)) {
-				return control;
+				return "it already runs '" + control.label() + "'";
 			}
 		}
 		return null;
+	}
+
+	/** {@code control} without {@code key}. */
+	static LabControl without(final LabControl control, final LabKey key) {
+		return switch (control) {
+			case final LabControl.Action a -> new LabControl.Action(a.group(), a.label(),
+					key.equals(a.key()) ? null : a.key(), a.run());
+			case final LabControl.Toggle t -> new LabControl.Toggle(t.group(), t.label(),
+					key.equals(t.key()) ? null : t.key(), t.value(), t.set());
+			case final LabControl.Choice c -> new LabControl.Choice(c.group(), c.label(),
+					key.equals(c.previous()) ? null : c.previous(), key.equals(c.next()) ? null : c.next(), c.items(),
+					c.selected(), c.select());
+			case final LabControl.Stepper s -> new LabControl.Stepper(s.group(), s.label(),
+					key.equals(s.less()) ? null : s.less(), key.equals(s.more()) ? null : s.more(), s.value(),
+					s.decrease(), s.increase());
+		};
 	}
 
 	/** Every control, in the order declared. */
@@ -118,17 +210,20 @@ public final class LabControls {
 	}
 
 	/**
-	 * Run the control bound to a key event ({@code type} and {@code value} as
-	 * gale hands them), on a key going down.
+	 * Run the control bound to a key going down ({@code type} and
+	 * {@code value} as gale hands them). The auto-repeat of a held key
+	 * ({@code repeat}) steps the steppers and the choices, never an action
+	 * nor a toggle.
 	 *
 	 * @return whether a control is bound to it
 	 */
-	public boolean press(final KeyKeyboard type, final Character value) {
+	public boolean press(final KeyKeyboard type, final Character value, final boolean repeat) {
 		for (final LabControl control : this.controls) {
-			final List<LabKey> keys = control.keys();
-			for (int i = 0; i < keys.size(); i++) {
-				if (keys.get(i).matches(type, value)) {
-					pressed(control, keys.get(i));
+			for (final LabKey key : control.keys()) {
+				if (key.matches(type, value)) {
+					if (!repeat || control instanceof LabControl.Choice || control instanceof LabControl.Stepper) {
+						pressed(control, key);
+					}
 					return true;
 				}
 			}
@@ -150,16 +245,6 @@ public final class LabControls {
 		guard(action, action.run());
 	}
 
-	/** Whether a toggle is on now (off when its supplier throws, which is told). */
-	public boolean value(final LabControl.Toggle toggle) {
-		try {
-			return toggle.value().getAsBoolean();
-		} catch (final Throwable e) {
-			this.onError.accept(toggle.label(), e);
-			return false;
-		}
-	}
-
 	/** Set a toggle on or off. */
 	public void set(final LabControl.Toggle toggle, final boolean on) {
 		guard(toggle, () -> toggle.set().accept(on));
@@ -177,8 +262,7 @@ public final class LabControls {
 			if (count == 0) {
 				return;
 			}
-			final int index = stepIndex(choice.selected().getAsInt(), direction, count);
-			choice.select().accept(index);
+			choice.select().accept(stepIndex(choice.selected().getAsInt(), direction, count));
 		});
 	}
 
@@ -195,11 +279,46 @@ public final class LabControls {
 		guard(stepper, direction < 0 ? stepper.decrease() : stepper.increase());
 	}
 
+	/** Whether a toggle is on now (off when its supplier throws). */
+	public boolean value(final LabControl.Toggle toggle) {
+		return state(toggle.label() + STATE, () -> toggle.value().getAsBoolean(), false);
+	}
+
+	/** The items of a choice now (none when its supplier throws). */
+	public List<String> items(final LabControl.Choice choice) {
+		final List<String> items = state(choice.label() + ITEMS, choice.items(), List.of());
+		return items != null ? items : List.of();
+	}
+
+	/** The index of the item chosen now (-1 when its supplier throws). */
+	public int selected(final LabControl.Choice choice) {
+		return state(choice.label() + SELECTED, () -> choice.selected().getAsInt(), -1);
+	}
+
+	/** The value of a stepper as shown now ({@code ?} when its supplier throws). */
+	public String text(final LabControl.Stepper stepper) {
+		final String text = state(stepper.label() + VALUE, stepper.value(), "?");
+		return text != null ? text : "";
+	}
+
+	/** What {@code supplier} gives, {@code fallback} (reported under {@code what}) when it throws. */
+	private <T> T state(final String what, final Supplier<T> supplier, final T fallback) {
+		try {
+			final T value = supplier.get();
+			this.reporter.clear(what);
+			return value;
+		} catch (final Throwable e) {
+			this.reporter.report(what, e);
+			return fallback;
+		}
+	}
+
 	private void guard(final LabControl control, final Runnable run) {
 		try {
 			run.run();
+			this.reporter.clear(control.label());
 		} catch (final Throwable e) {
-			this.onError.accept(control.label(), e);
+			this.reporter.report(control.label(), e);
 		}
 	}
 

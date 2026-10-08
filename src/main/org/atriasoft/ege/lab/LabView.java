@@ -14,7 +14,6 @@ import org.atriasoft.ege.celestial.CelestialBody;
 import org.atriasoft.ege.celestial.CelestialBodyType;
 import org.atriasoft.ege.engines.EngineShadow;
 import org.atriasoft.ege.shadow.ShadowConfig;
-import org.atriasoft.esignal.Connection;
 import org.atriasoft.etk.Color;
 import org.atriasoft.etk.math.Matrix4f;
 import org.atriasoft.etk.math.Vector2f;
@@ -22,8 +21,6 @@ import org.atriasoft.etk.math.Vector2i;
 import org.atriasoft.etk.math.Vector3f;
 import org.atriasoft.ewol.Ewol;
 import org.atriasoft.ewol.event.EventInput;
-import org.atriasoft.ewol.event.EventTime;
-import org.atriasoft.ewol.object.EwolObject;
 import org.atriasoft.ewol.widget.Widget;
 import org.atriasoft.gale.backend3d.OpenGL;
 import org.atriasoft.gale.backend3d.OpenGL.Flag;
@@ -37,7 +34,7 @@ import org.slf4j.LoggerFactory;
  * The 3D view of a lab, and what a {@link Lab} drives: the content it shows
  * ({@link #setContent}), the lines of its info panel ({@link #setInfo}), its
  * controls ({@link #controls()}), the files it watches ({@link #watch}),
- * the errors it reports ({@link #report}).
+ * the problems it reports ({@link #report}).
  * <p>
  * It draws a flat ground ruled every 1, 5 and 25 m (the axes X east in red,
  * Z south in blue) under a sky colour, lit by a sun casting cascaded shadows
@@ -49,9 +46,10 @@ import org.slf4j.LoggerFactory;
  * {@link #holdKey}).
  * <p>
  * Every throwable of the lab (an update, a control, a watcher) is caught and
- * shown in red in the info panel, never past the view. On the GUI thread.
+ * shown in red at the top of the info panel until the same thing succeeds
+ * again, never past the view. On the GUI thread.
  */
-public final class LabView extends Widget {
+public final class LabView extends Widget implements LabReporter {
 
 	private static final Logger LOGGER = LoggerFactory.getLogger(LabView.class);
 	/** Horizontal field of view, radians. */
@@ -62,25 +60,30 @@ public final class LabView extends Widget {
 	static final double POLL_SECONDS = 1.0;
 	/** The human figure stands this far west of the content, metres. */
 	static final float HUMAN_GAP = 1.0f;
-	/** The groups of the kit's own controls. */
+	/** The group of the kit's own controls, after those of the lab. */
 	public static final String VIEW_GROUP = "View";
+	/** The labels of the kit's own controls that take a key. */
+	static final String FRAME = "Frame the model";
+	static final String HUMAN = "Human figure 1.80 m";
+	static final String FLIGHT = "Free flight";
+	static final String HELP = "Key help";
+	/** What the problems are reported under. */
+	static final String UPDATE = "update";
+	static final String PANEL = "panel";
+	static final String READING = "reading the data";
+	static final String RENDERING = "3D view";
 
 	/** Files watched and what their change runs. */
 	private record Watch(LabWatcher watcher, Runnable onChange) {}
 
-	private static void onPeriodic(final LabView self, final EventTime event) {
-		self.markToRedraw();
-	}
-
 	private final Environement env = new Environement();
-	private final Camera camera = new Camera();
+	/** The ege camera the environment and its shadows take; {@link #labCamera} drives it. */
+	private final Camera egeCamera = new Camera();
 	private final ProjectionPerspective projection = new ProjectionPerspective();
-	private final LabCamera view = new LabCamera();
+	private final LabCamera labCamera = new LabCamera();
 	private final LabControls controls = new LabControls();
 	private final Map<String, String> errors = new LinkedHashMap<>();
 	private final List<Watch> watches = new ArrayList<>();
-	@SuppressWarnings("unused")
-	private Connection periodicHandle = new Connection();
 	private Lab lab;
 	private List<LabText.Line> info = List.of();
 	private LabMesh content;
@@ -105,13 +108,15 @@ public final class LabView extends Widget {
 	private double sincePoll;
 	private Runnable afterUpdate;
 	private LabRenderer renderer;
+	/** Whether the renderer could not be made (told once, never tried again). */
+	private boolean rendererFailed;
 	private LabInfoPanel panel;
 	private boolean detached;
 
 	public LabView() {
 		this.propertyCanFocus = true;
 		setMouseLimit(2);
-		this.env.addCamera("default", this.camera);
+		this.env.addCamera("default", this.egeCamera);
 		this.projection.setAngleViewRad(FOV_X);
 		final ShadowConfig config = this.env.getEngineShadow().getConfig();
 		config.setCascadeCount(3);
@@ -124,10 +129,18 @@ public final class LabView extends Widget {
 				(float) Math.acos(toSun.x()), Color.WHITE, 1.0f, true);
 		this.env.getCelestialSystem().addBody(sun);
 		this.env.getCelestialSystem().update(0L);
-		this.controls.onError(this::report);
+		this.controls.setReporter(this);
+		reserveKitKeys(this.controls);
 		this.human = humanBeside(null);
-		this.periodicHandle = EwolObject.getObjectManager().periodicCall.connect(this, LabView::onPeriodic);
 		markToRedraw();
+	}
+
+	/** The keys of the kit's own controls, kept before a lab declares its controls. */
+	static void reserveKitKeys(final LabControls controls) {
+		controls.reserve(LabKey.of('f'), FRAME);
+		controls.reserve(LabKey.of(KeyKeyboard.F1), HELP);
+		controls.reserve(LabKey.of(KeyKeyboard.F2), HUMAN);
+		controls.reserve(LabKey.of(KeyKeyboard.F3), FLIGHT);
 	}
 
 	// ---- What a lab drives -----------------------------------------------------------------------------
@@ -169,11 +182,11 @@ public final class LabView extends Widget {
 		}
 		final Vector2f size = getSize();
 		if (!(size.x() > 0.0f) || !(size.y() > 0.0f)) {
-			this.view.frame(box, FOV_X, 1.0f, 0.0f);
+			this.labCamera.frame(box, FOV_X, 1.0f, 0.0f);
 			return;
 		}
 		final float covered = this.info.isEmpty() ? 0.0f : LabInfoPanel.width(size) + 2.0f * LabInfoPanel.MARGIN;
-		this.view.frame(box, FOV_X, aspect(), Math.min(0.6f, covered / size.x()));
+		this.labCamera.frame(box, FOV_X, aspect(), Math.min(0.6f, covered / size.x()));
 	}
 
 	/**
@@ -185,25 +198,26 @@ public final class LabView extends Widget {
 		this.human = humanBeside(this.content != null ? this.content.bounds() : null);
 	}
 
-	/** The lines of the info panel (the errors reported follow them). */
+	/** The lines of the info panel (the problems reported come first). */
 	public void setInfo(final List<LabText.Line> lines) {
 		this.info = lines != null ? List.copyOf(lines) : List.of();
 	}
 
 	/** Where the eye is (a level of detail by distance). */
 	public Vector3f eye() {
-		return this.view.eye();
+		return this.labCamera.eye();
 	}
 
 	/** The camera: to frame a part of the content, to change its mode. */
 	public LabCamera camera() {
-		return this.view;
+		return this.labCamera;
 	}
 
 	/**
 	 * Watch {@code files} (asked at every poll): once one of them changed and
 	 * stayed the same for a poll of a second, {@code onChange} runs (read
-	 * them again). A throwable of {@code onChange} is reported.
+	 * them again). A throwable of {@code onChange} is reported until a reading
+	 * succeeds.
 	 *
 	 * @return the watcher: {@link LabWatcher#markRead()} after reading them on demand (F5)
 	 */
@@ -213,23 +227,36 @@ public final class LabView extends Widget {
 		return watcher;
 	}
 
-	/** Show {@code error} in red in the info panel, as what went wrong in {@code what}, until {@link #clear}. */
+	/**
+	 * Show {@code error} in red in the info panel, as what went wrong in
+	 * {@code what}, until {@link #clear}; logged once while it stays the same.
+	 */
+	@Override
 	public void report(final String what, final Throwable error) {
 		final String message = what + ": " + describe(error);
 		if (!message.equals(this.errors.put(what, message))) {
-			// Logged once while it stays the same (an update failing at every frame).
 			LOGGER.error("Lab: {} failed: {}", what, error.toString(), error);
 		}
 	}
 
 	/** Show {@code message} in red in the info panel under {@code what}, until {@link #clear}. */
+	@Override
 	public void report(final String what, final String message) {
-		this.errors.put(what, what + ": " + message);
+		final String line = what + ": " + message;
+		if (!line.equals(this.errors.put(what, line))) {
+			LOGGER.warn("Lab: {}", line);
+		}
 	}
 
-	/** Forget the error reported under {@code what}. */
+	/** Forget the problem reported under {@code what}. */
+	@Override
 	public void clear(final String what) {
 		this.errors.remove(what);
+	}
+
+	/** The problems shown now, each {@code what: message}. */
+	public List<String> problems() {
+		return List.copyOf(this.errors.values());
 	}
 
 	/** {@code IllegalStateException: no species} or the class and message of the cause that says most. */
@@ -256,17 +283,25 @@ public final class LabView extends Widget {
 
 	/** Declare the controls of the view itself, after those of the lab: they close the panel. */
 	void addViewControls() {
-		this.controls.group(VIEW_GROUP);
-		this.controls.action("Frame the model", LabKey.of('f'), this::frame);
-		this.controls.toggle("Human figure 1.80 m", LabKey.of(KeyKeyboard.F2), () -> this.humanShown,
-				value -> this.humanShown = value);
-		// Not Tab: AWT keeps it to move the focus, gale never sees it.
-		this.controls.toggle("Free flight", LabKey.of(KeyKeyboard.F3), () -> this.view.mode() == LabCamera.Mode.FLY,
-				value -> this.view.setMode(value ? LabCamera.Mode.FLY : LabCamera.Mode.ORBIT));
-		this.controls.toggle("Key help", LabKey.of(KeyKeyboard.F1), () -> this.helpShown,
-				value -> this.helpShown = value);
-		// No key: Escape closes the drop-down lists of the panel.
-		this.controls.action("Quit", null, () -> Ewol.getContext().exit(0));
+		this.controls.declareAsKit(() -> {
+			this.controls.group(VIEW_GROUP);
+			this.controls.action(FRAME, LabKey.of('f'), this::frame);
+			this.controls.toggle(HUMAN, LabKey.of(KeyKeyboard.F2), () -> this.humanShown,
+					value -> this.humanShown = value);
+			this.controls.toggle(FLIGHT, LabKey.of(KeyKeyboard.F3), () -> this.labCamera.mode() == LabCamera.Mode.FLY,
+					value -> this.labCamera.setMode(value ? LabCamera.Mode.FLY : LabCamera.Mode.ORBIT));
+			this.controls.toggle(HELP, LabKey.of(KeyKeyboard.F1), () -> this.helpShown,
+					value -> this.helpShown = value);
+			this.controls.action("Quit", null, () -> Ewol.getContext().exit(0));
+		});
+	}
+
+	/** Whether {@code type} is a key of the camera: the arrows and Page up/down. */
+	static boolean isCameraKey(final KeyKeyboard type) {
+		return switch (type) {
+			case UP, DOWN, LEFT, RIGHT, PAGE_UP, PAGE_DOWN -> true;
+			default -> false;
+		};
 	}
 
 	/**
@@ -311,17 +346,18 @@ public final class LabView extends Widget {
 		return (float) (2.0 * Math.atan(Math.tan(FOV_X * 0.5) / aspect()));
 	}
 
-	/** The lines over the picture: those of the lab, then the errors. */
+	/** The lines over the picture: the problems first (never cut off by a long panel), then those of the lab. */
 	private List<LabText.Line> infoLines() {
 		if (this.errors.isEmpty()) {
 			return this.info;
 		}
-		final List<LabText.Line> lines = new ArrayList<>(this.info);
-		lines.add(LabText.Line.gap());
-		lines.add(LabText.Line.bad("Errors"));
+		final List<LabText.Line> lines = new ArrayList<>();
+		lines.add(LabText.Line.bad("Problems"));
 		for (final String error : this.errors.values()) {
 			lines.add(LabText.Line.bad(error));
 		}
+		lines.add(LabText.Line.gap());
+		lines.addAll(this.info);
 		return lines;
 	}
 
@@ -358,6 +394,7 @@ public final class LabView extends Widget {
 		this.projection.updateMatrix(getSize());
 	}
 
+	/** Each frame: the camera keys, the update of the lab, the watched files, the panels; asks the next frame. */
 	@Override
 	public void onRegenerateDisplay() {
 		needRedraw();
@@ -366,23 +403,24 @@ public final class LabView extends Widget {
 			final float seconds = this.lastNanos == 0L ? 0.0f : (float) Math.min(0.25, (now - this.lastNanos) * 1.0e-9);
 			this.lastNanos = now;
 			this.env.periodicCall();
-			this.view.drive((this.up ? 1 : 0) - (this.down ? 1 : 0), (this.right ? 1 : 0) - (this.left ? 1 : 0),
+			this.labCamera.drive((this.up ? 1 : 0) - (this.down ? 1 : 0), (this.right ? 1 : 0) - (this.left ? 1 : 0),
 					(this.pageUp ? 1 : 0) - (this.pageDown ? 1 : 0), seconds);
 			final Lab driven = this.lab;
 			if (driven != null) {
 				try {
 					driven.update(this, seconds);
-					clear("update");
+					clear(UPDATE);
 				} catch (final Throwable e) {
-					report("update", e);
+					report(UPDATE, e);
 				}
 			}
 			poll(seconds);
 			if (this.afterUpdate != null) {
 				try {
 					this.afterUpdate.run();
+					clear(PANEL);
 				} catch (final Throwable e) {
-					report("panel", e);
+					report(PANEL, e);
 				}
 			}
 			if (this.panel == null) {
@@ -390,6 +428,7 @@ public final class LabView extends Widget {
 			}
 			this.panel.build(getSize(), infoLines(), helpLines());
 		}
+		// The next frame (the picture moves: a growing model, a held key, a build that comes).
 		markToRedraw();
 	}
 
@@ -404,9 +443,10 @@ public final class LabView extends Widget {
 			try {
 				if (watch.watcher().poll()) {
 					watch.onChange().run();
+					clear(READING);
 				}
 			} catch (final Throwable e) {
-				report("reading the data", e);
+				report(READING, e);
 			}
 		}
 	}
@@ -417,14 +457,22 @@ public final class LabView extends Widget {
 			return;
 		}
 		final Matrix4f widgetCamera = OpenGL.getCameraMatrix();
-		if (this.renderer == null) {
-			this.renderer = new LabRenderer(this.env.getEngineShadow());
+		if (this.renderer == null && !this.rendererFailed) {
+			try {
+				this.renderer = new LabRenderer(this.env.getEngineShadow());
+			} catch (final Throwable e) {
+				// Never tried again: the panels still work.
+				this.rendererFailed = true;
+				report(RENDERING, e);
+			}
 		}
-		this.renderer.show(this.content, this.humanShown ? this.human : null);
-		final Matrix4f viewMatrix = this.view.view();
-		final Vector3f eyePosition = this.view.eye();
-		this.camera.setViewMatrix(viewMatrix);
-		this.camera.setPosition(eyePosition);
+		if (this.renderer != null) {
+			this.renderer.show(this.content, this.humanShown ? this.human : null);
+		}
+		final Matrix4f viewMatrix = this.labCamera.view();
+		final Vector3f eyePosition = this.labCamera.eye();
+		this.egeCamera.setViewMatrix(viewMatrix);
+		this.egeCamera.setPosition(eyePosition);
 		final EngineShadow shadow = this.env.getEngineShadow();
 		shadow.setCameraAspectRatio(aspect());
 		shadow.setCameraFovY(fovY());
@@ -443,10 +491,18 @@ public final class LabView extends Widget {
 		OpenGL.disable(Flag.flag_scissorTest);
 		OpenGL.enable(Flag.flag_depthTest);
 		OpenGL.updateAllFlags();
-		// The depth passes of the shadows (the content casts through LabRenderer), then the ege entities (none).
-		this.env.render(20, "default");
-		OpenGL.setViewPort(new Vector2i((int) origin.x(), (int) origin.y()), new Vector2i((int) size.x(), (int) size.y()));
-		this.renderer.draw(this.projection.getMatrix(), viewMatrix, eyePosition);
+		try {
+			if (this.renderer != null) {
+				// The depth passes of the shadows (the content casts through LabRenderer), then the ege entities (none).
+				this.env.render(20, "default");
+				OpenGL.setViewPort(new Vector2i((int) origin.x(), (int) origin.y()),
+						new Vector2i((int) size.x(), (int) size.y()));
+				this.renderer.draw(this.projection.getMatrix(), viewMatrix, eyePosition);
+			}
+			clear(RENDERING);
+		} catch (final Throwable e) {
+			report(RENDERING, e);
+		}
 		OpenGL.disable(Flag.flag_depthTest);
 		OpenGL.updateAllFlags();
 		OpenGL.clear(OpenGL.ClearFlag.clearFlag_depthBuffer);
@@ -466,7 +522,7 @@ public final class LabView extends Widget {
 		final int button = event.inputId();
 		if ((button == 4 || button == 5) && event.status() == KeyStatus.down) {
 			// gale: 5 for the wheel turned away from the user (closer), 4 towards (farther).
-			this.view.zoom(button == 5 ? 1.0f : -1.0f);
+			this.labCamera.zoom(button == 5 ? 1.0f : -1.0f);
 			return true;
 		}
 		if (button < 1 || button > 3) {
@@ -484,9 +540,9 @@ public final class LabView extends Widget {
 					final float dy = position.y() - this.dragFrom.y();
 					this.dragFrom = position;
 					if (this.dragPans) {
-						this.view.pan(dx, dy, getSize().y(), fovY());
+						this.labCamera.pan(dx, dy, getSize().y(), fovY());
 					} else {
-						this.view.turn(dx, dy);
+						this.labCamera.turn(dx, dy);
 					}
 				}
 			}
@@ -503,7 +559,10 @@ public final class LabView extends Widget {
 		return true;
 	}
 
-	/** Stop drawing and give everything back (the OpenGL objects on the rendering thread). Idempotent. */
+	/**
+	 * Stop drawing and give everything back: the renderer, the panels, the
+	 * shadow maps (the OpenGL objects on the rendering thread). Idempotent.
+	 */
 	void release() {
 		if (this.detached) {
 			return;
@@ -518,5 +577,6 @@ public final class LabView extends Widget {
 			this.panel.release();
 			this.panel = null;
 		}
+		this.env.getEngineShadow().release();
 	}
 }

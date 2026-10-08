@@ -6,15 +6,13 @@ import org.atriasoft.gale.key.KeyKeyboard;
 
 /**
  * A key of the keyboard that runs a control of a lab: a character (a letter
- * matches in either case) or a special key (F1, Home...).
+ * matches in either case) or a special key (F5, Home...). Some keys cannot
+ * run a control: {@link LabControls#refusal} says which and why.
  *
  * @param type      {@link KeyKeyboard#CHARACTER} for a character, else the special key
  * @param character the character, lower case ({@code '\0'} for a special key)
  */
 public record LabKey(KeyKeyboard type, char character) {
-
-	/** Escape (the kit leaves it to ewol: it closes a drop-down list). Tab never reaches gale (AWT keeps it). */
-	public static final LabKey ESCAPE = of('\u001b');
 
 	/** The key typing {@code character} (a letter in either case). */
 	public static LabKey of(final char character) {

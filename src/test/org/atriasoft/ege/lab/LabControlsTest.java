@@ -2,16 +2,21 @@ package org.atriasoft.ege.lab;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
-import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.util.ArrayList;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 
 import org.atriasoft.gale.key.KeyKeyboard;
 import org.junit.jupiter.api.Test;
 
-/** The registry of the actions of a lab: keys, cycling, errors, help, and a control for each action. */
+/**
+ * The registry of the actions of a lab: keys, refused keys, auto-repeat,
+ * cycling, problems told and cleared, help, and a control for each action.
+ */
 class LabControlsTest {
 
 	/** A small lab: one of each kind. */
@@ -23,8 +28,33 @@ class LabControlsTest {
 		private int rebuilt;
 	}
 
+	/** The problems reported, by name. */
+	private static final class Problems implements LabReporter {
+		private final Map<String, String> shown = new LinkedHashMap<>();
+
+		@Override
+		public void report(final String what, final Throwable error) {
+			this.shown.put(what, error.getMessage());
+		}
+
+		@Override
+		public void report(final String what, final String message) {
+			this.shown.put(what, message);
+		}
+
+		@Override
+		public void clear(final String what) {
+			this.shown.remove(what);
+		}
+	}
+
 	private static LabControls controls(final Model model) {
+		return controls(model, new Problems());
+	}
+
+	private static LabControls controls(final Model model, final Problems problems) {
 		final LabControls controls = new LabControls();
+		controls.setReporter(problems);
 		controls.group("Subject");
 		controls.choice("Species", LabKey.of('o'), LabKey.of('p'), () -> model.species, () -> model.chosen,
 				index -> model.chosen = index);
@@ -41,49 +71,152 @@ class LabControlsTest {
 	void keysRunTheirControls() {
 		final Model model = new Model();
 		final LabControls controls = controls(model);
-		assertTrue(controls.press(KeyKeyboard.CHARACTER, 'p'));
+		assertTrue(controls.press(KeyKeyboard.CHARACTER, 'p', false));
 		assertEquals(1, model.chosen);
 		// Upper case too (Shift).
-		assertTrue(controls.press(KeyKeyboard.CHARACTER, 'P'));
+		assertTrue(controls.press(KeyKeyboard.CHARACTER, 'P', false));
 		assertEquals(2, model.chosen);
 		// Round the list.
-		controls.press(KeyKeyboard.CHARACTER, 'p');
+		controls.press(KeyKeyboard.CHARACTER, 'p', false);
 		assertEquals(0, model.chosen);
-		controls.press(KeyKeyboard.CHARACTER, 'o');
+		controls.press(KeyKeyboard.CHARACTER, 'o', false);
 		assertEquals(2, model.chosen);
-		controls.press(KeyKeyboard.CHARACTER, 'i');
+		controls.press(KeyKeyboard.CHARACTER, 'i', false);
 		assertEquals(2, model.seed);
-		controls.press(KeyKeyboard.CHARACTER, 'u');
-		controls.press(KeyKeyboard.CHARACTER, 'u');
+		controls.press(KeyKeyboard.CHARACTER, 'u', false);
+		controls.press(KeyKeyboard.CHARACTER, 'u', false);
 		assertEquals(0, model.seed);
-		controls.press(KeyKeyboard.CHARACTER, 'h');
+		controls.press(KeyKeyboard.CHARACTER, 'h', false);
 		assertTrue(model.proxies);
-		controls.press(KeyKeyboard.CHARACTER, 'h');
+		controls.press(KeyKeyboard.CHARACTER, 'h', false);
 		assertFalse(model.proxies);
-		assertTrue(controls.press(KeyKeyboard.F5, null));
+		assertTrue(controls.press(KeyKeyboard.F5, null, false));
 		assertEquals(1, model.rebuilt);
-		assertFalse(controls.press(KeyKeyboard.CHARACTER, 'z'));
-		assertFalse(controls.press(KeyKeyboard.F6, null));
+		assertFalse(controls.press(KeyKeyboard.CHARACTER, 'z', false));
+		assertFalse(controls.press(KeyKeyboard.F6, null, false));
 	}
 
 	@Test
-	void aKeyBoundTwiceIsRefused() {
-		final LabControls controls = controls(new Model());
-		final IllegalArgumentException e = assertThrows(IllegalArgumentException.class,
-				() -> controls.action("Again", LabKey.of('H'), () -> {}));
-		assertTrue(e.getMessage().contains("Proxies"), e.getMessage());
-	}
-
-	@Test
-	void aThrowingCallbackGoesToTheHandler() {
+	void aKeyThatCannotBeBoundIsDroppedAndToldTheControlKept() {
+		final Model model = new Model();
+		final Problems problems = new Problems();
 		final LabControls controls = new LabControls();
-		final List<String> told = new ArrayList<>();
-		controls.onError((what, error) -> told.add(what + ": " + error.getMessage()));
+		controls.setReporter(problems);
+		// As the view does before the lab declares its controls.
+		LabView.reserveKitKeys(controls);
+		controls.toggle("Proxies", LabKey.of('h'), () -> model.proxies, value -> model.proxies = value);
+		controls.action("Again", LabKey.of('H'), () -> model.rebuilt += 10);
+		controls.toggle("Framing", LabKey.of('f'), () -> false, value -> {});
+		controls.stepper("Zoom", LabKey.of(KeyKeyboard.PAGE_DOWN), LabKey.of('z'), () -> "1", () -> {}, () -> {});
+		controls.action("Close", LabKey.of('\u001b'), () -> {});
+		controls.action("Next tab", LabKey.of('\t'), () -> {});
+		controls.action("Inspect", LabKey.of(KeyKeyboard.F12), () -> {});
+		controls.action("Help", LabKey.of(KeyKeyboard.F1), () -> {});
+		assertTrue(problems.shown.get("Key H of 'Again'").contains("already runs 'Proxies'"), problems.shown.toString());
+		assertTrue(problems.shown.get("Key F of 'Framing'").contains("the kit keeps it for 'Frame the model'"));
+		assertTrue(problems.shown.get("Key Page down of 'Zoom'").contains("camera"));
+		assertTrue(problems.shown.get("Key Esc of 'Close'").contains("drop-down"));
+		assertTrue(problems.shown.get("Key Tab of 'Next tab'").contains("never reaches"));
+		assertTrue(problems.shown.get("Key F12 of 'Inspect'").contains("inspector"));
+		assertTrue(problems.shown.get("Key F1 of 'Help'").contains("Key help"));
+		assertEquals(7, problems.shown.size());
+		// Kept without the key, still clickable; the other key of the stepper kept.
+		final List<LabControl> all = controls.all();
+		assertEquals(8, all.size());
+		assertEquals("Again", all.get(1).title());
+		assertEquals("Framing", all.get(2).title());
+		assertEquals("Zoom [Z]", all.get(3).title());
+		controls.press(KeyKeyboard.CHARACTER, 'h', false);
+		assertTrue(model.proxies, "H still runs the proxies");
+		assertEquals(0, model.rebuilt);
+		controls.activate((LabControl.Action) all.get(1));
+		assertEquals(10, model.rebuilt);
+		// The kit takes its own keys.
+		controls.declareAsKit(() -> controls.action("Frame the model", LabKey.of('f'), () -> model.rebuilt++));
+		assertTrue(controls.press(KeyKeyboard.CHARACTER, 'F', false));
+		assertEquals(11, model.rebuilt);
+		assertEquals(7, problems.shown.size());
+		assertNull(LabControls.refusal(LabKey.of('q')));
+	}
+
+	@Test
+	void theAutoRepeatOfAHeldKeyStepsButNeverRepeatsAnActionOrAToggle() {
+		final Model model = new Model();
+		final LabControls controls = controls(model);
+		for (int i = 0; i < 5; i++) {
+			assertTrue(controls.press(KeyKeyboard.CHARACTER, 'i', true));
+			assertTrue(controls.press(KeyKeyboard.CHARACTER, 'p', true));
+			assertTrue(controls.press(KeyKeyboard.CHARACTER, 'h', true));
+			assertTrue(controls.press(KeyKeyboard.F5, null, true));
+		}
+		assertEquals(6, model.seed);
+		assertEquals(2, model.chosen);
+		assertFalse(model.proxies);
+		assertEquals(0, model.rebuilt);
+	}
+
+	@Test
+	void aProblemIsClearedOnceTheSameThingSucceeds() {
+		final Problems problems = new Problems();
+		final LabControls controls = controls(new Model(), problems);
+		final boolean[] fail = { true };
+		controls.action("Flaky", LabKey.of('y'), () -> {
+			if (fail[0]) {
+				throw new IllegalStateException("boom");
+			}
+		});
+		controls.toggle("Broken state", LabKey.of('w'), () -> {
+			if (fail[0]) {
+				throw new IllegalStateException("no state");
+			}
+			return true;
+		}, value -> {});
+		final LabControl.Toggle toggle = (LabControl.Toggle) controls.all().get(5);
+		controls.press(KeyKeyboard.CHARACTER, 'y', false);
+		assertFalse(controls.value(toggle));
+		assertEquals("boom", problems.shown.get("Flaky"));
+		assertEquals("no state", problems.shown.get("Broken state" + LabControls.STATE));
+		fail[0] = false;
+		controls.press(KeyKeyboard.CHARACTER, 'y', false);
+		assertTrue(controls.value(toggle));
+		assertTrue(problems.shown.isEmpty(), problems.shown.toString());
+	}
+
+	@Test
+	void theStateOfABrokenSupplierFallsBack() {
+		final Problems problems = new Problems();
+		final LabControls controls = new LabControls();
+		controls.setReporter(problems);
+		controls.choice("List", null, null, () -> {
+			throw new IllegalStateException("no items");
+		}, () -> {
+			throw new IllegalStateException("no index");
+		}, index -> {});
+		controls.stepper("Number", null, null, () -> {
+			throw new IllegalStateException("no value");
+		}, () -> {}, () -> {});
+		final LabControl.Choice choice = (LabControl.Choice) controls.all().get(0);
+		final LabControl.Stepper stepper = (LabControl.Stepper) controls.all().get(1);
+		assertEquals(List.of(), controls.items(choice));
+		assertEquals(-1, controls.selected(choice));
+		assertEquals("?", controls.text(stepper));
+		// Each supplier under its own name: one that works never clears another that fails.
+		assertEquals(3, problems.shown.size());
+		assertEquals("no items", problems.shown.get("List" + LabControls.ITEMS));
+		assertEquals("no index", problems.shown.get("List" + LabControls.SELECTED));
+		assertEquals("no value", problems.shown.get("Number" + LabControls.VALUE));
+	}
+
+	@Test
+	void aThrowingCallbackGoesToTheReporter() {
+		final LabControls controls = new LabControls();
+		final Problems problems = new Problems();
+		controls.setReporter(problems);
 		controls.action("Explode", LabKey.of('x'), () -> {
 			throw new IllegalStateException("boom");
 		});
-		assertTrue(controls.press(KeyKeyboard.CHARACTER, 'x'));
-		assertEquals(List.of("Explode: boom"), told);
+		assertTrue(controls.press(KeyKeyboard.CHARACTER, 'x', false));
+		assertEquals(Map.of("Explode", "boom"), problems.shown);
 	}
 
 	@Test
@@ -103,7 +236,7 @@ class LabControlsTest {
 		assertEquals("Proxies [H]", all.get(2).title());
 		assertEquals("Build again [F5]", all.get(3).title());
 		assertEquals("Tab", LabKey.of('\t').name());
-		assertEquals("Esc", LabKey.ESCAPE.name());
+		assertEquals("Esc", LabKey.of('\u001b').name());
 		assertEquals("Page up", LabKey.of(KeyKeyboard.PAGE_UP).name());
 	}
 

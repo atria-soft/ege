@@ -21,6 +21,11 @@ import org.atriasoft.gale.Gale;
  * 	LabApplication.run(args, () -&gt; new FloraLab(FloraOptions.parse(args)));
  * }
  * </pre>
+ *
+ * The kit's own files are found by their library ({@code new Uri("DATA",
+ * "lab/labLit.vert", "ege")}): a lab with files of its own names its
+ * application ({@link #run(String[], Class, String, Supplier)}), and
+ * {@code new Uri("DATA", "file")} finds them.
  */
 public final class LabApplication implements EwolApplication {
 
@@ -36,11 +41,22 @@ public final class LabApplication implements EwolApplication {
 
 	/** Open the window of the lab made by {@code factory} (on the GUI thread) and run until it closes. */
 	public static int run(final String[] args, final Supplier<Lab> factory) {
+		return run(args, LabApplication.class, "resources/ege", factory);
+	}
+
+	/**
+	 * {@link #run(String[], Supplier)} for a lab with files of its own:
+	 * {@code DATA:} names the folder {@code data} under {@code resources} of
+	 * the classpath of {@code application} ({@code new Uri("DATA",
+	 * "theme.json")} is {@code /<resources>/data/theme.json}).
+	 */
+	public static int run(final String[] args, final Class<?> application, final String resources,
+			final Supplier<Lab> factory) {
 		Gale.init();
 		Ewol.init();
 		Ege.init();
 		Uri.setGroup("DATA", "data");
-		Uri.setApplication(LabApplication.class, "resources/ege");
+		Uri.setApplication(application, resources);
 		return Ewol.run(new LabApplication(factory), args);
 	}
 
@@ -48,7 +64,8 @@ public final class LabApplication implements EwolApplication {
 	public void onCreate(final EwolContext context) {
 		context.setSize(SIZE);
 		Configs.getConfigFonts().set("FreeSherif", 13);
-		this.window = new LabWindow(this.factory.get());
+		// The lab is made by the window: a factory that throws is shown there, the window stays.
+		this.window = new LabWindow(this.factory);
 		context.setWindows(this.window);
 	}
 

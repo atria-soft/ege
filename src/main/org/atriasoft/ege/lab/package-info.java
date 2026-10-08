@@ -16,7 +16,8 @@
  * <li>the controls ({@link org.atriasoft.ege.lab.LabControls}): one
  * declaration per action (label, key, kind, callback) makes its widget in the
  * panel (button, check box, drop-down list, minus/plus), its key and its line
- * in the help;</li>
+ * in the help; a key the kit keeps or never receives is reported and dropped,
+ * the control kept ({@link org.atriasoft.ege.lab.LabControls#refusal});</li>
  * <li>the content ({@link org.atriasoft.ege.lab.LabMesh}, built with
  * {@link org.atriasoft.ege.lab.LabShapes}): opaque flat-shaded triangles
  * (casting shadows), translucent ones, lines hidden or on top;</li>
@@ -25,8 +26,10 @@
  * ({@link org.atriasoft.ege.lab.LabWatcher}, through
  * {@link org.atriasoft.ege.lab.LabView#watch}).</li>
  * </ul>
- * Whatever a lab throws (a build, a control, an update, a reading) is shown
- * in red in the info panel; the window stays.
+ * Whatever a lab throws (its factory, its start, a build, a control, an
+ * update, a reading) is shown in red at the top of the info panel until the
+ * same thing succeeds again ({@link org.atriasoft.ege.lab.LabReporter}); the
+ * window stays.
  *
  * <pre>
  * public final class MyLab implements Lab {

@@ -18,7 +18,7 @@ The engine implements cascaded shadow mapping for directional lights (celestial 
 
 | Component | Role |
 |-----------|------|
-| `EngineShadow` | Orchestrates depth passes, manages cascades, renders debug thumbnails |
+| `EngineShadow` | Orchestrates depth passes, manages cascades, renders debug thumbnails; `release()` gives the shadow maps back (no shadow afterwards) |
 | `ShadowConfig` | Cascade count (1-4), resolution, shadow distance, PCF kernel size, split lambda |
 | `ShadowCascade` | One cascade: computes light-space matrix from camera frustum slice |
 | `ShadowMapResources` | GPU resources: depth FBO, depth texture with hardware shadow comparison |
@@ -55,21 +55,29 @@ later). Nothing in it knows about trees or buildings. Overview and example: `pac
 | Class | Role |
 |-------|------|
 | `Lab` | What a lab implements: `title()`, `start(view)` (declare controls, watch files, first build), `update(view, seconds)` (each frame: take results, `setContent`, `setInfo`), `close()` |
-| `LabApplication.run(args, factory)` | Starts Gale/Ewol/Ege and opens the window (`LabWindow`: 3D view left, control panel right) |
-| `LabView` | The 3D view: ground ruled 1/5/25 m (X red, Z blue), sky, sun with ege's cascaded shadows, human figure of 1.80 m (`placeHuman`), info panel (`setInfo`), F1 help, errors (`report`), file watching (`watch`), `frame()` |
-| `LabControls` | The single source of the actions: `group(heading)`, `action`, `toggle`, `choice`, `stepper`; each gives a widget of the panel (`LabPanelWidgets`), a key (`LabKey`, refused when bound twice) and a help line |
+| `LabApplication.run(args, factory)` | Starts Gale/Ewol/Ege and opens the window (`LabWindow`: 3D view left, control panel right). `run(args, appClass, resources, factory)`: `DATA:` then names the lab's own files (the kit's are found by their library `ege`) |
+| `LabView` | The 3D view: ground ruled 1/5/25 m (X red, Z blue), sky, sun with ege's cascaded shadows, human figure of 1.80 m (`placeHuman`), info panel (`setInfo`), F1 help, file watching (`watch`), `frame()`; it is the `LabReporter`: `report(what, …)` shows a problem in red at the top of the info panel until `clear(what)` |
+| `LabControls` | The single source of the actions: `group(heading)`, `action`, `toggle`, `choice`, `stepper`; each gives a widget of the panel (`LabPanelWidgets`), a key (`LabKey`) and a help line. A key that cannot be bound is reported and dropped, the control kept: already bound, a kit key (reserved before `Lab.start`), or `refusal(key)` (arrows, Page up/down, F12, Tab, Escape). Callbacks and suppliers are guarded: a problem is reported under the control's label (a supplier under `label (state)`, `(items)`, `(item chosen)`, `(value)`) and cleared on its next success |
+| `LabKeyRepeat` | Tells gale's auto-repeat (a release and a press at once) from a new press, as dementia's `KeyPressFilter`: a held key repeats steppers and choices, never actions nor toggles |
 | `LabMesh` / `LabShapes` | Content: opaque flat-shaded triangles (cast shadows), translucent ones (alpha < 1), lines hidden or on top; boxes, cylinders, polygons, wire boxes, crosses, the human |
 | `LabCamera` | Orbit (drag turns, right/middle or Shift drag pans, wheel zooms) or flight (F3; arrows, Page up/down); `frame(box, fovX, aspect, leftShare)` fits a box beside a panel |
 | `LabWorkshop<R, M>` | Build thread, newest request wins, a throwable becomes a `Result` that carries it |
 | `LabWatcher` | Data files polled each second; a change is read once it stayed still for a poll |
+| `LabText` | Panel lines and their kinds; `ascii`, `wrap` (between words, a long word between letters; always ends) |
 
 Kit keys: `F` frame, `F1` help, `F2` human, `F3` free flight; the arrows and Page up/down drive the camera.
-Labs must not bind those. **Tab never reaches the application** (AWT keeps it for focus traversal), and Escape
-is left to ewol (it closes a drop-down list). `LabWindow.onEventShortCut` sees every key first, whatever widget
-has the focus. `LabRenderer` draws with `data/lab/labLit.*` (the CSM code copied from dementia's `surface.frag`)
-and `labLine.*`, casts through a `ShadowCaster`, refills its buffers per content and releases everything on the
-GL thread. Tests: `src/test/org/atriasoft/ege/lab/` (headless). See it only through a virtual X server
-(`eFlora/tools/lab-smoke.sh`), never on the real display.
+**Tab never reaches the application** (AWT keeps it for focus traversal), Escape is left to the drop-down lists,
+F12 is ewol's inspector. `LabWindow.onEventShortCut` sees every key first, whatever widget has the focus; while a
+drop-down list is open (`popUpCount() > 0`) it lets the list have the keys (a release still lets a camera key go).
+gale tells nothing when the window loses the focus: a release lost then leaves a camera key held until it is
+pressed again. Nothing a lab does while the window opens kills it (a factory, `start`, the controls of the view,
+the first sync of the panel: all reported). The info and help boxes stop at the bottom of the view (`... N more
+lines`). `LabRenderer` draws with `data/lab/labLit.*` (the CSM code copied from dementia's `surface.frag`) and
+`labLine.*`, casts through a `ShadowCaster`, refills its buffers per content, leaves texture unit 0 active and
+releases everything on the GL thread; `LabView.release()` also releases its `EngineShadow` (`release()`: cascade
+framebuffers, depth textures, programs). A renderer that cannot be made is reported once, never retried. Tests:
+`src/test/org/atriasoft/ege/lab/` (headless). See it only through a virtual X server
+(`eFlora/tools/lab-smoke.sh`, which compiles with no display and runs the window in Xvfb), never on the real display.
 
 ## Common Pitfalls
 

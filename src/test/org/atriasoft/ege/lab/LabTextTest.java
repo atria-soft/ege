@@ -1,6 +1,10 @@
 package org.atriasoft.ege.lab;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+
+import java.util.List;
+import java.util.function.ToDoubleFunction;
 
 import org.junit.jupiter.api.Test;
 
@@ -12,6 +16,35 @@ class LabTextTest {
 		assertEquals("Chene x 2 - 30 deg ~ 4 m2 ... ?", LabText.ascii("Chêne × 2 – 30° ≈ 4 m² … ☃"));
 		assertEquals("a b", LabText.ascii("a\tb"));
 		assertEquals("", LabText.ascii(null));
+	}
+
+	/** Seven pixels a character. */
+	private static final ToDoubleFunction<String> MONO = text -> 7.0 * text.length();
+
+	@Test
+	void aLongLineIsWrappedBetweenWordsAndAPathBetweenItsLetters() {
+		assertEquals(List.of("short"), LabText.wrap("short", 70, MONO));
+		assertEquals(List.of("one two", "  three", "  four"), LabText.wrap("one two three four", 56, MONO));
+		assertEquals(List.of("  one", "    two"), LabText.wrap("  one two", 49, MONO));
+		final List<String> path = LabText.wrap("/home/heero/dev/perso/jatria_soft/species.json", 70, MONO);
+		for (final String piece : path) {
+			assertTrue(MONO.applyAsDouble(piece) <= 70, piece);
+		}
+		assertEquals("/home/heero/dev/perso/jatria_soft/species.json",
+				String.join("", path.stream().map(String::strip).toList()));
+	}
+
+	@Test
+	void aBoxNarrowerThanTheIndentStillEnds() {
+		// The indent and one letter do not fit: no indent, one letter a piece at worst.
+		final List<String> pieces = LabText.wrap("                    abcdef ghij", 14, MONO);
+		assertTrue(pieces.size() <= 12, pieces.toString());
+		assertEquals("abcdefghij", String.join("", pieces.stream().map(String::strip).toList()));
+		// Narrower than a single letter: still one letter a piece, and it ends.
+		assertEquals(List.of("a", "b", "c"), LabText.wrap("abc", 3, MONO));
+		// A deep indent is capped.
+		final List<String> deep = LabText.wrap(" ".repeat(30) + "word word word", 140, MONO);
+		assertTrue(deep.get(0).startsWith(" ".repeat(LabText.MAX_INDENT) + "word"), deep.toString());
 	}
 
 	@Test

@@ -71,29 +71,52 @@ final class LabInfoPanel {
 		return Math.min(WIDTH, (size.x() - 3.0f * MARGIN) * 0.5f);
 	}
 
-	/** A box of {@code lines} whose top-left corner is {@code (x, top)}. */
+	/**
+	 * A box of {@code lines} whose top-left corner is {@code (x, top)}, no
+	 * lower than the bottom margin of the view: the lines that do not fit are
+	 * counted on a last line ({@code ... 12 more lines}).
+	 */
 	private void box(final float x, final float top, final float width, final List<LabText.Line> lines) {
 		final float inner = width - 2.0f * PADDING;
 		final List<LabText.Line> wrapped = new ArrayList<>();
 		for (final LabText.Line line : lines) {
-			for (final String part : wrap(LabText.ascii(line.text()), inner, fontOf(line))) {
+			final CompositingText font = fontOf(line);
+			for (final String part : LabText.wrap(LabText.ascii(line.text()), inner,
+					text -> font.calculateSize(text).x())) {
 				wrapped.add(new LabText.Line(part, line.kind()));
 			}
 		}
+		final List<LabText.Line> shown = fit(wrapped, top - MARGIN - 2.0f * PADDING);
 		float height = 2.0f * PADDING;
-		for (final LabText.Line line : wrapped) {
+		for (final LabText.Line line : shown) {
 			height += fontOf(line).getHeight();
 		}
 		this.shapes.setColor(BACK);
 		this.shapes.setPos(x, top - height);
 		this.shapes.rectangle(x + width, top);
 		float y = top - PADDING;
-		for (final LabText.Line line : wrapped) {
+		for (final LabText.Line line : shown) {
 			y -= fontOf(line).getHeight();
 			if (!line.text().isEmpty()) {
 				print(fontOf(line), line.text(), x + PADDING, y, colorOf(line.kind()));
 			}
 		}
+	}
+
+	/** The first of {@code lines} that fit in {@code room} pixels, then a line counting the others. */
+	private List<LabText.Line> fit(final List<LabText.Line> lines, final float room) {
+		float used = 0.0f;
+		for (int i = 0; i < lines.size(); i++) {
+			used += fontOf(lines.get(i)).getHeight();
+			if (used > room) {
+				// Room for the line that counts the others.
+				final int kept = Math.max(0, i - 1);
+				final List<LabText.Line> shown = new ArrayList<>(lines.subList(0, kept));
+				shown.add(LabText.Line.dim("... " + (lines.size() - kept) + " more lines"));
+				return shown;
+			}
+		}
+		return lines;
 	}
 
 	private CompositingText fontOf(final LabText.Line line) {
@@ -108,52 +131,6 @@ final class LabInfoPanel {
 		font.setColor(color);
 		font.setPos(new Vector2f(x, y));
 		font.print(line);
-	}
-
-	/**
-	 * {@code line} cut between words into pieces no wider than {@code width},
-	 * the pieces after the first indented; a word too long (a path) is cut
-	 * between its letters.
-	 */
-	private static List<String> wrap(final String line, final float width, final CompositingText font) {
-		final List<String> parts = new ArrayList<>();
-		if (line.isEmpty() || font.calculateSize(line).x() <= width) {
-			parts.add(line);
-			return parts;
-		}
-		int start = 0;
-		while (start < line.length() && line.charAt(start) == ' ') {
-			start++;
-		}
-		final String indent = line.substring(0, start);
-		final StringBuilder current = new StringBuilder(indent);
-		for (final String word : line.substring(start).split(" ")) {
-			final String candidate = current.toString().isBlank() ? current + word : current + " " + word;
-			if (font.calculateSize(candidate).x() <= width) {
-				current.setLength(0);
-				current.append(candidate);
-				continue;
-			}
-			if (!current.isEmpty() && !current.toString().isBlank()) {
-				parts.add(current.toString());
-				current.setLength(0);
-			}
-			String rest = (parts.isEmpty() ? indent : indent + "  ") + word;
-			while (font.calculateSize(rest).x() > width && rest.length() > 3) {
-				int cut = rest.length() - 1;
-				while (cut > 3 && font.calculateSize(rest.substring(0, cut)).x() > width) {
-					cut--;
-				}
-				parts.add(rest.substring(0, cut));
-				rest = indent + "  " + rest.substring(cut);
-			}
-			current.setLength(0);
-			current.append(rest);
-		}
-		if (!current.isEmpty()) {
-			parts.add(current.toString());
-		}
-		return parts;
 	}
 
 	private static Color colorOf(final LabText.Kind kind) {

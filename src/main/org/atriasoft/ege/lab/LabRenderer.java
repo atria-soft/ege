@@ -17,6 +17,7 @@ import org.atriasoft.gale.backend3d.OpenGL.Flag;
 import org.atriasoft.gale.resource.ResourceProgram;
 import org.lwjgl.BufferUtils;
 import org.lwjgl.opengl.GL11;
+import org.lwjgl.opengl.GL13;
 import org.lwjgl.opengl.GL15;
 import org.lwjgl.opengl.GL20;
 import org.lwjgl.opengl.GL30;
@@ -33,7 +34,8 @@ import org.slf4j.LoggerFactory;
  * nothing of OpenGL leaks from one content to the next; {@link #release()}
  * gives everything back. Every OpenGL state it changes is restored (blending
  * off with its default function, depth writes on, depth test as the caller
- * set it is left on). Created and drawn on the rendering thread.
+ * set it is left on, texture unit 0 active). Created and drawn on the rendering
+ * thread.
  */
 final class LabRenderer {
 
@@ -263,6 +265,8 @@ final class LabRenderer {
 		GL11.glDepthMask(true);
 		this.shadows.unBindForRendering();
 		this.lit.unUse();
+		// ShadowRender leaves the last shadow map unit active: unit 0 again for the texts and widgets drawn after.
+		GL13.glActiveTexture(GL13.GL_TEXTURE0);
 		this.line.use();
 		this.line.uniformMatrix(this.lineProjection, projection);
 		this.line.uniformMatrix(this.lineView, view);

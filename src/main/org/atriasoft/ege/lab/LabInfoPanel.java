@@ -23,6 +23,8 @@ final class LabInfoPanel {
 	private static final int TITLE_FONT = 16;
 	/** The monospace font of ewol (esvg's), for the lines that must keep their columns. */
 	static final String MONO_FONT = "FreeMono";
+	/** Its size: smaller than the proportional one, whose characters are narrower (a drawing of 30 columns fits). */
+	private static final int MONO_SIZE = 11;
 	/** Width of a box, pixels (narrower on a narrow view). */
 	static final float WIDTH = 380.0f;
 	static final float MARGIN = 10.0f;
@@ -39,7 +41,7 @@ final class LabInfoPanel {
 	private final CompositingGC shapes = new CompositingGC();
 	private final CompositingText text = new CompositingText("", FONT);
 	private final CompositingText title = new CompositingText("", TITLE_FONT);
-	private final CompositingText mono = new CompositingText(MONO_FONT, FONT);
+	private final CompositingText mono = new CompositingText(MONO_FONT, MONO_SIZE);
 	private Vector2f builtSize;
 	private List<LabText.Line> builtInfo;
 	private List<LabText.Line> builtHelp;

@@ -118,4 +118,25 @@ class LabCameraTest {
 		camera.setMode(LabCamera.Mode.ORBIT);
 		assertNear(flown, camera.eye());
 	}
+
+	@Test
+	void aDirectionIsSetAroundTheTargetOrTheEye() {
+		final LabCamera camera = new LabCamera();
+		final Vector3f target = camera.target();
+		camera.setDirection((float) (Math.PI / 2), 0.3f);
+		final Vector3f east = camera.eye().less(target);
+		assertTrue(east.x() > 0 && Math.abs(east.z()) < EPSILON, "east of the target: " + east);
+		assertEquals(0.3f, camera.elevation(), EPSILON);
+		assertNear(target, camera.target());
+		// The orbit keeps the eye over the ground of the target, the azimuth turns round.
+		camera.setDirection((float) (3 * Math.PI), -1.0f);
+		assertTrue(camera.elevation() > 0, "elevation " + camera.elevation());
+		assertEquals((float) -Math.PI, camera.azimuth(), EPSILON);
+		// A flight turns the look around the eye.
+		camera.setMode(LabCamera.Mode.FLY);
+		final Vector3f eye = camera.eye();
+		camera.setDirection(0.0f, -0.5f);
+		assertNear(eye, camera.eye());
+		assertEquals(-0.5f, camera.elevation(), EPSILON);
+	}
 }

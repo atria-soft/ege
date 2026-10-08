@@ -198,6 +198,16 @@ public final class LabView extends Widget implements LabReporter {
 		this.human = humanBeside(this.content != null ? this.content.bounds() : null);
 	}
 
+	/** Show the human figure or hide it (the kit's toggle, F2, shows the same state). */
+	public void showHuman(final boolean shown) {
+		this.humanShown = shown;
+	}
+
+	/** Whether the human figure is shown. */
+	public boolean humanShown() {
+		return this.humanShown;
+	}
+
 	/** The lines of the info panel (the problems reported come first). */
 	public void setInfo(final List<LabText.Line> lines) {
 		this.info = lines != null ? List.copyOf(lines) : List.of();
@@ -286,8 +296,7 @@ public final class LabView extends Widget implements LabReporter {
 		this.controls.declareAsKit(() -> {
 			this.controls.group(VIEW_GROUP);
 			this.controls.action(FRAME, LabKey.of('f'), this::frame);
-			this.controls.toggle(HUMAN, LabKey.of(KeyKeyboard.F2), () -> this.humanShown,
-					value -> this.humanShown = value);
+			this.controls.toggle(HUMAN, LabKey.of(KeyKeyboard.F2), this::humanShown, this::showHuman);
 			this.controls.toggle(FLIGHT, LabKey.of(KeyKeyboard.F3), () -> this.labCamera.mode() == LabCamera.Mode.FLY,
 					value -> this.labCamera.setMode(value ? LabCamera.Mode.FLY : LabCamera.Mode.ORBIT));
 			this.controls.toggle(HELP, LabKey.of(KeyKeyboard.F1), () -> this.helpShown,
@@ -521,7 +530,8 @@ public final class LabView extends Widget implements LabReporter {
 		final Vector2f position = relativePosition(event.pos());
 		final int button = event.inputId();
 		if ((button == 4 || button == 5) && event.status() == KeyStatus.down) {
-			// gale: 5 for the wheel turned away from the user (closer), 4 towards (farther).
+			// gale numbers the wheel turned away from the user (up: X button 4, xdotool click 4) 5: closer; turned
+			// towards the user (down: X button 5, xdotool click 5) 4: farther.
 			this.labCamera.zoom(button == 5 ? 1.0f : -1.0f);
 			return true;
 		}

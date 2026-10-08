@@ -100,6 +100,24 @@ public final class LabCamera {
 		return this.target.add(back().multiply(this.distance));
 	}
 
+	/**
+	 * Look from the direction {@code azimuth} (radians, 0: the eye south of
+	 * the target, {@code PI / 2}: east of it) and {@code elevation} (radians
+	 * above the horizon): around the target in an orbit (the elevation kept
+	 * over its ground, as a drag does), the look around the eye in a flight.
+	 */
+	public void setDirection(final float azimuth, final float elevation) {
+		if (this.mode == Mode.ORBIT) {
+			this.azimuth = wrap(azimuth);
+			this.elevation = clampOrbit(elevation);
+			return;
+		}
+		final Vector3f eye = eye();
+		this.azimuth = wrap(azimuth);
+		this.elevation = clamp(elevation, -MAX_ELEVATION, MAX_ELEVATION);
+		this.target = eye.less(back().multiply(this.distance));
+	}
+
 	/** Look at {@code target} from {@code distance} metres, the direction kept. */
 	public void lookAt(final Vector3f target, final float distance) {
 		this.target = target;

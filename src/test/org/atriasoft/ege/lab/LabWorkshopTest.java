@@ -30,10 +30,12 @@ class LabWorkshopTest {
 
 	@Test
 	void theNewestRequestWinsAndTheOnesBetweenAreSkipped() throws InterruptedException {
+		final CountDownLatch started = new CountDownLatch(1);
 		final CountDownLatch release = new CountDownLatch(1);
 		final List<Integer> built = new CopyOnWriteArrayList<>();
 		try (LabWorkshop<Integer, String> workshop = new LabWorkshop<>("test-workshop", request -> {
 			if (request == 1) {
+				started.countDown();
 				try {
 					release.await(10, TimeUnit.SECONDS);
 				} catch (final InterruptedException e) {
@@ -45,8 +47,8 @@ class LabWorkshopTest {
 		})) {
 			assertNull(workshop.latest());
 			workshop.request(1);
-			// Let the first build start and block.
-			Thread.sleep(50);
+			// The first build started (and blocks): the next two come while it runs.
+			assertTrue(started.await(10, TimeUnit.SECONDS));
 			workshop.request(2);
 			final long last = workshop.request(3);
 			assertTrue(workshop.busy());

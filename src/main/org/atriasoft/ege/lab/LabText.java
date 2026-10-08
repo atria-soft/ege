@@ -30,14 +30,31 @@ public final class LabText {
 	/**
 	 * A line of the info panel.
 	 *
-	 * @param text what it says (no line break: a long line is wrapped between words)
+	 * @param text what it says (no line break: a long line is wrapped between words, a monospace one between
+	 *             characters)
 	 * @param kind its colour
+	 * @param mono whether it is drawn in a monospace font (ASCII drawings, tables: their columns line up)
 	 */
-	public record Line(String text, Kind kind) {
+	public record Line(String text, Kind kind, boolean mono) {
 
 		public Line {
 			text = text != null ? text : "";
 			kind = kind != null ? kind : Kind.NORMAL;
+		}
+
+		/** A line in the proportional font. */
+		public Line(final String text, final Kind kind) {
+			this(text, kind, false);
+		}
+
+		/** A plain line in the monospace font ({@code .#HHH+..}: the columns line up). */
+		public static Line mono(final String text) {
+			return new Line(text, Kind.NORMAL, true);
+		}
+
+		/** A line in the monospace font, of {@code kind} (an error at its line of a drawing: {@link Kind#BAD}). */
+		public static Line mono(final String text, final Kind kind) {
+			return new Line(text, kind, true);
 		}
 
 		public static Line title(final String text) {
@@ -129,6 +146,45 @@ public final class LabText {
 			parts.add(current);
 		}
 		return parts;
+	}
+
+	/**
+	 * {@code line} cut into pieces no wider than {@code width} as
+	 * {@code measure} measures them, between any two characters (spaces kept:
+	 * a monospace drawing keeps its columns), each piece taking at least one
+	 * character, so the cutting always ends.
+	 */
+	public static List<String> wrapChars(final String line, final float width, final ToDoubleFunction<String> measure) {
+		final List<String> parts = new ArrayList<>();
+		if (line.isEmpty() || measure.applyAsDouble(line) <= width) {
+			parts.add(line);
+			return parts;
+		}
+		int start = 0;
+		while (start < line.length()) {
+			int end = start + 1;
+			while (end < line.length() && measure.applyAsDouble(line.substring(start, end + 1)) <= width) {
+				end++;
+			}
+			parts.add(line.substring(start, end));
+			start = end;
+		}
+		return parts;
+	}
+
+	/**
+	 * {@code text} no longer than {@code max} characters: cut, its end
+	 * replaced by {@code ...} (an item of a drop-down list that would push
+	 * the panel wider).
+	 */
+	public static String shorten(final String text, final int max) {
+		if (text == null) {
+			return "";
+		}
+		if (text.length() <= max || max < 4) {
+			return text.length() <= max ? text : text.substring(0, Math.max(0, max));
+		}
+		return text.substring(0, max - 3) + "...";
 	}
 
 	/**

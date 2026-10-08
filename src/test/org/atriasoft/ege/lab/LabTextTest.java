@@ -35,6 +35,30 @@ class LabTextTest {
 	}
 
 	@Test
+	void aMonospaceLineIsWrappedBetweenCharactersItsSpacesKept() {
+		assertEquals(List.of(" 12  .#HH"), LabText.wrapChars(" 12  .#HH", 70, MONO));
+		assertEquals(List.of(" 12  .#", "HH:CC #", ".."), LabText.wrapChars(" 12  .#HH:CC #..", 49, MONO));
+		// Narrower than one character: one a piece, and it ends.
+		assertEquals(List.of("a", " ", "b"), LabText.wrapChars("a b", 3, MONO));
+		assertEquals(List.of(""), LabText.wrapChars("", 3, MONO));
+		final LabText.Line row = LabText.Line.mono(".#H+#.");
+		assertTrue(row.mono());
+		assertEquals(LabText.Kind.NORMAL, row.kind());
+		assertEquals(LabText.Kind.BAD, LabText.Line.mono("12 .#x", LabText.Kind.BAD).kind());
+		assertEquals(new LabText.Line("text", LabText.Kind.WARN, false), LabText.Line.warn("text"));
+		assertTrue(!new LabText.Line("text", LabText.Kind.DIM).mono());
+	}
+
+	@Test
+	void aLongItemIsShortened() {
+		assertEquals("farmhouse", LabText.shorten("farmhouse", 12));
+		assertEquals("roofs/fuz...", LabText.shorten("roofs/fuzz20261004n371", 12));
+		assertEquals(12, LabText.shorten("roofs/fuzz20261004n371", 12).length());
+		assertEquals("ab", LabText.shorten("abcdef", 2));
+		assertEquals("", LabText.shorten(null, 5));
+	}
+
+	@Test
 	void aBoxNarrowerThanTheIndentStillEnds() {
 		// The indent and one letter do not fit: no indent, one letter a piece at worst.
 		final List<String> pieces = LabText.wrap("                    abcdef ghij", 14, MONO);

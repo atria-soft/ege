@@ -12,7 +12,8 @@ import org.atriasoft.ewol.compositing.CompositingText;
  * The texts drawn over the 3D view of a lab with ewol's compositing layers:
  * the info panel (figures, checks, errors: {@link LabText.Line}s) in the top
  * left corner, the help of the keys (F1) in the top right one. A line too
- * long for its box is wrapped between words. Laid out on the GUI thread
+ * long for its box is wrapped between words, a monospace line
+ * ({@link LabText.Line#mono()}, in {@value #MONO_FONT}) between characters. Laid out on the GUI thread
  * ({@link #build}, again only when something changed), drawn on the
  * rendering thread ({@link #draw}).
  */
@@ -20,6 +21,8 @@ final class LabInfoPanel {
 
 	private static final int FONT = 13;
 	private static final int TITLE_FONT = 16;
+	/** The monospace font of ewol (esvg's), for the lines that must keep their columns. */
+	static final String MONO_FONT = "FreeMono";
 	/** Width of a box, pixels (narrower on a narrow view). */
 	static final float WIDTH = 380.0f;
 	static final float MARGIN = 10.0f;
@@ -36,6 +39,7 @@ final class LabInfoPanel {
 	private final CompositingGC shapes = new CompositingGC();
 	private final CompositingText text = new CompositingText("", FONT);
 	private final CompositingText title = new CompositingText("", TITLE_FONT);
+	private final CompositingText mono = new CompositingText(MONO_FONT, FONT);
 	private Vector2f builtSize;
 	private List<LabText.Line> builtInfo;
 	private List<LabText.Line> builtHelp;
@@ -52,6 +56,7 @@ final class LabInfoPanel {
 		this.shapes.clear();
 		this.text.clear();
 		this.title.clear();
+		this.mono.clear();
 		final float width = width(size);
 		if (width >= 120.0f) {
 			if (!info.isEmpty()) {
@@ -64,6 +69,7 @@ final class LabInfoPanel {
 		this.shapes.flush();
 		this.text.flush();
 		this.title.flush();
+		this.mono.flush();
 	}
 
 	/** Width of a box in a view of {@code size} pixels. */
@@ -81,9 +87,11 @@ final class LabInfoPanel {
 		final List<LabText.Line> wrapped = new ArrayList<>();
 		for (final LabText.Line line : lines) {
 			final CompositingText font = fontOf(line);
-			for (final String part : LabText.wrap(LabText.ascii(line.text()), inner,
-					text -> font.calculateSize(text).x())) {
-				wrapped.add(new LabText.Line(part, line.kind()));
+			final String ascii = LabText.ascii(line.text());
+			final List<String> parts = line.mono() ? LabText.wrapChars(ascii, inner, text -> font.calculateSize(text).x())
+					: LabText.wrap(ascii, inner, text -> font.calculateSize(text).x());
+			for (final String part : parts) {
+				wrapped.add(new LabText.Line(part, line.kind(), line.mono()));
 			}
 		}
 		final List<LabText.Line> shown = fit(wrapped, top - MARGIN - 2.0f * PADDING);
@@ -120,6 +128,9 @@ final class LabInfoPanel {
 	}
 
 	private CompositingText fontOf(final LabText.Line line) {
+		if (line.mono()) {
+			return this.mono;
+		}
 		return line.kind() == LabText.Kind.TITLE ? this.title : this.text;
 	}
 
@@ -152,6 +163,7 @@ final class LabInfoPanel {
 		this.shapes.draw(true);
 		this.text.draw(true);
 		this.title.draw(true);
+		this.mono.draw(true);
 	}
 
 	/** Give the layers back (from any thread); nothing is built nor drawn afterwards. */
@@ -161,6 +173,7 @@ final class LabInfoPanel {
 			this.shapes.release();
 			this.text.release();
 			this.title.release();
+			this.mono.release();
 		}
 	}
 }

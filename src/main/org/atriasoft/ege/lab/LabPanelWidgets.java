@@ -5,6 +5,7 @@ import java.util.List;
 import java.util.Objects;
 
 import org.atriasoft.etk.Dimension2f;
+import org.atriasoft.etk.DimensionInsets;
 import org.atriasoft.etk.Distance;
 import org.atriasoft.etk.math.Vector2b;
 import org.atriasoft.etk.math.Vector2f;
@@ -21,12 +22,18 @@ import org.atriasoft.ewol.widget.Widget;
 /**
  * The control panel of a lab in ewol widgets, docked beside the 3D view: for
  * each group of its {@link LabControls} a heading, then a button per action,
- * a check box per toggle, a drop-down list with previous and next buttons
- * per choice, minus and plus buttons around the value per stepper; each
- * label followed by its keys in brackets ({@code Proxies [H]}). A widget runs
- * the same {@link LabControls} method as the key; {@link #sync()} (every
- * frame) shows the state of every control, and lays the panel out again when
- * controls were declared since.
+ * a check box per toggle, a drop-down list under its title and its previous
+ * and next buttons per choice, minus and plus buttons around the value per
+ * stepper; each label followed by its keys in brackets ({@code Proxies [H]}).
+ * The groups of the lab scroll; the group of the view ({@link LabView#VIEW_GROUP}:
+ * frame, human, flight, help, Quit) stays in a footer under them, always in
+ * sight. A widget runs the same {@link LabControls} method as the key;
+ * {@link #sync()} (every frame) shows the state of every control, and lays the
+ * panel out again when controls were declared since.
+ * <p>
+ * The items of a drop-down list are shown at most {@link #ITEM_CHARS}
+ * characters long (cut with {@code ...}: the list keeps the panel's width;
+ * the lab is told the index).
  * <p>
  * The widgets are connected with {@code connectAuto} on this object (kept by
  * the window), never with a connection left to the garbage collector.
@@ -37,9 +44,13 @@ final class LabPanelWidgets implements LabControlPanel.Factory<Widget> {
 	static final float WIDTH = 330.0f;
 	/** Width of the value of a stepper, pixels. */
 	private static final float VALUE_WIDTH = 96.0f;
+	/** The longest item a drop-down list shows, characters. */
+	static final int ITEM_CHARS = 34;
 
 	private final LabControls controls;
+	private final Sizer panel = new Sizer(Sizer.DisplayMode.VERTICAL);
 	private final Sizer column = new Sizer(Sizer.DisplayMode.VERTICAL);
+	private final Sizer footer = new Sizer(Sizer.DisplayMode.VERTICAL);
 	private final ScrollView scroll = new ScrollView();
 	/** What each control shows of its state, run every frame. */
 	private final List<Runnable> syncs = new ArrayList<>();
@@ -47,19 +58,28 @@ final class LabPanelWidgets implements LabControlPanel.Factory<Widget> {
 
 	LabPanelWidgets(final LabControls controls) {
 		this.controls = controls;
-		this.column.setPropertyExpand(new Vector2b(true, false));
-		this.column.setPropertyFill(new Vector2b(true, false));
-		this.column.setPropertyBorderSize(new Dimension2f(new Vector2f(8, 4), Distance.PIXEL));
+		for (final Sizer part : new Sizer[] { this.column, this.footer }) {
+			part.setPropertyExpand(new Vector2b(true, false));
+			part.setPropertyFill(new Vector2b(true, false));
+			// Away from the scroll bar on the right.
+			part.setPropertyBorderSize(new Dimension2f(new Vector2f(10, 2), Distance.PIXEL));
+		}
 		this.scroll.setPropertyShowHorizontal(false);
 		this.scroll.setPropertyExpand(new Vector2b(false, true));
 		this.scroll.setPropertyFill(Vector2b.TRUE);
 		this.scroll.setPropertyMinSize(new Dimension2f(new Vector2f(WIDTH, 100), Distance.PIXEL));
 		this.scroll.setSubWidget(this.column);
+		this.panel.setPropertyExpand(new Vector2b(false, true));
+		this.panel.setPropertyFill(Vector2b.TRUE);
+		// As wide as the scroll view: the rows of the footer that expand never widen the panel.
+		this.panel.setPropertyLockExpand(new Vector2b(true, false));
+		this.panel.subWidgetAdd(this.scroll);
+		this.panel.subWidgetAdd(this.footer);
 	}
 
-	/** The panel to dock beside the view. */
+	/** The panel to dock beside the view: the controls of the lab (scrolling), the footer of the view under them. */
 	Widget widget() {
-		return this.scroll;
+		return this.panel;
 	}
 
 	/** Show the state of every control; lay the panel out again when controls were declared since. */
@@ -68,13 +88,46 @@ final class LabPanelWidgets implements LabControlPanel.Factory<Widget> {
 			this.builtVersion = this.controls.version();
 			this.syncs.clear();
 			this.column.subWidgetRemoveAll();
-			for (final Widget piece : LabControlPanel.layout(this.controls, this)) {
+			for (final Widget piece : LabControlPanel.layout(this.controls, this,
+					group -> !LabView.VIEW_GROUP.equals(group))) {
 				this.column.subWidgetAdd(piece);
+			}
+			this.footer.subWidgetRemoveAll();
+			for (final Widget piece : footerPieces()) {
+				this.footer.subWidgetAdd(piece);
 			}
 		}
 		for (final Runnable sync : this.syncs) {
 			sync.run();
 		}
+	}
+
+	/** The group of the view: its heading, its buttons side by side on one row, its check boxes under them. */
+	private List<Widget> footerPieces() {
+		final List<Widget> pieces = new ArrayList<>();
+		final List<LabControl> view = this.controls.byGroup().get(LabView.VIEW_GROUP);
+		if (view == null) {
+			return pieces;
+		}
+		pieces.add(heading(LabView.VIEW_GROUP));
+		final Sizer buttons = row();
+		for (final LabControl control : view) {
+			if (control instanceof final LabControl.Action action) {
+				buttons.subWidgetAdd(action(action));
+			}
+		}
+		pieces.add(buttons);
+		for (final LabControl control : view) {
+			if (!(control instanceof LabControl.Action)) {
+				pieces.add(switch (control) {
+					case final LabControl.Toggle toggle -> toggle(toggle);
+					case final LabControl.Choice choice -> choice(choice);
+					case final LabControl.Stepper stepper -> stepper(stepper);
+					case final LabControl.Action action -> action(action);
+				});
+			}
+		}
+		return pieces;
 	}
 
 	private static void wide(final Widget widget) {
@@ -89,8 +142,11 @@ final class LabPanelWidgets implements LabControlPanel.Factory<Widget> {
 		return label;
 	}
 
+	/** A button with thin borders (the panel holds more rows). */
 	private static Button button(final String text) {
 		final Button button = Button.createLabelButton(text);
+		button.setPropertyBorderWidth(new DimensionInsets(2));
+		button.setPropertyPadding(new DimensionInsets(1));
 		return button;
 	}
 
@@ -100,15 +156,24 @@ final class LabPanelWidgets implements LabControlPanel.Factory<Widget> {
 		return row;
 	}
 
+	/** The items of a list as shown: each at most {@link #ITEM_CHARS} characters. */
+	static List<String> shown(final List<String> items) {
+		final List<String> out = new ArrayList<>(items.size());
+		for (final String item : items) {
+			out.add(LabText.shorten(LabText.ascii(item), ITEM_CHARS));
+		}
+		return out;
+	}
+
 	@Override
 	public Widget heading(final String text) {
 		final Sizer block = new Sizer(Sizer.DisplayMode.VERTICAL);
 		wide(block);
 		final Spacer gap = new Spacer();
-		gap.setPropertyMinSize(new Dimension2f(new Vector2f(4, 4), Distance.PIXEL));
+		gap.setPropertyMinSize(new Dimension2f(new Vector2f(2, 2), Distance.PIXEL));
 		block.subWidgetAdd(gap);
 		final Label title = label("<b>" + text + "</b>");
-		title.setPropertyFontSize(15);
+		title.setPropertyFontSize(14);
 		wide(title);
 		block.subWidgetAdd(title);
 		return block;
@@ -147,17 +212,24 @@ final class LabPanelWidgets implements LabControlPanel.Factory<Widget> {
 		return row;
 	}
 
+	/** The title and the previous and next buttons on one row, the drop-down list alone on the whole row under. */
 	@Override
 	public Widget choice(final LabControl.Choice control) {
 		final Sizer block = new Sizer(Sizer.DisplayMode.VERTICAL);
 		wide(block);
+		final Sizer top = row();
 		final Label title = label(control.title());
 		wide(title);
-		block.subWidgetAdd(title);
-		final Sizer row = row();
-		final Button previous = button("Prev");
+		top.subWidgetAdd(title);
+		final Button previous = button(" Prev ");
+		previous.setPropertyExpand(Vector2b.FALSE);
 		previous.signalClick.connectAuto(this, (final LabPanelWidgets self) -> self.controls.step(control, -1));
-		row.subWidgetAdd(previous);
+		top.subWidgetAdd(previous);
+		final Button next = button(" Next ");
+		next.setPropertyExpand(Vector2b.FALSE);
+		next.signalClick.connectAuto(this, (final LabPanelWidgets self) -> self.controls.step(control, 1));
+		top.subWidgetAdd(next);
+		block.subWidgetAdd(top);
 		final Select select = new Select();
 		wide(select);
 		select.signalSelectionChanged.connectAuto(this, (final LabPanelWidgets self, final Integer index) -> {
@@ -165,13 +237,9 @@ final class LabPanelWidgets implements LabControlPanel.Factory<Widget> {
 				self.controls.select(control, index);
 			}
 		});
-		row.subWidgetAdd(select);
-		final Button next = button("Next");
-		next.signalClick.connectAuto(this, (final LabPanelWidgets self) -> self.controls.step(control, 1));
-		row.subWidgetAdd(next);
-		block.subWidgetAdd(row);
+		block.subWidgetAdd(select);
 		this.syncs.add(() -> {
-			final List<String> items = this.controls.items(control);
+			final List<String> items = shown(this.controls.items(control));
 			if (!items.equals(select.getItems())) {
 				select.setItems(items);
 			}
@@ -190,6 +258,7 @@ final class LabPanelWidgets implements LabControlPanel.Factory<Widget> {
 		wide(title);
 		row.subWidgetAdd(title);
 		final Button less = button(" - ");
+		less.setPropertyExpand(Vector2b.FALSE);
 		less.signalClick.connectAuto(this, (final LabPanelWidgets self) -> self.controls.step(control, -1));
 		row.subWidgetAdd(less);
 		final Label value = label("");
@@ -197,6 +266,7 @@ final class LabPanelWidgets implements LabControlPanel.Factory<Widget> {
 		value.setPropertyMinSize(new Dimension2f(new Vector2f(VALUE_WIDTH, 10), Distance.PIXEL));
 		row.subWidgetAdd(value);
 		final Button more = button(" + ");
+		more.setPropertyExpand(Vector2b.FALSE);
 		more.signalClick.connectAuto(this, (final LabPanelWidgets self) -> self.controls.step(control, 1));
 		row.subWidgetAdd(more);
 		this.syncs.add(() -> {

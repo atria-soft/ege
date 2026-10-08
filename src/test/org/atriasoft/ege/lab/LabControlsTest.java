@@ -273,6 +273,35 @@ class LabControlsTest {
 				"# Data", "button Build again [F5]"), pieces);
 		// Each control once: the panel, like the help, is made from the registry alone.
 		assertEquals(controls.all().size() + controls.byGroup().size(), pieces.size());
+		// A group left out (the window lays the group of the view out in its footer).
+		final List<String> withoutDebug = LabControlPanel.layout(controls, new LabControlPanel.Factory<String>() {
+			@Override
+			public String heading(final String text) {
+				return "# " + text;
+			}
+
+			@Override
+			public String action(final LabControl.Action control) {
+				return "button " + control.title();
+			}
+
+			@Override
+			public String toggle(final LabControl.Toggle control) {
+				return "check " + control.title();
+			}
+
+			@Override
+			public String choice(final LabControl.Choice control) {
+				return "list " + control.title();
+			}
+
+			@Override
+			public String stepper(final LabControl.Stepper control) {
+				return "steps " + control.title();
+			}
+		}, group -> !"Debug".equals(group));
+		assertEquals(List.of("# Subject", "list Species [O/P]", "steps Seed [U/I]", "# Data", "button Build again [F5]"),
+				withoutDebug);
 	}
 
 	@Test

@@ -3,6 +3,7 @@ package org.atriasoft.ege.lab;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.function.Predicate;
 
 /**
  * The layout of the control panel of a lab, apart from its widgets: a
@@ -38,8 +39,20 @@ public final class LabControlPanel {
 
 	/** The pieces of the panel of {@code controls}, from the top: each heading followed by its controls. */
 	public static <W> List<W> layout(final LabControls controls, final Factory<W> factory) {
+		return layout(controls, factory, group -> true);
+	}
+
+	/**
+	 * The pieces of the groups of {@code controls} that {@code groups} accepts (the window lays the group of
+	 * the view out in a footer of its own).
+	 */
+	public static <W> List<W> layout(final LabControls controls, final Factory<W> factory,
+			final Predicate<String> groups) {
 		final List<W> pieces = new ArrayList<>();
 		for (final Map.Entry<String, List<LabControl>> entry : controls.byGroup().entrySet()) {
+			if (!groups.test(entry.getKey())) {
+				continue;
+			}
 			pieces.add(factory.heading(entry.getKey()));
 			for (final LabControl control : entry.getValue()) {
 				pieces.add(switch (control) {

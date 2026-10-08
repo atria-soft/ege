@@ -49,21 +49,21 @@ Currently supported: `ComponentRenderTexturedMaterialsStaticMesh`, `ComponentRen
 
 ## Lab kit (`org.atriasoft.ege.lab`)
 
-A small kit to write a standalone lab window for a library (eFlora's trees: `eFlora/lab`; eArchi's buildings
-later). Nothing in it knows about trees or buildings. Overview and example: `package-info.java`.
+A small kit to write a standalone lab window for a library (eFlora's trees: `eFlora/lab`; eArchi's buildings:
+`eArchi/lab`). Nothing in it knows about trees or buildings. Overview and example: `package-info.java`.
 
 | Class | Role |
 |-------|------|
 | `Lab` | What a lab implements: `title()`, `start(view)` (declare controls, watch files, first build), `update(view, seconds)` (each frame: take results, `setContent`, `setInfo`), `close()` |
-| `LabApplication.run(args, factory)` | Starts Gale/Ewol/Ege and opens the window (`LabWindow`: 3D view left, control panel right). `run(args, appClass, resources, factory)`: `DATA:` then names the lab's own files (the kit's are found by their library `ege`) |
-| `LabView` | The 3D view: ground ruled 1/5/25 m (X red, Z blue), sky, sun with ege's cascaded shadows, human figure of 1.80 m (`placeHuman`), info panel (`setInfo`), F1 help, file watching (`watch`), `frame()`; it is the `LabReporter`: `report(what, …)` shows a problem in red at the top of the info panel until `clear(what)` |
-| `LabControls` | The single source of the actions: `group(heading)`, `action`, `toggle`, `choice`, `stepper`; each gives a widget of the panel (`LabPanelWidgets`), a key (`LabKey`) and a help line. A key that cannot be bound is reported and dropped, the control kept: already bound, a kit key (reserved before `Lab.start`), or `refusal(key)` (arrows, Page up/down, F12, Tab, Escape). Callbacks and suppliers are guarded: a problem is reported under the control's label (a supplier under `label (state)`, `(items)`, `(item chosen)`, `(value)`) and cleared on its next success |
+| `LabApplication.run(args, factory)` | Starts Gale/Ewol/Ege and opens the window (`LabWindow`: 3D view left, control panel right: the groups of the lab scroll, the View group and Quit stay in a footer under them, always in sight). `run(args, appClass, resources, factory)`: `DATA:` then names the lab's own files (the kit's are found by their library `ege`) |
+| `LabView` | The 3D view: ground ruled 1/5/25 m (X red, Z blue), sky, sun with ege's cascaded shadows, human figure of 1.80 m (`placeHuman`, `showHuman(boolean)`: the F2 toggle shows the same state), info panel (`setInfo`), F1 help, file watching (`watch`), `frame()`; it is the `LabReporter`: `report(what, …)` shows a problem in red at the top of the info panel until `clear(what)` |
+| `LabControls` | The single source of the actions: `group(heading)`, `action`, `toggle`, `choice`, `stepper`; each gives a widget of the panel (`LabPanelWidgets`: thin buttons; a choice is its title with Prev/Next, then the drop-down list alone on the row under, its items shown at most 34 characters, `...` after: the lab is told the index), a key (`LabKey`) and a help line. A key that cannot be bound is reported and dropped, the control kept: already bound, a kit key (reserved before `Lab.start`), or `refusal(key)` (arrows, Page up/down, F12, Tab, Escape). Callbacks and suppliers are guarded: a problem is reported under the control's label (a supplier under `label (state)`, `(items)`, `(item chosen)`, `(value)`) and cleared on its next success |
 | `LabKeyRepeat` | Tells gale's auto-repeat (a release and a press at once) from a new press, as dementia's `KeyPressFilter`: a held key repeats steppers and choices, never actions nor toggles |
 | `LabMesh` / `LabShapes` | Content: opaque flat-shaded triangles (cast shadows), translucent ones (alpha < 1), lines hidden or on top; boxes, cylinders, polygons, wire boxes, crosses, the human |
-| `LabCamera` | Orbit (drag turns, right/middle or Shift drag pans, wheel zooms) or flight (F3; arrows, Page up/down); `frame(box, fovX, aspect, leftShare)` fits a box beside a panel |
+| `LabCamera` | Orbit (drag turns, right/middle or Shift drag pans, wheel zooms) or flight (F3; arrows, Page up/down); `frame(box, fovX, aspect, leftShare)` fits a box beside a panel; `setDirection(azimuth, elevation)` turns it (the orbit's clamp kept; around the eye in a flight); `lookAt(target, distance)` |
 | `LabWorkshop<R, M>` | Build thread, newest request wins, a throwable becomes a `Result` that carries it |
 | `LabWatcher` | Data files polled each second; a change is read once it stayed still for a poll |
-| `LabText` | Panel lines and their kinds; `ascii`, `wrap` (between words, a long word between letters; always ends) |
+| `LabText` | Panel lines (`Line(text, kind[, mono])`; `Line.mono(text[, kind])` drawn in FreeMono, wrapped between characters, its columns lined up) and their kinds; `ascii`, `wrap` (between words, a long word between letters; always ends), `wrapChars`, `shorten` |
 
 Kit keys: `F` frame, `F1` help, `F2` human, `F3` free flight; the arrows and Page up/down drive the camera.
 **Tab never reaches the application** (AWT keeps it for focus traversal), Escape is left to the drop-down lists,
@@ -77,7 +77,11 @@ lines`). `LabRenderer` draws with `data/lab/labLit.*` (the CSM code copied from 
 releases everything on the GL thread; `LabView.release()` also releases its `EngineShadow` (`release()`: cascade
 framebuffers, depth textures, programs). A renderer that cannot be made is reported once, never retried. Tests:
 `src/test/org/atriasoft/ege/lab/` (headless). See it only through a virtual X server
-(`eFlora/tools/lab-smoke.sh`, which compiles with no display and runs the window in Xvfb), never on the real display.
+(`tools/lab-smoke.sh LAB_SCRIPT OUTDIR "ARGS" STEP...`, which compiles with no display and runs the window in Xvfb;
+`eFlora/tools/lab-smoke.sh` and `eArchi/tools/lab-smoke.sh` wrap it), never on the real display. In the smoke steps
+`click=4` is the wheel up (away from the user: the view comes closer, the panel scrolls up) and `click=5` the wheel
+down; gale numbers them the other way round (5 up, 4 down), which `LabView.onEventInput` reads. Quit is in the
+footer: `close=1220,667` at the default 1280x760.
 
 ## Common Pitfalls
 

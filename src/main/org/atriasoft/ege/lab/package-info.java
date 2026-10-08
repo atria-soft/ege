@@ -7,12 +7,16 @@
  * {@link org.atriasoft.ege.lab.LabApplication#run}. The kit gives:
  * <ul>
  * <li>the window ({@code LabWindow}): the 3D view on the left, the control
- * panel docked on the right;</li>
+ * panel docked on the right, its groups scrolling over a footer that keeps
+ * the controls of the view and Quit always in sight;</li>
  * <li>the 3D view ({@link org.atriasoft.ege.lab.LabView}): a flat ground ruled
  * every 1, 5 and 25 m (X east red, Z south blue), a sky colour, a sun casting
- * cascaded shadows, a human figure of 1.80 m, an orbit camera that can fly
- * ({@link org.atriasoft.ege.lab.LabCamera}), the info panel and the F1
- * help drawn over the picture;</li>
+ * cascaded shadows, a human figure of 1.80 m (placed and shown by the lab
+ * too: {@code placeHuman}, {@code showHuman}), an orbit camera that can fly
+ * and be turned by the lab ({@link org.atriasoft.ege.lab.LabCamera#setDirection}),
+ * the info panel (its lines proportional or monospace:
+ * {@link org.atriasoft.ege.lab.LabText.Line#mono(String)}) and the F1 help
+ * drawn over the picture;</li>
  * <li>the controls ({@link org.atriasoft.ege.lab.LabControls}): one
  * declaration per action (label, key, kind, callback) makes its widget in the
  * panel (button, check box, drop-down list, minus/plus), its key and its line
@@ -29,7 +33,13 @@
  * Whatever a lab throws (its factory, its start, a build, a control, an
  * update, a reading) is shown in red at the top of the info panel until the
  * same thing succeeds again ({@link org.atriasoft.ege.lab.LabReporter}); the
- * window stays.
+ * window stays. A lab reports there what must never fall off the panel (a
+ * data file that broke): {@code view.report(what, message)}, then
+ * {@code view.clear(what)}.
+ * <p>
+ * A lab is seen by an automated session only in a virtual X server:
+ * {@code ege/tools/lab-smoke.sh LAB_SCRIPT OUTDIR "ARGS" STEP...} (each lab
+ * keeps a wrapper naming its launcher).
  *
  * <pre>
  * public final class MyLab implements Lab {

@@ -14,7 +14,8 @@
 #   9:keydown=Left  11:keyup=Left   hold a key
 #   9:click=1             click a mouse button: 1 left, 3 right; 4 the wheel up (away from you: the 3D view comes
 #                         closer, the panel scrolls up), 5 the wheel down (farther, the panel scrolls down);
-#                         mousedown= / mouseup= to hold one
+#                         mousedown= / mouseup= to hold one; 9:dblclick=1 a double click (the splitter between
+#                         the view and the panel: back to the default width)
 #   9:moveto=1100,300     move the pointer to a point of the window (the panel of controls is on the right)
 #   9:move=40,-10         move the pointer by so many pixels (a drag between mousedown and mouseup)
 #   9:run=COMMAND         run a shell command (break or mend a data file given with --data)
@@ -22,15 +23,17 @@
 #                         the default size): the lab must end with code 0 within 10 s (the last step)
 #   9:quit                stop (also done after the last step)
 #
-# The lab runs with an empty user folder (OUTDIR/home). SMOKE_SIZE=1280x760 sets the size of the virtual
-# screen. Output of the lab: OUTDIR/lab.log. Exit status: 0 when the lab still ran at the end (or ended with
-# code 0 after close=) and no exception was logged, 1 otherwise; 2 when it cannot run.
+# The lab runs with its own user folder (OUTDIR/home), its lab settings cleared first: the panel starts at its
+# default width (Quit at 1220,667); SMOKE_KEEP_SETTINGS=1 keeps those of the run before (the width of the panel
+# dragged then). SMOKE_SIZE=1280x760 sets the size of the virtual screen. Output of the lab: OUTDIR/lab.log.
+# Exit status: 0 when the lab still ran at the end (or ended with code 0 after close=) and no exception was
+# logged, 1 otherwise; 2 when it cannot run.
 #
 #   ./ege/tools/lab-smoke.sh eFlora/tools/lab.sh eFlora/out/lab "" 10:shot=oak 11:key=h 13:shot=proxies
 set -u
 
 if [ $# -lt 3 ]; then
-	sed -n '2,29p' "$0" | sed 's/^# \{0,1\}//'
+	sed -n '2,32p' "$0" | sed 's/^# \{0,1\}//'
 	exit 2
 fi
 for tool in Xvfb xdotool import; do
@@ -46,6 +49,7 @@ LAB_SCRIPT=$(cd "$(dirname "$LAB_SCRIPT")" && pwd)/$(basename "$LAB_SCRIPT")
 mkdir -p "$OUT"
 OUT=$(cd "$OUT" && pwd)
 mkdir -p "$OUT/home"
+[ "${SMOKE_KEEP_SETTINGS:-0}" = 1 ] || rm -rf "$OUT/home/.config/atriasoft/lab"
 SIZE=${SMOKE_SIZE:-1280x760}
 
 # Compiled before the clock starts (the steps count from the launch of the window): nothing is run, and without
@@ -120,6 +124,7 @@ for step in "$@"; do
 		keydown) xdotool keydown "$value" ;;
 		keyup) xdotool keyup "$value" ;;
 		click) xdotool click "$value" ;;
+		dblclick) xdotool click --repeat 2 --delay 80 "$value" ;;
 		mousedown) xdotool mousedown "$value" ;;
 		mouseup) xdotool mouseup "$value" ;;
 		move) xdotool mousemove_relative -- "${value%%,*}" "${value##*,}" ;;

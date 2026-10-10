@@ -47,8 +47,6 @@ import org.atriasoft.ewol.widget.Widget;
  */
 final class LabPanelWidgets implements LabControlPanel.Factory<Widget> {
 
-	/** Width of the panel, pixels. */
-	static final float WIDTH = 330.0f;
 	/** Width of the value of a stepper, pixels. */
 	private static final float VALUE_WIDTH = 96.0f;
 	/** The longest item a drop-down list shows, characters. */
@@ -84,19 +82,20 @@ final class LabPanelWidgets implements LabControlPanel.Factory<Widget> {
 			part.setPropertyBorderSize(new Dimension2f(new Vector2f(10, 2), Distance.PIXEL));
 		}
 		this.scroll.setPropertyShowHorizontal(false);
-		this.scroll.setPropertyExpand(new Vector2b(false, true));
+		this.scroll.setPropertyExpand(Vector2b.TRUE);
 		this.scroll.setPropertyFill(Vector2b.TRUE);
-		this.scroll.setPropertyMinSize(new Dimension2f(new Vector2f(WIDTH, 100), Distance.PIXEL));
+		this.scroll.setPropertyMinSize(new Dimension2f(new Vector2f(0, 100), Distance.PIXEL));
 		this.scroll.setSubWidget(this.column);
-		this.panel.setPropertyExpand(new Vector2b(false, true));
+		this.panel.setPropertyExpand(Vector2b.TRUE);
 		this.panel.setPropertyFill(Vector2b.TRUE);
-		// As wide as the scroll view: the rows of the footer that expand never widen the panel.
-		this.panel.setPropertyLockExpand(new Vector2b(true, false));
 		this.panel.subWidgetAdd(this.scroll);
 		this.panel.subWidgetAdd(this.footer);
 	}
 
-	/** The panel to dock beside the view: the controls of the lab (scrolling), the footer of the view under them. */
+	/**
+	 * The panel to dock beside the view ({@link LabSplit} sets its width): the controls of the lab (scrolling), the
+	 * footer of the view under them.
+	 */
 	Widget widget() {
 		return this.panel;
 	}

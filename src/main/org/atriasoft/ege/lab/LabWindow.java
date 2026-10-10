@@ -1,11 +1,11 @@
 package org.atriasoft.ege.lab;
 
+import java.nio.file.Path;
 import java.util.function.Supplier;
 
 import org.atriasoft.etk.math.Vector2b;
 import org.atriasoft.ewol.Ewol;
 import org.atriasoft.ewol.widget.Entry;
-import org.atriasoft.ewol.widget.Sizer;
 import org.atriasoft.ewol.widget.Widget;
 import org.atriasoft.ewol.widget.Windows;
 import org.atriasoft.gale.key.KeyKeyboard;
@@ -16,7 +16,10 @@ import org.slf4j.LoggerFactory;
 /**
  * The window of a lab: the 3D view ({@link LabView}) and the control panel
  * docked on its right ({@link LabPanelWidgets}), side by side, so the clicks
- * on the panel go to its widgets and the drags over the view to the camera.
+ * on the panel go to its widgets and the drags over the view to the camera;
+ * between them a splitter the user drags to make the panel wider or narrower
+ * ({@link LabSplit}), the width remembered for the lab in its settings
+ * ({@link LabSettings}: one file per class of lab).
  * <p>
  * Every key goes through the window first, whatever widget has the focus:
  * the arrows and Page up/down drive the camera, a key of a control runs it
@@ -95,12 +98,14 @@ final class LabWindow extends Windows {
 			this.view.report(LabView.PANEL, e);
 		}
 		this.view.setAfterUpdate(this.panel::sync);
-		final Sizer row = new Sizer(Sizer.DisplayMode.HORIZONTAL);
-		row.setPropertyExpand(Vector2b.TRUE);
-		row.setPropertyFill(Vector2b.TRUE);
-		row.subWidgetAdd(this.view);
-		row.subWidgetAdd(this.panel.widget());
-		setSubWidget(row);
+		// The width of the panel as the user left it for this lab (none for a lab that could not be made).
+		final Path settings = made != null ? LabSettings.file(LabSettings.folder(), made.getClass()) : null;
+		final LabPanelSize width = new LabPanelSize(LabSettings.panelWidth(settings));
+		setSubWidget(new LabSplit(this.view, this.panel.widget(), width, () -> {
+			if (settings != null) {
+				LabSettings.savePanelWidth(settings, width.chosen());
+			}
+		}));
 	}
 
 	private String title(final Lab made) {

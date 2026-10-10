@@ -59,7 +59,7 @@ public final class LabView extends Widget implements LabReporter {
 	/** Horizontal field of view, radians. */
 	static final float FOV_X = (float) Math.toRadians(70.0);
 	private static final Color SKY = new Color(0.64f, 0.77f, 0.90f, 1.0f);
-	private static final Vector2f MIN_SIZE = new Vector2f(320, 240);
+	private static final Vector2f MIN_SIZE = new Vector2f(LabPanelSize.VIEW_MIN, 240);
 	/** Seconds between two looks at the watched files. */
 	static final double POLL_SECONDS = 1.0;
 	/** The human figure stands this far west of the content, metres. */

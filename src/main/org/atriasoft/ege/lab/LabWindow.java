@@ -25,8 +25,9 @@ import org.slf4j.LoggerFactory;
  * auto-repeat of a held key only steps the steppers and choices,
  * {@link LabKeyRepeat}), any other key goes on to the focused widget. While a
  * drop-down list is open it has the keys, and while a text field has the
- * focus every key is its own, Escape giving the focus back to the 3D view (a
- * release still lets a camera key go).
+ * focus every key is its own but those with Control (a field types nothing
+ * with them: Ctrl+S still saves), Escape giving the focus back to the 3D view
+ * (a release still lets a camera key go).
  * <p>
  * Nothing a lab does while the window opens kills it: a lab that cannot be
  * made, a {@link Lab#start} that throws, a control the kit cannot add, a
@@ -123,24 +124,26 @@ final class LabWindow extends Windows {
 			// A release always lets a camera key go, a list open or not.
 			this.view.holdKey(type, false);
 		}
+		// AltGr types the symbols of a keyboard (# | @ on a French one): no key held. Windows hands it with Control.
+		final boolean altGr = special != null && special.getAltGr();
+		final boolean ctrl = special != null && special.getCtrl() && !altGr;
+		final boolean other = special != null && (special.getAltLeft() || special.getMeta());
+		final boolean repeat = press == LabKeyRepeat.Press.REPEAT;
 		if (typing()) {
-			// A text field has the focus: the keys are its own; Escape gives the focus back to the view.
+			// A text field has the focus: the keys are its own, but the controls with Control (the field types nothing
+			// with Control: Ctrl+S saves); Escape gives the focus back to the view.
 			if (isDown && type == KeyKeyboard.CHARACTER && value != null && value == '\u001b') {
 				this.view.keepFocus();
 				return true;
 			}
-			return false;
+			return ctrl && !other && isDown && this.view.controls().press(type, value, true, repeat);
 		}
 		if (popUpCount() == 0) {
 			if (LabView.isCameraKey(type)) {
 				this.view.holdKey(type, isDown);
 				return true;
 			}
-			// AltGr types the symbols of a keyboard (# | @ on a French one): no key held. Windows hands it with Control.
-			final boolean altGr = special != null && special.getAltGr();
-			final boolean ctrl = special != null && special.getCtrl() && !altGr;
-			final boolean other = special != null && (special.getAltLeft() || special.getMeta());
-			if (!other && isDown && this.view.controls().press(type, value, ctrl, press == LabKeyRepeat.Press.REPEAT)) {
+			if (!other && isDown && this.view.controls().press(type, value, ctrl, repeat)) {
 				return true;
 			}
 		}

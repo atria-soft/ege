@@ -321,7 +321,8 @@ final class LabPanelWidgets implements LabControlPanel.Factory<Widget> {
 
 	/**
 	 * The title (Enter takes what is typed), the text field alone on the row under. While it is not typed in, it
-	 * shows the text of the control; Enter gives what is typed to the control and the focus back to the view.
+	 * shows the text of the control; Enter gives the focus back to the view and what is typed to the control (the text
+	 * of the control itself when it was left as shown: the field shows it without its accents).
 	 */
 	@Override
 	public Widget text(final LabControl.Text control) {
@@ -335,7 +336,10 @@ final class LabPanelWidgets implements LabControlPanel.Factory<Widget> {
 		entry.setPropertyPadding(new DimensionInsets(2));
 		entry.signalEnter.connectAuto(this, (final LabPanelWidgets self, final String typed) -> {
 			self.release.run();
-			self.controls.enter(control, typed);
+			// The field shows the text in the letters the fonts draw: left as shown, the text itself is given (no accent
+			// lost).
+			final String value = self.controls.text(control);
+			self.controls.enter(control, LabText.ascii(value).equals(typed) ? value : typed);
 		});
 		block.subWidgetAdd(entry);
 		this.syncs.add(() -> {

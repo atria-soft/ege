@@ -91,9 +91,12 @@ public final class LabControls {
 		this.reporter = Objects.requireNonNull(next);
 	}
 
-	/** Why {@code key} cannot run a control of a lab, {@code null} when it can (if it is free). */
+	/**
+	 * Why {@code key} cannot run a control of a lab, {@code null} when it can (if it is free); Control held or not (a
+	 * Ctrl+Tab never arrives, a Ctrl+arrow drives the camera).
+	 */
 	public static String refusal(final LabKey key) {
-		return REFUSED.get(key);
+		return REFUSED.get(new LabKey(key.type(), key.character()));
 	}
 
 	/** Keep {@code key} for the control {@code label} of the kit: a lab declaring it loses it. */

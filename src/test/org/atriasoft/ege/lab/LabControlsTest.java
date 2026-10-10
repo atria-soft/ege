@@ -357,4 +357,19 @@ class LabControlsTest {
 		assertEquals(List.of("Edit", "  [#]  Help", "  [-]  Paint: Wall", "  [+]  Paint: Door", "  [-]  Paint: Outside",
 				"  [Enter]  Name (a text field)"), controls.help());
 	}
+
+	@Test
+	void theReservedKeysAreRefusedWithControlToo() {
+		final Problems problems = new Problems();
+		final LabControls controls = new LabControls();
+		controls.setReporter(problems);
+		controls.action("Escape", LabKey.ctrl('\u001b'), () -> {});
+		controls.action("Left", new LabKey(KeyKeyboard.LEFT, '\0', true), () -> {});
+		controls.action("Inspector", new LabKey(KeyKeyboard.F12, '\0', true), () -> {});
+		for (final LabControl control : controls.all()) {
+			assertEquals(List.of(), control.keys(), control.label() + " keeps no key");
+		}
+		assertEquals(3, problems.shown.size(), problems.shown.toString());
+		assertNull(LabControls.refusal(LabKey.ctrl('z')));
+	}
 }

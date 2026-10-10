@@ -70,9 +70,12 @@ Kit keys: `F` frame, `F1` help, `F2` human, `F3` free flight; the arrows and Pag
 **Tab never reaches the application** (AWT keeps it for focus traversal), Escape is left to the drop-down lists,
 F12 is ewol's inspector. `LabWindow.onEventShortCut` sees every key first, whatever widget has the focus; while a
 drop-down list is open (`popUpCount() > 0`) it lets the list have the keys, while a text field (`Entry`) has the
-focus it lets the field have them (Escape gives the focus back to the view; a release still lets a camera key go). A
-key with Control runs a `LabKey.ctrl` control, a key without it a plain one; the left Alt or Meta held runs none;
-AltGr counts as no key held (it types `#`, `|`, `@` on a French keyboard; Windows hands it with Control).
+focus it lets the field have them, but the keys with Control (the field types nothing with them: Ctrl+S still
+saves; Escape gives the focus back to the view; a release still lets a camera key go). A key with Control runs a
+`LabKey.ctrl` control, a key without it a plain one; the left Alt or Meta held runs none; AltGr counts as no key held
+(it types `#`, `|`, `@` on a French keyboard; Windows hands it with Control). `refusal(key)` refuses a reserved key with
+Control too. A text field shows its text in ASCII (`LabText.ascii`); Enter on it left as shown gives the control its
+own text back, accents kept.
 gale tells nothing when the window loses the focus: a release lost then leaves a camera key held until it is
 pressed again. Nothing a lab does while the window opens kills it (a factory, `start`, the controls of the view,
 the first sync of the panel: all reported). The info and help boxes stop at the bottom of the view (`... N more

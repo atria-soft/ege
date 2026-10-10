@@ -8,7 +8,11 @@
  * <ul>
  * <li>the window ({@code LabWindow}): the 3D view on the left, the control
  * panel docked on the right, its groups scrolling over a footer that keeps
- * the controls of the view and Quit always in sight;</li>
+ * the controls of the view and Quit always in sight; between them a splitter
+ * the user drags to widen or narrow the panel (a double click: its default
+ * width back), the width remembered per lab in
+ * {@code ~/.config/atriasoft/lab/}; whatever the width, the texts of the panel
+ * are shortened with {@code ...}, never clipped;</li>
  * <li>the 3D view ({@link org.atriasoft.ege.lab.LabView}): a flat ground ruled
  * every 1, 5 and 25 m (X east red, Z south blue), a sky colour, a sun casting
  * cascaded shadows, a human figure of 1.80 m (placed and shown by the lab
@@ -24,8 +28,10 @@
  * to the camera);</li>
  * <li>the controls ({@link org.atriasoft.ege.lab.LabControls}): one
  * declaration per action (label, key, kind, callback) makes its widget in the
- * panel (button, check box, drop-down list, minus/plus, a text field taking
- * what is typed on Enter, a palette of buttons each with its key), its key
+ * panel (button, check box, drop-down list, minus/plus around a value that may
+ * also be typed ({@link org.atriasoft.ege.lab.LabControls#whole}: a seed), a
+ * text field taking what is typed on Enter, a palette of buttons each with its
+ * key), its key
  * (alone or with Control: {@link org.atriasoft.ege.lab.LabKey#ctrl}) and its
  * line in the help; a key the kit keeps or never receives is reported and
  * dropped, the control kept ({@link org.atriasoft.ege.lab.LabControls#refusal});</li>
@@ -61,7 +67,8 @@
  * 	public void start(final LabView view) {
  * 		view.controls().group("Subject")
  * 				.stepper("Seed", LabKey.of('u'), LabKey.of('i'), () -&gt; Long.toString(this.seed),
- * 						() -&gt; this.workshop.request(--this.seed), () -&gt; this.workshop.request(++this.seed))
+ * 						() -&gt; this.workshop.request(--this.seed), () -&gt; this.workshop.request(++this.seed),
+ * 						LabControls.whole(typed -&gt; this.workshop.request(this.seed = typed)))
  * 				.group("Debug")
  * 				.toggle("Helpers", LabKey.of('h'), () -&gt; this.helpers, value -&gt; this.helpers = value);
  * 		this.workshop.request(this.seed);

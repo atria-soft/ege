@@ -6,6 +6,7 @@ import java.util.function.BooleanSupplier;
 import java.util.function.Consumer;
 import java.util.function.IntConsumer;
 import java.util.function.IntSupplier;
+import java.util.function.Predicate;
 import java.util.function.Supplier;
 
 /**
@@ -87,19 +88,28 @@ public sealed interface LabControl permits LabControl.Action, LabControl.Toggle,
 	}
 
 	/**
-	 * A number stepped down or up: a pair of buttons around the value shown.
+	 * A number stepped down or up: a pair of buttons around the value shown. A stepper that takes a value typed
+	 * ({@code enter} not {@code null}) shows its value in a box: a click on it makes it a text field, Enter gives
+	 * what is typed to {@code enter}, Escape (or a click elsewhere) leaves the value as it was.
 	 *
 	 * @param less     the key that steps down, {@code null} for none
 	 * @param more     the key that steps up, {@code null} for none
 	 * @param value    the value as shown now ({@code 12 years}, {@code 7})
 	 * @param decrease step down
 	 * @param increase step up
+	 * @param enter    take a value typed (spaces around it taken off), {@code false} when it refuses it (the value
+	 *                 kept, the refusal told); {@code null}: the value is only shown
 	 */
 	record Stepper(String group, String label, LabKey less, LabKey more, Supplier<String> value, Runnable decrease,
-			Runnable increase) implements LabControl {
+			Runnable increase, Predicate<String> enter) implements LabControl {
 		@Override
 		public List<LabKey> keys() {
 			return pair(this.less, this.more);
+		}
+
+		/** Whether a value may be typed in. */
+		public boolean typed() {
+			return this.enter != null;
 		}
 	}
 

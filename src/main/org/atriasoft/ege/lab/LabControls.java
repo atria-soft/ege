@@ -10,6 +10,8 @@ import java.util.function.BooleanSupplier;
 import java.util.function.Consumer;
 import java.util.function.IntConsumer;
 import java.util.function.IntSupplier;
+import java.util.function.LongConsumer;
+import java.util.function.Predicate;
 import java.util.function.Supplier;
 
 import org.atriasoft.gale.key.KeyKeyboard;
@@ -28,7 +30,8 @@ import org.slf4j.LoggerFactory;
  * before the lab declares its controls), a key the window keeps or never
  * receives ({@link #refusal}). {@link #press} (a key, with Control or not)
  * and the widgets of the panel run the same methods ({@link #activate},
- * {@link #set}, {@link #select}, {@link #step}, {@link #enter}); the state the
+ * {@link #set}, {@link #select}, {@link #step}, {@link #enter}; a value typed
+ * in a stepper: {@link #enter(LabControl.Stepper, String)}); the state the
  * widgets show is asked through {@link #value}, {@link #items},
  * {@link #selected}, {@link #text}.
  * Whatever a callback or a supplier throws is reported, never further, and
@@ -46,6 +49,8 @@ public final class LabControls {
 	static final String SELECTED = " (item chosen)";
 	static final String VALUE = " (value)";
 	static final String TEXT = " (text)";
+	/** The most characters of a value refused that the report repeats. */
+	private static final int REFUSED_CHARS = 24;
 
 	/** The keys a lab cannot bind, and why. */
 	private static final Map<LabKey, String> REFUSED = new HashMap<>();
@@ -142,8 +147,36 @@ public final class LabControls {
 	/** A number stepped down or up (two buttons around the value shown); its keys repeat while held. */
 	public LabControls stepper(final String label, final LabKey less, final LabKey more, final Supplier<String> value,
 			final Runnable decrease, final Runnable increase) {
+		return stepper(label, less, more, value, decrease, increase, null);
+	}
+
+	/**
+	 * A number stepped down or up whose value may also be typed: a click on the value makes it a text field, Enter
+	 * gives what is typed to {@code enter} ({@code false}: refused, the value kept and the refusal told; a number:
+	 * {@link #whole}), Escape leaves the value as it was. {@code enter} {@code null}: the value is only shown.
+	 */
+	public LabControls stepper(final String label, final LabKey less, final LabKey more, final Supplier<String> value,
+			final Runnable decrease, final Runnable increase, final Predicate<String> enter) {
 		return add(new LabControl.Stepper(this.group, label, less, more, Objects.requireNonNull(value),
-				Objects.requireNonNull(decrease), Objects.requireNonNull(increase)));
+				Objects.requireNonNull(decrease), Objects.requireNonNull(increase), enter));
+	}
+
+	/**
+	 * What a stepper of whole numbers does with a value typed: a whole number ({@code 42}, {@code -7}, {@code +3})
+	 * is given to {@code set}, anything else refused.
+	 */
+	public static Predicate<String> whole(final LongConsumer set) {
+		Objects.requireNonNull(set);
+		return typed -> {
+			final long value;
+			try {
+				value = Long.parseLong(typed.strip());
+			} catch (final NumberFormatException e) {
+				return false;
+			}
+			set.accept(value);
+			return true;
+		};
 	}
 
 	/** A line of text typed in (a text field); what is typed goes to {@code set} on Enter. No key. */
@@ -203,7 +236,7 @@ public final class LabControls {
 					c.selected(), c.select());
 			case final LabControl.Stepper s -> new LabControl.Stepper(s.group(), s.label(),
 					key.equals(s.less()) ? null : s.less(), key.equals(s.more()) ? null : s.more(), s.value(),
-					s.decrease(), s.increase());
+					s.decrease(), s.increase(), s.enter());
 			case final LabControl.Text t -> t;
 			case final LabControl.Palette p -> {
 				final List<LabControl.Palette.Item> items = new ArrayList<>();
@@ -328,6 +361,30 @@ public final class LabControls {
 		guard(stepper, direction < 0 ? stepper.decrease() : stepper.increase());
 	}
 
+	/**
+	 * Give {@code typed} (spaces around it taken off) to a stepper that takes a value typed. Nothing typed changes
+	 * nothing; a value refused is told under the label of the stepper (until it next succeeds), the value kept.
+	 *
+	 * @return whether the value was taken
+	 */
+	public boolean enter(final LabControl.Stepper stepper, final String typed) {
+		final String text = typed != null ? typed.strip() : "";
+		if (stepper.enter() == null || text.isEmpty()) {
+			return false;
+		}
+		try {
+			if (stepper.enter().test(text)) {
+				this.reporter.clear(stepper.label());
+				return true;
+			}
+			this.reporter.report(stepper.label(),
+					"'" + LabText.shorten(text, REFUSED_CHARS) + "' refused, the value kept");
+		} catch (final Throwable e) {
+			this.reporter.report(stepper.label(), e);
+		}
+		return false;
+	}
+
 	/** Whether a toggle is on now (off when its supplier throws). */
 	public boolean value(final LabControl.Toggle toggle) {
 		return state(toggle.label() + STATE, () -> toggle.value().getAsBoolean(), false);
@@ -407,7 +464,8 @@ public final class LabControls {
 					names.add(key.name());
 				}
 				final String keys = names.isEmpty() ? "-" : String.join("/", names);
-				lines.add("  [" + keys + "]  " + control.label());
+				final boolean typed = control instanceof final LabControl.Stepper stepper && stepper.typed();
+				lines.add("  [" + keys + "]  " + control.label() + (typed ? " (or click the value, type it)" : ""));
 			}
 		}
 		return lines;

@@ -11,6 +11,7 @@ import org.atriasoft.etk.Distance;
 import org.atriasoft.etk.math.Vector2b;
 import org.atriasoft.etk.math.Vector2f;
 import org.atriasoft.ewol.Gravity;
+import org.atriasoft.ewol.widget.Box;
 import org.atriasoft.ewol.widget.Button;
 import org.atriasoft.ewol.widget.Entry;
 import org.atriasoft.ewol.widget.ScrollView;
@@ -24,7 +25,8 @@ import org.atriasoft.ewol.widget.Widget;
  * each group of its {@link LabControls} a heading, then a button per action,
  * a check box per toggle, a drop-down list under its title and its previous
  * and next buttons per choice, minus and plus buttons around the value per
- * stepper, a text field under its title per text, a grid of buttons per
+ * stepper (the value in a box that becomes a text field when it may be
+ * typed), a text field under its title per text, a grid of buttons per
  * palette (the item chosen lit); each label followed by its keys in brackets
  * ({@code Proxies [H]}).
  * The groups of the lab scroll; the group of the view ({@link LabView#VIEW_GROUP}:
@@ -58,6 +60,8 @@ final class LabPanelWidgets implements LabControlPanel.Factory<Widget> {
 	/** The colour of the item of a palette chosen, and of the others. */
 	static final Color CHOSEN = new Color(1.0f, 0.84f, 0.42f, 1.0f);
 	static final Color NOT_CHOSEN = Color.WHITE;
+	/** The frame of a value that may be typed. */
+	private static final Color VALUE_FRAME = new Color(0.55f, 0.55f, 0.58f, 1.0f);
 	/** The font of the words of a button, and of a heading. */
 	private static final int BUTTON_FONT = 12;
 	private static final int HEADING_FONT = 14;
@@ -307,6 +311,11 @@ final class LabPanelWidgets implements LabControlPanel.Factory<Widget> {
 		return block;
 	}
 
+	/**
+	 * The title, then minus, the value and plus. A value that may be typed is framed: a click on it makes it a
+	 * text field (the value in it, all selected: what is typed replaces it), Enter gives what is typed to the control
+	 * and the focus back to the view, Escape or a click elsewhere leaves the value as it was.
+	 */
 	@Override
 	public Widget stepper(final LabControl.Stepper control) {
 		final LabRow row = new LabRow();
@@ -320,7 +329,45 @@ final class LabPanelWidgets implements LabControlPanel.Factory<Widget> {
 		row.subWidgetAdd(less);
 		final LabLabel value = new LabLabel("", 0, false, true, VALUE_WIDTH);
 		value.setPropertyGravity(Gravity.CENTER);
-		row.addShrinking(value, value);
+		if (control.typed()) {
+			value.setPropertyExpand(new Vector2b(true, false));
+			final Box frame = new Box();
+			frame.setSubWidget(value);
+			frame.setPropertyFill(new Vector2b(true, false));
+			frame.setPropertyColor(Color.WHITE);
+			frame.setPropertyBorderColor(VALUE_FRAME);
+			frame.setPropertyBorderWidth(new DimensionInsets(1));
+			frame.setPropertyMargin(new DimensionInsets(1));
+			row.addShrinking(frame, value);
+			final LabField field = new LabField();
+			field.setPropertyPadding(new DimensionInsets(2));
+			field.setPropertyMinSize(new Dimension2f(new Vector2f(VALUE_WIDTH, 10), Distance.PIXEL));
+			field.setPropertyHide(true);
+			row.subWidgetAdd(field);
+			value.signalPressed.connectAuto(this, (final LabPanelWidgets self) -> {
+				frame.setPropertyHide(true);
+				field.setPropertyHide(false);
+				// The value all selected: what is typed replaces it.
+				field.showSelected(self.controls.text(control));
+				field.keepFocus();
+			});
+			field.signalEnter.connectAuto(this, (final LabPanelWidgets self, final String typed) -> {
+				// The focus back to the view first: the field gives its place back to the value at the next sync.
+				self.release.run();
+				// Enter on the value left as shown changes nothing.
+				if (!LabText.ascii(self.controls.text(control)).equals(typed)) {
+					self.controls.enter(control, typed);
+				}
+			});
+			this.syncs.add(() -> {
+				if (!field.getPropertyHide() && !field.isFocused()) {
+					field.setPropertyHide(true);
+					frame.setPropertyHide(false);
+				}
+			});
+		} else {
+			row.addShrinking(value, value);
+		}
 		final Button more = smallButton(" + ");
 		more.signalClick.connectAuto(this, (final LabPanelWidgets self) -> {
 			self.release.run();

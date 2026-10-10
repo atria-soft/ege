@@ -359,6 +359,68 @@ class LabControlsTest {
 	}
 
 	@Test
+	void aStepperTakesAValueTypedAndRefusesWhatIsNoNumber() {
+		final Problems problems = new Problems();
+		final LabControls controls = new LabControls();
+		controls.setReporter(problems);
+		final long[] seed = { 7 };
+		controls.stepper("Seed", LabKey.of('u'), LabKey.of('i'), () -> Long.toString(seed[0]), () -> seed[0]--,
+				() -> seed[0]++, LabControls.whole(value -> seed[0] = value));
+		controls.stepper("Age", LabKey.of('v'), LabKey.of('b'), () -> "12 years", () -> {}, () -> {});
+		final LabControl.Stepper typed = (LabControl.Stepper) controls.all().get(0);
+		final LabControl.Stepper shown = (LabControl.Stepper) controls.all().get(1);
+		assertTrue(typed.typed());
+		assertFalse(shown.typed());
+		// Spaces around it taken off; a sign accepted.
+		assertTrue(controls.enter(typed, " 42 "));
+		assertEquals(42, seed[0]);
+		assertTrue(controls.enter(typed, "-3"));
+		assertEquals(-3, seed[0]);
+		// Refused: told under the label of the stepper, the value kept.
+		assertFalse(controls.enter(typed, "4x2"));
+		assertEquals(-3, seed[0]);
+		assertTrue(problems.shown.get("Seed").contains("'4x2' refused"), problems.shown.toString());
+		assertFalse(controls.enter(typed, "99999999999999999999"), "out of a long");
+		// Nothing typed changes nothing; the next success clears the refusal (a step too).
+		assertFalse(controls.enter(typed, "   "));
+		assertEquals(-3, seed[0]);
+		assertTrue(problems.shown.containsKey("Seed"));
+		controls.step(typed, 1);
+		assertEquals(-2, seed[0]);
+		assertTrue(problems.shown.isEmpty(), problems.shown.toString());
+		// The keys still step it.
+		assertTrue(controls.press(KeyKeyboard.CHARACTER, 'i', false));
+		assertEquals(-1, seed[0]);
+		// A stepper without a setter only shows its value.
+		assertFalse(controls.enter(shown, "3"));
+		assertTrue(problems.shown.isEmpty(), problems.shown.toString());
+		// A setter that throws is told, never further.
+		controls.stepper("Broken", null, null, () -> "1", () -> {}, () -> {}, text -> {
+			throw new IllegalStateException("no " + text);
+		});
+		assertFalse(controls.enter((LabControl.Stepper) controls.all().get(2), "5"));
+		assertEquals("no 5", problems.shown.get("Broken"));
+		// The help tells the value may be typed.
+		assertEquals("  [U/I]  Seed (or click the value, type it)", controls.help().get(1));
+		assertEquals("  [V/B]  Age", controls.help().get(2));
+	}
+
+	@Test
+	void aStepperThatLosesAKeyStillTakesAValueTyped() {
+		final Problems problems = new Problems();
+		final LabControls controls = new LabControls();
+		controls.setReporter(problems);
+		final long[] seed = { 1 };
+		controls.action("Up", LabKey.of('i'), () -> {});
+		controls.stepper("Seed", LabKey.of('u'), LabKey.of('i'), () -> Long.toString(seed[0]), () -> {}, () -> {},
+				LabControls.whole(value -> seed[0] = value));
+		final LabControl.Stepper stepper = (LabControl.Stepper) controls.all().get(1);
+		assertEquals("Seed [U]", stepper.title());
+		assertTrue(controls.enter(stepper, "8"));
+		assertEquals(8, seed[0]);
+	}
+
+	@Test
 	void theReservedKeysAreRefusedWithControlToo() {
 		final Problems problems = new Problems();
 		final LabControls controls = new LabControls();

@@ -209,10 +209,16 @@ public final class LabView extends Widget implements LabReporter {
 	 */
 	public void frame() {
 		final LabMesh shown = this.content;
-		float[] box = shown != null ? shown.bounds() : null;
-		if (box == null) {
-			box = new float[] { -2.0f, 0.0f, -2.0f, 2.0f, 2.0f, 2.0f };
-		}
+		frame(shown != null ? shown.bounds() : null);
+	}
+
+	/**
+	 * Put the camera where it sees {@code box} ({@code {minX, minY, minZ, maxX, maxY, maxZ}}, metres; {@code null}:
+	 * a small box at the origin), from where it looks now, in the part of the picture right of the info panel: a
+	 * part of the content, or what the lab draws in its overlay (the grid of an editor).
+	 */
+	public void frame(final float[] given) {
+		final float[] box = given != null ? given : new float[] { -2.0f, 0.0f, -2.0f, 2.0f, 2.0f, 2.0f };
 		final Vector2f size = getSize();
 		if (!(size.x() > 0.0f) || !(size.y() > 0.0f)) {
 			this.labCamera.frame(box, FOV_X, 1.0f, 0.0f);

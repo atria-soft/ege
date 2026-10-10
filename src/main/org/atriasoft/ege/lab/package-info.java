@@ -16,12 +16,19 @@
  * and be turned by the lab ({@link org.atriasoft.ege.lab.LabCamera#setDirection}),
  * the info panel (its lines proportional or monospace:
  * {@link org.atriasoft.ege.lab.LabText.Line#mono(String)}) and the F1 help
- * drawn over the picture;</li>
+ * drawn over the picture; an overlay of the lab's tools over the content
+ * ({@code setOverlay}: a grid, a cursor, never framed, casting no shadow); the
+ * mouse given to the lab first when it asks
+ * ({@link org.atriasoft.ege.lab.LabPointer}, {@code setPointer}: the ground
+ * point under the pointer, a press taken with its drag and release, the rest
+ * to the camera);</li>
  * <li>the controls ({@link org.atriasoft.ege.lab.LabControls}): one
  * declaration per action (label, key, kind, callback) makes its widget in the
- * panel (button, check box, drop-down list, minus/plus), its key and its line
- * in the help; a key the kit keeps or never receives is reported and dropped,
- * the control kept ({@link org.atriasoft.ege.lab.LabControls#refusal});</li>
+ * panel (button, check box, drop-down list, minus/plus, a text field taking
+ * what is typed on Enter, a palette of buttons each with its key), its key
+ * (alone or with Control: {@link org.atriasoft.ege.lab.LabKey#ctrl}) and its
+ * line in the help; a key the kit keeps or never receives is reported and
+ * dropped, the control kept ({@link org.atriasoft.ege.lab.LabControls#refusal});</li>
  * <li>the content ({@link org.atriasoft.ege.lab.LabMesh}, built with
  * {@link org.atriasoft.ege.lab.LabShapes}): opaque flat-shaded triangles
  * (casting shadows), translucent ones, lines hidden or on top;</li>

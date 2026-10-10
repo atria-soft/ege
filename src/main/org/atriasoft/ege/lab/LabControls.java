@@ -19,17 +19,18 @@ import org.slf4j.LoggerFactory;
 /**
  * The actions of a lab, the single source of its control panel, of its keys
  * and of its F1 help: each one declared once ({@link #action},
- * {@link #toggle}, {@link #choice}, {@link #stepper}) under the heading set
- * by {@link #group}.
+ * {@link #toggle}, {@link #choice}, {@link #stepper}, {@link #text},
+ * {@link #palette}) under the heading set by {@link #group}.
  * <p>
  * A key that cannot run the control is dropped from it, the control kept
  * (clickable) and the reason reported ({@link #setReporter}): a key already
  * bound, a key of the kit ({@code F}, {@code F1} to {@code F3}, reserved
  * before the lab declares its controls), a key the window keeps or never
- * receives ({@link #refusal}). {@link #press} (a key) and the widgets of the
- * panel run the same methods ({@link #activate}, {@link #set},
- * {@link #select}, {@link #step}); the state the widgets show is asked
- * through {@link #value}, {@link #items}, {@link #selected}, {@link #text}.
+ * receives ({@link #refusal}). {@link #press} (a key, with Control or not)
+ * and the widgets of the panel run the same methods ({@link #activate},
+ * {@link #set}, {@link #select}, {@link #step}, {@link #enter}); the state the
+ * widgets show is asked through {@link #value}, {@link #items},
+ * {@link #selected}, {@link #text}.
  * Whatever a callback or a supplier throws is reported, never further, and
  * cleared once it succeeds again. Not thread-safe: declared and run on the
  * GUI thread. Pure Java, tested headless.
@@ -44,6 +45,7 @@ public final class LabControls {
 	static final String ITEMS = " (items)";
 	static final String SELECTED = " (item chosen)";
 	static final String VALUE = " (value)";
+	static final String TEXT = " (text)";
 
 	/** The keys a lab cannot bind, and why. */
 	private static final Map<LabKey, String> REFUSED = new HashMap<>();
@@ -141,6 +143,18 @@ public final class LabControls {
 				Objects.requireNonNull(decrease), Objects.requireNonNull(increase)));
 	}
 
+	/** A line of text typed in (a text field); what is typed goes to {@code set} on Enter. No key. */
+	public LabControls text(final String label, final Supplier<String> value, final Consumer<String> set) {
+		return add(new LabControl.Text(this.group, label, Objects.requireNonNull(value), Objects.requireNonNull(set)));
+	}
+
+	/** One of a few items, each with its key (a grid of buttons, the item chosen lit). */
+	public LabControls palette(final String label, final List<LabControl.Palette.Item> items, final IntSupplier selected,
+			final IntConsumer select) {
+		return add(new LabControl.Palette(this.group, label, items, Objects.requireNonNull(selected),
+				Objects.requireNonNull(select)));
+	}
+
 	private LabControls add(final LabControl control) {
 		LabControl kept = control;
 		for (final LabKey key : control.keys()) {
@@ -187,6 +201,14 @@ public final class LabControls {
 			case final LabControl.Stepper s -> new LabControl.Stepper(s.group(), s.label(),
 					key.equals(s.less()) ? null : s.less(), key.equals(s.more()) ? null : s.more(), s.value(),
 					s.decrease(), s.increase());
+			case final LabControl.Text t -> t;
+			case final LabControl.Palette p -> {
+				final List<LabControl.Palette.Item> items = new ArrayList<>();
+				for (final LabControl.Palette.Item item : p.items()) {
+					items.add(key.equals(item.key()) ? new LabControl.Palette.Item(item.label(), null) : item);
+				}
+				yield new LabControl.Palette(p.group(), p.label(), items, p.selected(), p.select());
+			}
 		};
 	}
 
@@ -210,17 +232,27 @@ public final class LabControls {
 	}
 
 	/**
-	 * Run the control bound to a key going down ({@code type} and
-	 * {@code value} as gale hands them). The auto-repeat of a held key
-	 * ({@code repeat}) steps the steppers and the choices, never an action
-	 * nor a toggle.
+	 * Run the control bound to a key going down without Control ({@code type} and {@code value} as gale hands
+	 * them): {@link #press(KeyKeyboard, Character, boolean, boolean)}.
 	 *
 	 * @return whether a control is bound to it
 	 */
 	public boolean press(final KeyKeyboard type, final Character value, final boolean repeat) {
+		return press(type, value, false, repeat);
+	}
+
+	/**
+	 * Run the control bound to a key going down ({@code type} and
+	 * {@code value} as gale hands them, Control held or not). The auto-repeat
+	 * of a held key ({@code repeat}) steps the steppers and the choices, never
+	 * an action, a toggle nor a palette.
+	 *
+	 * @return whether a control is bound to it
+	 */
+	public boolean press(final KeyKeyboard type, final Character value, final boolean ctrl, final boolean repeat) {
 		for (final LabControl control : this.controls) {
 			for (final LabKey key : control.keys()) {
-				if (key.matches(type, value)) {
+				if (key.matches(type, value, ctrl)) {
 					if (!repeat || control instanceof LabControl.Choice || control instanceof LabControl.Stepper) {
 						pressed(control, key);
 					}
@@ -237,6 +269,10 @@ public final class LabControls {
 			case final LabControl.Toggle toggle -> set(toggle, !value(toggle));
 			case final LabControl.Choice choice -> step(choice, key.equals(choice.previous()) ? -1 : 1);
 			case final LabControl.Stepper stepper -> step(stepper, key.equals(stepper.less()) ? -1 : 1);
+			case final LabControl.Palette palette -> select(palette, palette.indexOf(key));
+			case final LabControl.Text text -> {
+				// No key.
+			}
 		}
 	}
 
@@ -253,6 +289,16 @@ public final class LabControls {
 	/** Choose the item {@code index} of a choice. */
 	public void select(final LabControl.Choice choice, final int index) {
 		guard(choice, () -> choice.select().accept(index));
+	}
+
+	/** Choose the item {@code index} of a palette. */
+	public void select(final LabControl.Palette palette, final int index) {
+		guard(palette, () -> palette.select().accept(index));
+	}
+
+	/** Give {@code typed} to a text field (Enter). */
+	public void enter(final LabControl.Text text, final String typed) {
+		guard(text, () -> text.set().accept(typed != null ? typed : ""));
 	}
 
 	/** The item {@code direction} after the one chosen, round the list (the first or the last when none is chosen). */
@@ -295,6 +341,17 @@ public final class LabControls {
 		return state(choice.label() + SELECTED, () -> choice.selected().getAsInt(), -1);
 	}
 
+	/** The index of the item of a palette chosen now (-1 when its supplier throws). */
+	public int selected(final LabControl.Palette palette) {
+		return state(palette.label() + SELECTED, () -> palette.selected().getAsInt(), -1);
+	}
+
+	/** The text of a text field now ({@code ""} when its supplier throws). */
+	public String text(final LabControl.Text text) {
+		final String value = state(text.label() + TEXT, text.value(), "");
+		return value != null ? value : "";
+	}
+
 	/** The value of a stepper as shown now ({@code ?} when its supplier throws). */
 	public String text(final LabControl.Stepper stepper) {
 		final String text = state(stepper.label() + VALUE, stepper.value(), "?");
@@ -322,12 +379,26 @@ public final class LabControls {
 		}
 	}
 
-	/** The lines of the F1 help: each heading, then {@code [H]  Proxies} per control. */
+	/**
+	 * The lines of the F1 help: each heading, then {@code [H]  Proxies} per control ({@code [#]  Paint: Wall} per item
+	 * of a palette, {@code [Enter]  Name} for a text field).
+	 */
 	public List<String> help() {
 		final List<String> lines = new ArrayList<>();
 		for (final Map.Entry<String, List<LabControl>> entry : byGroup().entrySet()) {
 			lines.add(entry.getKey());
 			for (final LabControl control : entry.getValue()) {
+				if (control instanceof final LabControl.Palette palette) {
+					for (final LabControl.Palette.Item item : palette.items()) {
+						lines.add("  [" + (item.key() != null ? item.key().name() : "-") + "]  " + palette.label() + ": "
+								+ item.label());
+					}
+					continue;
+				}
+				if (control instanceof LabControl.Text) {
+					lines.add("  [Enter]  " + control.label() + " (a text field)");
+					continue;
+				}
 				final List<String> names = new ArrayList<>();
 				for (final LabKey key : control.keys()) {
 					names.add(key.name());

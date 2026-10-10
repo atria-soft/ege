@@ -139,4 +139,30 @@ class LabCameraTest {
 		assertNear(eye, camera.eye());
 		assertEquals(-0.5f, camera.elevation(), EPSILON);
 	}
+
+	@Test
+	void theRayOfAPixelFindsWhatLiesUnderIt() {
+		final LabCamera camera = new LabCamera();
+		camera.setDirection(0.0f, (float) Math.toRadians(89.0));
+		camera.lookAt(new Vector3f(3.0f, 0.0f, -2.0f), 20.0f);
+		final float fovX = (float) Math.toRadians(70.0);
+		// The middle of the picture: the target.
+		final Vector3f middle = camera.ray(400.0f, 300.0f, 800.0f, 600.0f, fovX);
+		assertNear(camera.back().multiply(-1.0f), middle);
+		final LabPointer.Event centre = new LabPointer.Event(LabPointer.Action.HOVER, 0, 400.0f, 300.0f, camera.eye(),
+				middle, false, false);
+		assertNear(new Vector3f(3.0f, 0.0f, -2.0f), centre.ground());
+		// Right of the middle: east (X grows); above it: north (Z falls) for an eye south of the target looking down.
+		final Vector3f right = new LabPointer.Event(LabPointer.Action.HOVER, 0, 800.0f, 300.0f, camera.eye(), camera.ray(
+				800.0f, 300.0f, 800.0f, 600.0f, fovX), false, false).ground();
+		assertEquals(3.0f + 20.0f * (float) Math.tan(fovX / 2.0), right.x(), 0.2f);
+		final Vector3f top = new LabPointer.Event(LabPointer.Action.HOVER, 0, 400.0f, 600.0f, camera.eye(), camera.ray(
+				400.0f, 600.0f, 800.0f, 600.0f, fovX), false, false).ground();
+		assertTrue(top.z() < -2.0f - 5.0f, "north: " + top);
+		// Looking above the horizon: no ground.
+		final LabCamera level = new LabCamera();
+		level.setDirection(0.0f, (float) Math.toRadians(5.0));
+		assertEquals(null, new LabPointer.Event(LabPointer.Action.HOVER, 0, 400.0f, 600.0f, level.eye(), level.ray(400.0f,
+				600.0f, 800.0f, 600.0f, fovX), false, false).ground());
+	}
 }

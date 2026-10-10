@@ -38,12 +38,16 @@ import org.slf4j.LoggerFactory;
  * <p>
  * It draws a flat ground ruled every 1, 5 and 25 m (the axes X east in red,
  * Z south in blue) under a sky colour, lit by a sun casting cascaded shadows
- * (ege's {@link EngineShadow}), the content, a human figure of 1.80 m beside
- * it (a toggle), then the info panel and the help of the keys over the
- * picture. The mouse drives a {@link LabCamera}: left drag turns (around the
- * target, or the look in a flight), right or middle drag (or Shift and left)
- * pans, the wheel zooms; the arrows and Page up/down drive it too (held keys:
- * {@link #holdKey}).
+ * (ege's {@link EngineShadow}), the content, an overlay of the lab over it
+ * ({@link #setOverlay}: a grid, a cursor; never framed, casting no shadow), a
+ * human figure of 1.80 m beside it (a toggle), then the info panel and the
+ * help of the keys over the picture. The mouse goes to the lab first when it
+ * asks ({@link #setPointer}: the ground point under the pointer, a press it
+ * takes and its drag), else drives a {@link LabCamera}: left drag turns (around
+ * the target, or the look in a flight), right or middle drag (or Shift and
+ * left) pans, the wheel zooms; the arrows and Page up/down drive it too (held
+ * keys: {@link #holdKey}). A press on the view takes the focus (a text field
+ * of the panel gives the keys back).
  * <p>
  * Every throwable of the lab (an update, a control, a watcher) is caught and
  * shown in red at the top of the info panel until the same thing succeeds
@@ -72,6 +76,7 @@ public final class LabView extends Widget implements LabReporter {
 	static final String PANEL = "panel";
 	static final String READING = "reading the data";
 	static final String RENDERING = "3D view";
+	static final String POINTER = "pointer";
 
 	/** Files watched and what their change runs. */
 	private record Watch(LabWatcher watcher, Runnable onChange) {}
@@ -87,6 +92,7 @@ public final class LabView extends Widget implements LabReporter {
 	private Lab lab;
 	private List<LabText.Line> info = List.of();
 	private LabMesh content;
+	private LabMesh overlay;
 	private LabMesh human;
 	/** Where the human figure stands, {@code null}: beside the content. */
 	private Vector3f humanSpot;
@@ -100,6 +106,10 @@ public final class LabView extends Widget implements LabReporter {
 	private boolean right;
 	private boolean pageUp;
 	private boolean pageDown;
+	/** What the lab does with the mouse first, {@code null}: nothing (the camera alone). */
+	private LabPointer pointer;
+	/** The button of the press the lab took (its drag and release are the lab's), 0: none. */
+	private int pointerButton;
 	/** A drag: the button held and where the pointer was. */
 	private int dragButton;
 	private boolean dragPans;
@@ -158,6 +168,29 @@ public final class LabView extends Widget implements LabReporter {
 			this.frameNext = false;
 			frame();
 		}
+	}
+
+	/**
+	 * Show {@code mesh} over the content from the next frame on, {@code null}: none. The overlay is the lab's tools
+	 * drawn in the scene (a grid, a cursor, a selection): it is never framed and casts no shadow; its lines on top are
+	 * seen through everything.
+	 */
+	public void setOverlay(final LabMesh mesh) {
+		this.overlay = mesh;
+	}
+
+	/** The overlay shown, {@code null} for none. */
+	public LabMesh overlay() {
+		return this.overlay;
+	}
+
+	/**
+	 * Give the mouse over the view to {@code next} first ({@code null}: to the camera alone): the pointer moving, a
+	 * press it may take with the drag and the release after it.
+	 */
+	public void setPointer(final LabPointer next) {
+		this.pointer = next;
+		this.pointerButton = 0;
 	}
 
 	/** The content shown, {@code null} before the first one. */
@@ -476,7 +509,7 @@ public final class LabView extends Widget implements LabReporter {
 			}
 		}
 		if (this.renderer != null) {
-			this.renderer.show(this.content, this.humanShown ? this.human : null);
+			this.renderer.show(this.content, this.overlay, this.humanShown ? this.human : null);
 		}
 		final Matrix4f viewMatrix = this.labCamera.view();
 		final Vector3f eyePosition = this.labCamera.eye();
@@ -525,6 +558,33 @@ public final class LabView extends Widget implements LabReporter {
 		OpenGL.blendFuncAuto();
 	}
 
+	/** The event of the pointer at {@code position} (pixels in the view), with its ray. */
+	private LabPointer.Event pointerEvent(final LabPointer.Action action, final int button, final Vector2f position,
+			final EventInput event) {
+		final Vector2f size = getSize();
+		final boolean shift = event.specialKey() != null && event.specialKey().getShift();
+		final boolean ctrl = event.specialKey() != null && event.specialKey().getCtrl();
+		return new LabPointer.Event(action, button, position.x(), position.y(), this.labCamera.eye(),
+				this.labCamera.ray(position.x(), position.y(), size.x(), size.y(), FOV_X), shift, ctrl);
+	}
+
+	/** Tell the lab what the pointer did; whether it takes it (a throwable is reported: not taken). */
+	private boolean tell(final LabPointer.Action action, final int button, final Vector2f position,
+			final EventInput event) {
+		final LabPointer told = this.pointer;
+		if (told == null) {
+			return false;
+		}
+		try {
+			final boolean taken = told.pointer(pointerEvent(action, button, position, event));
+			clear(POINTER);
+			return taken;
+		} catch (final Throwable e) {
+			report(POINTER, e);
+			return false;
+		}
+	}
+
 	@Override
 	public boolean onEventInput(final EventInput event) {
 		final Vector2f position = relativePosition(event.pos());
@@ -535,11 +595,43 @@ public final class LabView extends Widget implements LabReporter {
 			this.labCamera.zoom(button == 5 ? 1.0f : -1.0f);
 			return true;
 		}
+		if (button == 0) {
+			// The pointer moving with no button held, or leaving the view.
+			if (this.pointerButton == 0) {
+				if (event.status() == KeyStatus.leave) {
+					tell(LabPointer.Action.LEAVE, 0, position, event);
+				} else if (event.status() == KeyStatus.move || event.status() == KeyStatus.enter) {
+					tell(LabPointer.Action.HOVER, 0, position, event);
+				}
+			}
+			return false;
+		}
 		if (button < 1 || button > 3) {
 			return false;
 		}
+		if (this.pointerButton != 0 && button == this.pointerButton) {
+			// A press the lab took: its drag and its release are the lab's.
+			switch (event.status()) {
+				case move -> tell(LabPointer.Action.DRAG, button, position, event);
+				case up, abort -> {
+					this.pointerButton = 0;
+					tell(LabPointer.Action.RELEASE, button, position, event);
+				}
+				default -> {
+					// Clicks, enter, leave: nothing.
+				}
+			}
+			return true;
+		}
 		switch (event.status()) {
 			case down -> {
+				// A text field of the panel typed into gives the keys back.
+				keepFocus();
+				if (this.pointerButton == 0 && this.dragFrom == null && tell(LabPointer.Action.PRESS, button, position,
+						event)) {
+					this.pointerButton = button;
+					return true;
+				}
 				this.dragButton = button;
 				this.dragFrom = position;
 				this.dragPans = button != 1 || event.specialKey() != null && event.specialKey().getShift();

@@ -48,6 +48,48 @@ class LabControlsTest {
 		}
 	}
 
+	/** The pieces of a panel as strings. */
+	private static final class Strings implements LabControlPanel.Factory<String> {
+		@Override
+		public String heading(final String text) {
+			return "# " + text;
+		}
+
+		@Override
+		public String action(final LabControl.Action control) {
+			return "button " + control.title();
+		}
+
+		@Override
+		public String toggle(final LabControl.Toggle control) {
+			return "check " + control.title();
+		}
+
+		@Override
+		public String choice(final LabControl.Choice control) {
+			return "list " + control.title();
+		}
+
+		@Override
+		public String stepper(final LabControl.Stepper control) {
+			return "steps " + control.title();
+		}
+
+		@Override
+		public String text(final LabControl.Text control) {
+			return "field " + control.title();
+		}
+
+		@Override
+		public String palette(final LabControl.Palette control) {
+			final List<String> items = new ArrayList<>();
+			for (final LabControl.Palette.Item item : control.items()) {
+				items.add(item.title());
+			}
+			return "palette " + control.title() + ": " + String.join(", ", items);
+		}
+	}
+
 	private static LabControls controls(final Model model) {
 		return controls(model, new Problems());
 	}
@@ -243,63 +285,13 @@ class LabControlsTest {
 	@Test
 	void everyActionHasItsControlUnderItsHeading() {
 		final LabControls controls = controls(new Model());
-		final List<String> pieces = LabControlPanel.layout(controls, new LabControlPanel.Factory<String>() {
-			@Override
-			public String heading(final String text) {
-				return "# " + text;
-			}
-
-			@Override
-			public String action(final LabControl.Action control) {
-				return "button " + control.title();
-			}
-
-			@Override
-			public String toggle(final LabControl.Toggle control) {
-				return "check " + control.title();
-			}
-
-			@Override
-			public String choice(final LabControl.Choice control) {
-				return "list " + control.title();
-			}
-
-			@Override
-			public String stepper(final LabControl.Stepper control) {
-				return "steps " + control.title();
-			}
-		});
+		final List<String> pieces = LabControlPanel.layout(controls, new Strings());
 		assertEquals(List.of("# Subject", "list Species [O/P]", "steps Seed [U/I]", "# Debug", "check Proxies [H]",
 				"# Data", "button Build again [F5]"), pieces);
 		// Each control once: the panel, like the help, is made from the registry alone.
 		assertEquals(controls.all().size() + controls.byGroup().size(), pieces.size());
 		// A group left out (the window lays the group of the view out in its footer).
-		final List<String> withoutDebug = LabControlPanel.layout(controls, new LabControlPanel.Factory<String>() {
-			@Override
-			public String heading(final String text) {
-				return "# " + text;
-			}
-
-			@Override
-			public String action(final LabControl.Action control) {
-				return "button " + control.title();
-			}
-
-			@Override
-			public String toggle(final LabControl.Toggle control) {
-				return "check " + control.title();
-			}
-
-			@Override
-			public String choice(final LabControl.Choice control) {
-				return "list " + control.title();
-			}
-
-			@Override
-			public String stepper(final LabControl.Stepper control) {
-				return "steps " + control.title();
-			}
-		}, group -> !"Debug".equals(group));
+		final List<String> withoutDebug = LabControlPanel.layout(controls, new Strings(), group -> !"Debug".equals(group));
 		assertEquals(List.of("# Subject", "list Species [O/P]", "steps Seed [U/I]", "# Data", "button Build again [F5]"),
 				withoutDebug);
 	}
@@ -309,5 +301,60 @@ class LabControlsTest {
 		final List<String> help = controls(new Model()).help();
 		assertEquals(List.of("Subject", "  [O/P]  Species", "  [U/I]  Seed", "Debug", "  [H]  Proxies", "Data",
 				"  [F5]  Build again"), help);
+	}
+
+	@Test
+	void keysWithControlRunTheirOwnControls() {
+		final Problems problems = new Problems();
+		final LabControls controls = new LabControls();
+		controls.setReporter(problems);
+		final List<String> ran = new ArrayList<>();
+		controls.action("Zoom", LabKey.of('z'), () -> ran.add("zoom"));
+		controls.action("Undo", LabKey.ctrl('Z'), () -> ran.add("undo"));
+		assertEquals("Ctrl+Z", LabKey.ctrl('z').name());
+		assertEquals("Undo [Ctrl+Z]", controls.all().get(1).title());
+		assertTrue(controls.press(KeyKeyboard.CHARACTER, 'z', true, false));
+		assertTrue(controls.press(KeyKeyboard.CHARACTER, 'Z', false, false));
+		assertEquals(List.of("undo", "zoom"), ran);
+		assertFalse(LabKey.ctrl('z').matches(KeyKeyboard.CHARACTER, 'z'), "without Control");
+		assertFalse(controls.press(KeyKeyboard.CHARACTER, 'q', true, false));
+		assertTrue(problems.shown.isEmpty(), problems.shown.toString());
+	}
+
+	@Test
+	void aPaletteChoosesAnItemByItsKeyAndATextTakesWhatIsTyped() {
+		final Problems problems = new Problems();
+		final LabControls controls = new LabControls();
+		controls.setReporter(problems);
+		final int[] chosen = { -1 };
+		final String[] name = { "keep" };
+		controls.group("Edit");
+		controls.action("Help", LabKey.of('#'), () -> {});
+		controls.palette("Paint", List.of(new LabControl.Palette.Item("Wall", LabKey.of('#')),
+				new LabControl.Palette.Item("Door", LabKey.of('+')), new LabControl.Palette.Item("Outside", null)),
+				() -> chosen[0], index -> chosen[0] = index);
+		controls.text("Name", () -> name[0], typed -> name[0] = typed);
+		// The key of an item already bound is dropped from that item alone.
+		assertTrue(problems.shown.containsKey("Key # of 'Paint'"), problems.shown.toString());
+		final LabControl.Palette palette = (LabControl.Palette) controls.all().get(1);
+		assertEquals(List.of(LabKey.of('+')), palette.keys());
+		assertEquals("Paint", palette.title());
+		assertEquals("Wall", palette.items().get(0).title());
+		assertEquals("Door [+]", palette.items().get(1).title());
+		assertTrue(controls.press(KeyKeyboard.CHARACTER, '+', false, false));
+		assertEquals(1, chosen[0]);
+		assertEquals(1, controls.selected(palette));
+		assertTrue(controls.press(KeyKeyboard.CHARACTER, '+', false, true), "bound, its repeat dropped");
+		controls.select(palette, 2);
+		assertEquals(2, chosen[0]);
+		final LabControl.Text text = (LabControl.Text) controls.all().get(2);
+		assertEquals(List.of(), text.keys());
+		assertEquals("keep", controls.text(text));
+		controls.enter(text, "tower");
+		assertEquals("tower", name[0]);
+		assertEquals(List.of("# Edit", "button Help [#]", "palette Paint: Wall, Door [+], Outside", "field Name"),
+				LabControlPanel.layout(controls, new Strings()));
+		assertEquals(List.of("Edit", "  [#]  Help", "  [-]  Paint: Wall", "  [+]  Paint: Door", "  [-]  Paint: Outside",
+				"  [Enter]  Name (a text field)"), controls.help());
 	}
 }

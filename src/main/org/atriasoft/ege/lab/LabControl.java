@@ -16,7 +16,8 @@ import java.util.function.Supplier;
  * exactly the same thing. The suppliers give the state the widget shows,
  * asked every frame on the GUI thread.
  */
-public sealed interface LabControl permits LabControl.Action, LabControl.Toggle, LabControl.Choice, LabControl.Stepper {
+public sealed interface LabControl permits LabControl.Action, LabControl.Toggle, LabControl.Choice, LabControl.Stepper,
+		LabControl.Text, LabControl.Palette {
 
 	/** The heading it is shown under (Subject, Display, Debug, Data, View...). */
 	String group();
@@ -24,7 +25,7 @@ public sealed interface LabControl permits LabControl.Action, LabControl.Toggle,
 	/** What it does, in plain words. */
 	String label();
 
-	/** Its keys, none or one or two (previous / next, less / more). */
+	/** Its keys, none or one or two (previous / next, less / more); a palette one per item. */
 	List<LabKey> keys();
 
 	/** {@code Proxies [H]}, {@code Seed [U/I]}: the label and its keys in brackets. */
@@ -99,6 +100,78 @@ public sealed interface LabControl permits LabControl.Action, LabControl.Toggle,
 		@Override
 		public List<LabKey> keys() {
 			return pair(this.less, this.more);
+		}
+	}
+
+	/**
+	 * A line of text typed in (a name, a file name): a text field under its label. What is typed is given to
+	 * {@code set} when Enter is pressed; the field shows {@code value} while it is not being typed in. No key: while the
+	 * field has the focus every key goes to it, Escape (or a click elsewhere) gives the keys back to the lab.
+	 *
+	 * @param value the text now
+	 * @param set   take the text typed (Enter)
+	 */
+	record Text(String group, String label, Supplier<String> value, Consumer<String> set) implements LabControl {
+		@Override
+		public List<LabKey> keys() {
+			return List.of();
+		}
+	}
+
+	/**
+	 * One of a few items, each with a key of its own (the tools of an editor, the colours of a palette): a grid of
+	 * buttons, the item chosen lit; the key of an item chooses it.
+	 *
+	 * @param items    the items, each its label and its key
+	 * @param selected the index of the item chosen now, -1 for none
+	 * @param select   choose the item of an index
+	 */
+	record Palette(String group, String label, List<Item> items, IntSupplier selected, IntConsumer select)
+			implements LabControl {
+
+		/**
+		 * An item of a palette.
+		 *
+		 * @param label what it is, in plain words
+		 * @param key   its key, {@code null} for none
+		 */
+		public record Item(String label, LabKey key) {
+
+			/** {@code Wall [#]}: the label and its key in brackets. */
+			public String title() {
+				return this.key != null ? this.label + " [" + this.key.name() + "]" : this.label;
+			}
+		}
+
+		public Palette {
+			items = List.copyOf(items);
+		}
+
+		@Override
+		public List<LabKey> keys() {
+			final List<LabKey> keys = new ArrayList<>();
+			for (final Item item : this.items) {
+				if (item.key() != null) {
+					keys.add(item.key());
+				}
+			}
+			return List.copyOf(keys);
+		}
+
+		/** The label alone: the keys are on the items. */
+		@Override
+		public String title() {
+			return this.label;
+		}
+
+		/** The index of the item of {@code key}, -1 when none has it. */
+		public int indexOf(final LabKey key) {
+			for (int i = 0; i < this.items.size(); i++) {
+				if (key.equals(this.items.get(i).key())) {
+					return i;
+				}
+			}
+			return -1;
 		}
 	}
 

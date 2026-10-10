@@ -33,6 +33,12 @@ public final class LabControlPanel {
 
 		/** Two buttons around a value. */
 		W stepper(LabControl.Stepper control);
+
+		/** A text field under its label. */
+		W text(LabControl.Text control);
+
+		/** A grid of buttons, one per item, the item chosen lit. */
+		W palette(LabControl.Palette control);
 	}
 
 	private LabControlPanel() {}
@@ -60,6 +66,8 @@ public final class LabControlPanel {
 					case final LabControl.Toggle toggle -> factory.toggle(toggle);
 					case final LabControl.Choice choice -> factory.choice(choice);
 					case final LabControl.Stepper stepper -> factory.stepper(stepper);
+					case final LabControl.Text text -> factory.text(text);
+					case final LabControl.Palette palette -> factory.palette(palette);
 				});
 			}
 		}

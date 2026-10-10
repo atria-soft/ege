@@ -4,6 +4,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
 
+import org.atriasoft.etk.Color;
 import org.atriasoft.etk.Dimension2f;
 import org.atriasoft.etk.DimensionInsets;
 import org.atriasoft.etk.Distance;
@@ -11,6 +12,7 @@ import org.atriasoft.etk.math.Vector2b;
 import org.atriasoft.etk.math.Vector2f;
 import org.atriasoft.ewol.Gravity;
 import org.atriasoft.ewol.widget.Button;
+import org.atriasoft.ewol.widget.Entry;
 import org.atriasoft.ewol.widget.Label;
 import org.atriasoft.ewol.widget.ScrollView;
 import org.atriasoft.ewol.widget.Select;
@@ -24,7 +26,9 @@ import org.atriasoft.ewol.widget.Widget;
  * each group of its {@link LabControls} a heading, then a button per action,
  * a check box per toggle, a drop-down list under its title and its previous
  * and next buttons per choice, minus and plus buttons around the value per
- * stepper; each label followed by its keys in brackets ({@code Proxies [H]}).
+ * stepper, a text field under its title per text, a grid of buttons per
+ * palette (the item chosen lit); each label followed by its keys in brackets
+ * ({@code Proxies [H]}).
  * The groups of the lab scroll; the group of the view ({@link LabView#VIEW_GROUP}:
  * frame, human, flight, help, Quit) stays in a footer under them, always in
  * sight. A widget runs the same {@link LabControls} method as the key;
@@ -36,7 +40,10 @@ import org.atriasoft.ewol.widget.Widget;
  * the lab is told the index).
  * <p>
  * The widgets are connected with {@code connectAuto} on this object (kept by
- * the window), never with a connection left to the garbage collector.
+ * the window), never with a connection left to the garbage collector. Each
+ * widget used gives the focus back to the 3D view ({@code release}): the keys
+ * go to the lab again, never to a text field left behind nor to a button that
+ * Enter would press again.
  */
 final class LabPanelWidgets implements LabControlPanel.Factory<Widget> {
 
@@ -46,8 +53,15 @@ final class LabPanelWidgets implements LabControlPanel.Factory<Widget> {
 	private static final float VALUE_WIDTH = 96.0f;
 	/** The longest item a drop-down list shows, characters. */
 	static final int ITEM_CHARS = 34;
+	/** The buttons of a palette on a row. */
+	static final int PALETTE_COLUMNS = 2;
+	/** The colour of the item of a palette chosen, and of the others. */
+	static final Color CHOSEN = new Color(1.0f, 0.84f, 0.42f, 1.0f);
+	static final Color NOT_CHOSEN = Color.WHITE;
 
 	private final LabControls controls;
+	/** Gives the focus back to the 3D view. */
+	private final Runnable release;
 	private final Sizer panel = new Sizer(Sizer.DisplayMode.VERTICAL);
 	private final Sizer column = new Sizer(Sizer.DisplayMode.VERTICAL);
 	private final Sizer footer = new Sizer(Sizer.DisplayMode.VERTICAL);
@@ -56,8 +70,13 @@ final class LabPanelWidgets implements LabControlPanel.Factory<Widget> {
 	private final List<Runnable> syncs = new ArrayList<>();
 	private int builtVersion = -1;
 
-	LabPanelWidgets(final LabControls controls) {
+	/**
+	 * @param controls the controls laid out
+	 * @param release  gives the focus back to the 3D view (after a widget was used, or Enter in a text field)
+	 */
+	LabPanelWidgets(final LabControls controls, final Runnable release) {
 		this.controls = controls;
+		this.release = release;
 		for (final Sizer part : new Sizer[] { this.column, this.footer }) {
 			part.setPropertyExpand(new Vector2b(true, false));
 			part.setPropertyFill(new Vector2b(true, false));
@@ -123,6 +142,8 @@ final class LabPanelWidgets implements LabControlPanel.Factory<Widget> {
 					case final LabControl.Toggle toggle -> toggle(toggle);
 					case final LabControl.Choice choice -> choice(choice);
 					case final LabControl.Stepper stepper -> stepper(stepper);
+					case final LabControl.Text text -> text(text);
+					case final LabControl.Palette palette -> palette(palette);
 					case final LabControl.Action action -> action(action);
 				});
 			}
@@ -183,7 +204,10 @@ final class LabPanelWidgets implements LabControlPanel.Factory<Widget> {
 	public Widget action(final LabControl.Action control) {
 		final Button button = button(control.title());
 		wide(button);
-		button.signalClick.connectAuto(this, (final LabPanelWidgets self) -> self.controls.activate(control));
+		button.signalClick.connectAuto(this, (final LabPanelWidgets self) -> {
+			self.release.run();
+			self.controls.activate(control);
+		});
 		return button;
 	}
 
@@ -199,10 +223,14 @@ final class LabPanelWidgets implements LabControlPanel.Factory<Widget> {
 		// The tick sets the value it shows; a click on the words flips it.
 		tick.signalValue.connectAuto(this, (final LabPanelWidgets self, final Boolean value) -> {
 			if (value != null && value != self.controls.value(control)) {
+				self.release.run();
 				self.controls.set(control, value);
 			}
 		});
-		text.signalPressed.connectAuto(this, (final LabPanelWidgets self) -> self.controls.set(control, !self.controls.value(control)));
+		text.signalPressed.connectAuto(this, (final LabPanelWidgets self) -> {
+			self.release.run();
+			self.controls.set(control, !self.controls.value(control));
+		});
 		this.syncs.add(() -> {
 			final boolean on = this.controls.value(control);
 			if (!Objects.equals(tick.getPropertyValue(), on)) {
@@ -223,17 +251,24 @@ final class LabPanelWidgets implements LabControlPanel.Factory<Widget> {
 		top.subWidgetAdd(title);
 		final Button previous = button(" Prev ");
 		previous.setPropertyExpand(Vector2b.FALSE);
-		previous.signalClick.connectAuto(this, (final LabPanelWidgets self) -> self.controls.step(control, -1));
+		previous.signalClick.connectAuto(this, (final LabPanelWidgets self) -> {
+			self.release.run();
+			self.controls.step(control, -1);
+		});
 		top.subWidgetAdd(previous);
 		final Button next = button(" Next ");
 		next.setPropertyExpand(Vector2b.FALSE);
-		next.signalClick.connectAuto(this, (final LabPanelWidgets self) -> self.controls.step(control, 1));
+		next.signalClick.connectAuto(this, (final LabPanelWidgets self) -> {
+			self.release.run();
+			self.controls.step(control, 1);
+		});
 		top.subWidgetAdd(next);
 		block.subWidgetAdd(top);
 		final Select select = new Select();
 		wide(select);
 		select.signalSelectionChanged.connectAuto(this, (final LabPanelWidgets self, final Integer index) -> {
 			if (index != null && index >= 0) {
+				self.release.run();
 				self.controls.select(control, index);
 			}
 		});
@@ -259,7 +294,10 @@ final class LabPanelWidgets implements LabControlPanel.Factory<Widget> {
 		row.subWidgetAdd(title);
 		final Button less = button(" - ");
 		less.setPropertyExpand(Vector2b.FALSE);
-		less.signalClick.connectAuto(this, (final LabPanelWidgets self) -> self.controls.step(control, -1));
+		less.signalClick.connectAuto(this, (final LabPanelWidgets self) -> {
+			self.release.run();
+			self.controls.step(control, -1);
+		});
 		row.subWidgetAdd(less);
 		final Label value = label("");
 		value.setPropertyGravity(Gravity.CENTER);
@@ -267,7 +305,10 @@ final class LabPanelWidgets implements LabControlPanel.Factory<Widget> {
 		row.subWidgetAdd(value);
 		final Button more = button(" + ");
 		more.setPropertyExpand(Vector2b.FALSE);
-		more.signalClick.connectAuto(this, (final LabPanelWidgets self) -> self.controls.step(control, 1));
+		more.signalClick.connectAuto(this, (final LabPanelWidgets self) -> {
+			self.release.run();
+			self.controls.step(control, 1);
+		});
 		row.subWidgetAdd(more);
 		this.syncs.add(() -> {
 			final String shown = LabText.ascii(this.controls.text(control));
@@ -276,5 +317,81 @@ final class LabPanelWidgets implements LabControlPanel.Factory<Widget> {
 			}
 		});
 		return row;
+	}
+
+	/**
+	 * The title (Enter takes what is typed), the text field alone on the row under. While it is not typed in, it
+	 * shows the text of the control; Enter gives what is typed to the control and the focus back to the view.
+	 */
+	@Override
+	public Widget text(final LabControl.Text control) {
+		final Sizer block = new Sizer(Sizer.DisplayMode.VERTICAL);
+		wide(block);
+		final Label title = label(control.title() + " (Enter)");
+		wide(title);
+		block.subWidgetAdd(title);
+		final Entry entry = new Entry();
+		wide(entry);
+		entry.setPropertyPadding(new DimensionInsets(2));
+		entry.signalEnter.connectAuto(this, (final LabPanelWidgets self, final String typed) -> {
+			self.release.run();
+			self.controls.enter(control, typed);
+		});
+		block.subWidgetAdd(entry);
+		this.syncs.add(() -> {
+			if (entry.isFocused()) {
+				return;
+			}
+			final String shown = LabText.ascii(this.controls.text(control));
+			if (!shown.equals(entry.getPropertyValue())) {
+				entry.setPropertyValue(shown);
+			}
+		});
+		return block;
+	}
+
+	/** The title, then the items as buttons, {@link #PALETTE_COLUMNS} on a row, the item chosen lit. */
+	@Override
+	public Widget palette(final LabControl.Palette control) {
+		final Sizer block = new Sizer(Sizer.DisplayMode.VERTICAL);
+		wide(block);
+		final Label title = label(control.title());
+		wide(title);
+		block.subWidgetAdd(title);
+		final List<Button> buttons = new ArrayList<>();
+		Sizer line = null;
+		for (int i = 0; i < control.items().size(); i++) {
+			if (i % PALETTE_COLUMNS == 0) {
+				line = row();
+				block.subWidgetAdd(line);
+			}
+			final int index = i;
+			final Button button = button(control.items().get(i).title());
+			wide(button);
+			button.signalClick.connectAuto(this, (final LabPanelWidgets self) -> {
+				self.release.run();
+				self.controls.select(control, index);
+			});
+			line.subWidgetAdd(button);
+			buttons.add(button);
+		}
+		if (line != null) {
+			// The last row as wide as the others.
+			for (int i = control.items().size() % PALETTE_COLUMNS; i > 0 && i < PALETTE_COLUMNS; i++) {
+				final Spacer filler = new Spacer();
+				wide(filler);
+				line.subWidgetAdd(filler);
+			}
+		}
+		this.syncs.add(() -> {
+			final int chosen = this.controls.selected(control);
+			for (int i = 0; i < buttons.size(); i++) {
+				final Color color = i == chosen ? CHOSEN : NOT_CHOSEN;
+				if (!color.equals(buttons.get(i).getPropertyColor())) {
+					buttons.get(i).setPropertyColor(color);
+				}
+			}
+		});
+		return block;
 	}
 }

@@ -101,6 +101,18 @@ public final class LabCamera {
 	}
 
 	/**
+	 * The unit direction from the eye through the pixel {@code (x, y)} of a picture {@code width} x {@code height}
+	 * pixels ({@code y} up from its bottom) of horizontal field of view {@code fovX}: what lies under the pointer.
+	 */
+	public Vector3f ray(final float x, final float y, final float width, final float height, final float fovX) {
+		final double tanX = Math.tan(fovX * 0.5);
+		final double tanY = height > 0.0f && width > 0.0f ? tanX * height / width : tanX;
+		final float across = (float) ((width > 0.0f ? 2.0 * x / width - 1.0 : 0.0) * tanX);
+		final float upward = (float) ((height > 0.0f ? 2.0 * y / height - 1.0 : 0.0) * tanY);
+		return right().multiply(across).add(up().multiply(upward)).less(back()).normalize();
+	}
+
+	/**
 	 * Look from the direction {@code azimuth} (radians, 0: the eye south of
 	 * the target, {@code PI / 2}: east of it) and {@code elevation} (radians
 	 * above the horizon): around the target in an orbit (the elevation kept

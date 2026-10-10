@@ -25,12 +25,14 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 /**
- * Draws a lab: the ground with its grid, the content ({@link LabMesh}) and
- * the human figure, lit by the sun of the lab with the cascaded shadows of
- * ege's shadow engine (the opaque triangles cast them, registered as a
- * {@link ShadowCaster}; everything lit receives them), then the translucent
- * triangles (blended, the depth tested but not written), the lines, the lines
- * on top. One vertex buffer per layer, filled again when the content changes:
+ * Draws a lab: the ground with its grid, the content ({@link LabMesh}), the
+ * overlay of the lab and the human figure, lit by the sun of the lab with the
+ * cascaded shadows of ege's shadow engine (the opaque triangles of the content
+ * and the human cast them, registered as a {@link ShadowCaster}; everything
+ * lit receives them; the overlay casts none), then the translucent triangles
+ * (blended, the depth tested but not written), the lines, the lines on top
+ * (those of the overlay after those of the content each time). One vertex
+ * buffer per layer, filled again when the content (or the overlay) changes:
  * nothing of OpenGL leaks from one content to the next; {@link #release()}
  * gives everything back. Every OpenGL state it changes is restored (blending
  * off with its default function, depth writes on, depth test as the caller
@@ -136,10 +138,15 @@ final class LabRenderer {
 	private final Layer translucent = new Layer(LabMesh.LIT_FLOATS);
 	private final Layer lines = new Layer(LabMesh.LINE_FLOATS);
 	private final Layer linesOnTop = new Layer(LabMesh.LINE_FLOATS);
+	private final Layer overlayOpaque = new Layer(LabMesh.LIT_FLOATS);
+	private final Layer overlayTranslucent = new Layer(LabMesh.LIT_FLOATS);
+	private final Layer overlayLines = new Layer(LabMesh.LINE_FLOATS);
+	private final Layer overlayLinesOnTop = new Layer(LabMesh.LINE_FLOATS);
 	private final FloatBuffer[] upload = { BufferUtils.createFloatBuffer(4096) };
 	private final ShadowCaster caster = this::castShadows;
 	/** What the layers hold. */
 	private LabMesh shownContent;
+	private LabMesh shownOverlay;
 	private LabMesh shownHuman;
 	private boolean released;
 
@@ -201,8 +208,11 @@ final class LabRenderer {
 		return usable;
 	}
 
-	/** Show {@code content} and the human figure ({@code null}: hidden) from this frame on. */
-	void show(final LabMesh content, final LabMesh figure) {
+	/**
+	 * Show {@code content}, the overlay ({@code null}: none) and the human figure ({@code null}: hidden) from this
+	 * frame on.
+	 */
+	void show(final LabMesh content, final LabMesh overlay, final LabMesh figure) {
 		if (this.lit == null || this.released) {
 			return;
 		}
@@ -213,6 +223,14 @@ final class LabRenderer {
 			this.translucent.fill(mesh.translucent().data(), mesh.translucent().size(), this.upload);
 			this.lines.fill(mesh.lines().data(), mesh.lines().size(), this.upload);
 			this.linesOnTop.fill(mesh.linesOnTop().data(), mesh.linesOnTop().size(), this.upload);
+		}
+		if (overlay != this.shownOverlay) {
+			this.shownOverlay = overlay;
+			final LabMesh mesh = overlay != null ? overlay : new LabMesh();
+			this.overlayOpaque.fill(mesh.opaque().data(), mesh.opaque().size(), this.upload);
+			this.overlayTranslucent.fill(mesh.translucent().data(), mesh.translucent().size(), this.upload);
+			this.overlayLines.fill(mesh.lines().data(), mesh.lines().size(), this.upload);
+			this.overlayLinesOnTop.fill(mesh.linesOnTop().data(), mesh.linesOnTop().size(), this.upload);
 		}
 		if (figure != this.shownHuman) {
 			this.shownHuman = figure;
@@ -257,11 +275,13 @@ final class LabRenderer {
 		this.lit.uniformInt(this.litGrid, 0);
 		this.opaque.draw(GL11.GL_TRIANGLES);
 		this.human.draw(GL11.GL_TRIANGLES);
+		this.overlayOpaque.draw(GL11.GL_TRIANGLES);
 		OpenGL.enable(Flag.flag_blend);
 		OpenGL.updateAllFlags();
 		OpenGL.blendFuncAuto();
 		GL11.glDepthMask(false);
 		this.translucent.draw(GL11.GL_TRIANGLES);
+		this.overlayTranslucent.draw(GL11.GL_TRIANGLES);
 		GL11.glDepthMask(true);
 		this.shadows.unBindForRendering();
 		this.lit.unUse();
@@ -271,9 +291,11 @@ final class LabRenderer {
 		this.line.uniformMatrix(this.lineProjection, projection);
 		this.line.uniformMatrix(this.lineView, view);
 		this.lines.draw(GL11.GL_LINES);
+		this.overlayLines.draw(GL11.GL_LINES);
 		OpenGL.disable(Flag.flag_depthTest);
 		OpenGL.updateAllFlags();
 		this.linesOnTop.draw(GL11.GL_LINES);
+		this.overlayLinesOnTop.draw(GL11.GL_LINES);
 		OpenGL.enable(Flag.flag_depthTest);
 		OpenGL.updateAllFlags();
 		this.line.unUse();
@@ -297,7 +319,7 @@ final class LabRenderer {
 		}
 		final List<int[]> objects = new ArrayList<>();
 		for (final Layer layer : new Layer[] { this.ground, this.opaque, this.human, this.translucent, this.lines,
-				this.linesOnTop }) {
+				this.linesOnTop, this.overlayOpaque, this.overlayTranslucent, this.overlayLines, this.overlayLinesOnTop }) {
 			objects.add(layer.objects());
 		}
 		this.litCreated.release();

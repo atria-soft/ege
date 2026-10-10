@@ -3,7 +3,10 @@ package org.atriasoft.ege.lab;
 import java.util.function.Supplier;
 
 import org.atriasoft.etk.math.Vector2b;
+import org.atriasoft.ewol.Ewol;
+import org.atriasoft.ewol.widget.Entry;
 import org.atriasoft.ewol.widget.Sizer;
+import org.atriasoft.ewol.widget.Widget;
 import org.atriasoft.ewol.widget.Windows;
 import org.atriasoft.gale.key.KeyKeyboard;
 import org.atriasoft.gale.key.KeySpecial;
@@ -17,9 +20,12 @@ import org.slf4j.LoggerFactory;
  * <p>
  * Every key goes through the window first, whatever widget has the focus:
  * the arrows and Page up/down drive the camera, a key of a control runs it
- * (without Control, Alt or Meta; the auto-repeat of a held key only steps
- * the steppers and choices, {@link LabKeyRepeat}), any other key goes on to
- * the focused widget. While a drop-down list is open it has the keys (a
+ * (with Control or not as the key says; never with the left Alt nor Meta;
+ * AltGr, which types the symbols of a keyboard, counts as no key held; the
+ * auto-repeat of a held key only steps the steppers and choices,
+ * {@link LabKeyRepeat}), any other key goes on to the focused widget. While a
+ * drop-down list is open it has the keys, and while a text field has the
+ * focus every key is its own, Escape giving the focus back to the 3D view (a
  * release still lets a camera key go).
  * <p>
  * Nothing a lab does while the window opens kills it: a lab that cannot be
@@ -81,7 +87,7 @@ final class LabWindow extends Windows {
 			this.view.report("the controls of the view", e);
 		}
 		this.view.attach(this.lab);
-		this.panel = new LabPanelWidgets(this.view.controls());
+		this.panel = new LabPanelWidgets(this.view.controls(), this.view::keepFocus);
 		try {
 			this.panel.sync();
 		} catch (final Throwable e) {
@@ -117,13 +123,24 @@ final class LabWindow extends Windows {
 			// A release always lets a camera key go, a list open or not.
 			this.view.holdKey(type, false);
 		}
+		if (typing()) {
+			// A text field has the focus: the keys are its own; Escape gives the focus back to the view.
+			if (isDown && type == KeyKeyboard.CHARACTER && value != null && value == '\u001b') {
+				this.view.keepFocus();
+				return true;
+			}
+			return false;
+		}
 		if (popUpCount() == 0) {
 			if (LabView.isCameraKey(type)) {
 				this.view.holdKey(type, isDown);
 				return true;
 			}
-			final boolean plain = special == null || !special.getCtrl() && !special.getAlt() && !special.getMeta();
-			if (plain && isDown && this.view.controls().press(type, value, press == LabKeyRepeat.Press.REPEAT)) {
+			// AltGr types the symbols of a keyboard (# | @ on a French one): no key held. Windows hands it with Control.
+			final boolean altGr = special != null && special.getAltGr();
+			final boolean ctrl = special != null && special.getCtrl() && !altGr;
+			final boolean other = special != null && (special.getAltLeft() || special.getMeta());
+			if (!other && isDown && this.view.controls().press(type, value, ctrl, press == LabKeyRepeat.Press.REPEAT)) {
 				return true;
 			}
 		}
@@ -132,6 +149,12 @@ final class LabWindow extends Windows {
 			return false;
 		}
 		return super.onEventShortCut(special, value, type, isDown);
+	}
+
+	/** Whether a text field has the focus (the keys go to it). */
+	static boolean typing() {
+		final Widget focused = Ewol.getContext().getWidgetManager().focusGet();
+		return focused instanceof Entry && focused.isFocused();
 	}
 
 	/** Stop the lab and give the view back. Idempotent; whatever the lab throws is logged. */

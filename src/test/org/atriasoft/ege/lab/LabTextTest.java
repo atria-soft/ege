@@ -22,6 +22,31 @@ class LabTextTest {
 	private static final ToDoubleFunction<String> MONO = text -> 7.0 * text.length();
 
 	@Test
+	void aLabelIsShortenedToItsWidthItsKeysFirst() {
+		// Whole when it fits.
+		assertEquals("Seed [U/I]", LabText.fit("Seed [U/I]", 70, MONO));
+		assertEquals("", LabText.fit("", 70, MONO));
+		assertEquals("", LabText.fit(null, 70, MONO));
+		// Its keys left out first (the help lists them), then cut, the spaces before the dots taken off.
+		final String title = "Tree (shape or species) [O/P]";
+		assertEquals("Tree (shape or species)", LabText.fit(title, 161, MONO));
+		final String fitted = LabText.fit(title, 140, MONO);
+		assertEquals("Tree (shape or sp...", fitted);
+		assertTrue(MONO.applyAsDouble(fitted) <= 140, fitted);
+		assertEquals("Tree (shape...", LabText.fit(title, 104, MONO));
+		assertEquals("Seed", LabText.fit("Seed [U/I]", 35, MONO));
+		assertEquals("...", LabText.fit("Seed [U/I]", 27, MONO));
+		// A value with no keys.
+		assertEquals("x1.00 (0...", LabText.fit("x1.00 (0.050, 0.250)", 77, MONO));
+		// Never wider than its width: the dots alone, then nothing.
+		assertEquals("...", LabText.fit(title, 21, MONO));
+		assertEquals("", LabText.fit(title, 20, MONO));
+		for (int width = 0; width < 220; width++) {
+			assertTrue(MONO.applyAsDouble(LabText.fit(title, width, MONO)) <= width, "width " + width);
+		}
+	}
+
+	@Test
 	void aLongLineIsWrappedBetweenWordsAndAPathBetweenItsLetters() {
 		assertEquals(List.of("short"), LabText.wrap("short", 70, MONO));
 		assertEquals(List.of("one two", "  three", "  four"), LabText.wrap("one two three four", 56, MONO));

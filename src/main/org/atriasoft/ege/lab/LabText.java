@@ -188,6 +188,50 @@ public final class LabText {
 	}
 
 	/**
+	 * {@code text} as it fits in {@code width} as {@code measure} measures it: whole when it fits, else without its
+	 * keys in brackets at the end ({@code Tree (shape or species)}: the keys are in the help), else cut and ended by
+	 * {@code ...} ({@code Tree (shape o...}); {@code ...} alone when no letter fits, nothing when even that does not.
+	 * Never wider than {@code width}: a label of the panel is shortened, never clipped.
+	 */
+	public static String fit(final String text, final float width, final ToDoubleFunction<String> measure) {
+		if (text == null || text.isEmpty()) {
+			return "";
+		}
+		if (measure.applyAsDouble(text) <= width) {
+			return text;
+		}
+		final int keys = text.endsWith("]") ? text.lastIndexOf(" [") : -1;
+		final String words = keys > 0 ? text.substring(0, keys) : text;
+		if (keys > 0 && measure.applyAsDouble(words) <= width) {
+			return words;
+		}
+		final String head = longestHead(words, width, cut -> measure.applyAsDouble(cut + "..."));
+		if (!head.isEmpty()) {
+			return head + "...";
+		}
+		return measure.applyAsDouble("...") <= width ? "..." : "";
+	}
+
+	/**
+	 * The longest beginning of {@code text} (spaces at its end taken off) for which {@code measure} stays within
+	 * {@code width}, {@code ""} when not even one letter does.
+	 */
+	private static String longestHead(final String text, final float width, final ToDoubleFunction<String> measure) {
+		int fits = 0;
+		int fails = text.length() + 1;
+		// What a beginning measures grows with its length: a bisection.
+		while (fails - fits > 1) {
+			final int middle = (fits + fails) >>> 1;
+			if (measure.applyAsDouble(text.substring(0, middle)) <= width) {
+				fits = middle;
+			} else {
+				fails = middle;
+			}
+		}
+		return text.substring(0, fits).stripTrailing();
+	}
+
+	/**
 	 * {@code text} in the characters the fonts of ewol draw: accents taken
 	 * off, a few signs spelled out ({@code ×} becomes {@code x}, {@code °}
 	 * {@code deg}, dashes {@code -}), tabulations and line breaks become

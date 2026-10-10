@@ -13,9 +13,7 @@ import org.atriasoft.etk.math.Vector2f;
 import org.atriasoft.ewol.Gravity;
 import org.atriasoft.ewol.widget.Button;
 import org.atriasoft.ewol.widget.Entry;
-import org.atriasoft.ewol.widget.Label;
 import org.atriasoft.ewol.widget.ScrollView;
-import org.atriasoft.ewol.widget.Select;
 import org.atriasoft.ewol.widget.Sizer;
 import org.atriasoft.ewol.widget.Spacer;
 import org.atriasoft.ewol.widget.Tick;
@@ -35,9 +33,13 @@ import org.atriasoft.ewol.widget.Widget;
  * {@link #sync()} (every frame) shows the state of every control, and lays the
  * panel out again when controls were declared since.
  * <p>
- * The items of a drop-down list are shown at most {@link #ITEM_CHARS}
- * characters long (cut with {@code ...}: the list keeps the panel's width;
- * the lab is told the index).
+ * Nothing is clipped at any width of the panel the splitter allows
+ * ({@link LabPanelSize#MIN} and more): every text is a {@link LabLabel}, drawn
+ * whole when there is room, else without its keys in brackets, else cut and
+ * ended by {@code ...}; the rows ({@link LabRow}) shorten their widest texts first
+ * and keep their small buttons (Prev, Next, -, +) whole. The items of a
+ * drop-down list are also cut at {@link #ITEM_CHARS} characters (with
+ * {@code ...}: its list stays narrow; the lab is told the index).
  * <p>
  * The widgets are connected with {@code connectAuto} on this object (kept by
  * the window), never with a connection left to the garbage collector. Each
@@ -47,7 +49,7 @@ import org.atriasoft.ewol.widget.Widget;
  */
 final class LabPanelWidgets implements LabControlPanel.Factory<Widget> {
 
-	/** Width of the value of a stepper, pixels. */
+	/** The least width the value of a stepper takes when there is room, pixels (its buttons keep their place). */
 	private static final float VALUE_WIDTH = 96.0f;
 	/** The longest item a drop-down list shows, characters. */
 	static final int ITEM_CHARS = 34;
@@ -56,6 +58,9 @@ final class LabPanelWidgets implements LabControlPanel.Factory<Widget> {
 	/** The colour of the item of a palette chosen, and of the others. */
 	static final Color CHOSEN = new Color(1.0f, 0.84f, 0.42f, 1.0f);
 	static final Color NOT_CHOSEN = Color.WHITE;
+	/** The font of the words of a button, and of a heading. */
+	private static final int BUTTON_FONT = 12;
+	private static final int HEADING_FONT = 14;
 
 	private final LabControls controls;
 	/** Gives the focus back to the 3D view. */
@@ -103,6 +108,10 @@ final class LabPanelWidgets implements LabControlPanel.Factory<Widget> {
 	/** Show the state of every control; lay the panel out again when controls were declared since. */
 	void sync() {
 		if (this.builtVersion != this.controls.version()) {
+			if (LabWindow.typing()) {
+				// The field typed in is taken out of the window: the keys back to the view first.
+				this.release.run();
+			}
 			this.builtVersion = this.controls.version();
 			this.syncs.clear();
 			this.column.subWidgetRemoveAll();
@@ -128,10 +137,11 @@ final class LabPanelWidgets implements LabControlPanel.Factory<Widget> {
 			return pieces;
 		}
 		pieces.add(heading(LabView.VIEW_GROUP));
-		final Sizer buttons = row();
+		final LabRow buttons = new LabRow();
 		for (final LabControl control : view) {
 			if (control instanceof final LabControl.Action action) {
-				buttons.subWidgetAdd(action(action));
+				final LabLabel words = buttonWords(action.title());
+				buttons.addShrinking(action(action, words), words);
 			}
 		}
 		pieces.add(buttons);
@@ -155,25 +165,37 @@ final class LabPanelWidgets implements LabControlPanel.Factory<Widget> {
 		widget.setPropertyFill(new Vector2b(true, false));
 	}
 
-	private static Label label(final String text) {
-		final Label label = new Label(text);
-		label.setPropertyAutoTranslate(false);
-		label.setPropertyGravity(Gravity.LEFT);
+	/** A text of the panel, left, shortened when its row is narrow. */
+	private static LabLabel label(final String text) {
+		final LabLabel label = LabLabel.shrinking(text);
+		wide(label);
 		return label;
 	}
 
-	/** A button with thin borders (the panel holds more rows). */
-	private static Button button(final String text) {
-		final Button button = Button.createLabelButton(text);
+	/** The words of a wide button: centred, shortened when the button is narrow. */
+	private static LabLabel buttonWords(final String text) {
+		final LabLabel words = new LabLabel(text, BUTTON_FONT, false, true, 0.0f);
+		words.setPropertyGravity(Gravity.CENTER);
+		wide(words);
+		return words;
+	}
+
+	/** A button with thin borders (the panel holds more rows) around {@code words}. */
+	private static Button button(final LabLabel words) {
+		final Button button = new Button();
+		button.setSubWidget(words);
 		button.setPropertyBorderWidth(new DimensionInsets(2));
 		button.setPropertyPadding(new DimensionInsets(1));
 		return button;
 	}
 
-	private static Sizer row() {
-		final Sizer row = new Sizer(Sizer.DisplayMode.HORIZONTAL);
-		wide(row);
-		return row;
+	/** A small button that keeps its width: its words are never shortened (Prev, Next, -, +). */
+	private static Button smallButton(final String text) {
+		final LabLabel words = new LabLabel(text, BUTTON_FONT, false, false, 0.0f);
+		words.setPropertyGravity(Gravity.CENTER);
+		final Button button = button(words);
+		button.setPropertyExpand(Vector2b.FALSE);
+		return button;
 	}
 
 	/** The items of a list as shown: each at most {@link #ITEM_CHARS} characters. */
@@ -192,8 +214,7 @@ final class LabPanelWidgets implements LabControlPanel.Factory<Widget> {
 		final Spacer gap = new Spacer();
 		gap.setPropertyMinSize(new Dimension2f(new Vector2f(2, 2), Distance.PIXEL));
 		block.subWidgetAdd(gap);
-		final Label title = label("<b>" + text + "</b>");
-		title.setPropertyFontSize(14);
+		final LabLabel title = new LabLabel(text, HEADING_FONT, true, true, 0.0f);
 		wide(title);
 		block.subWidgetAdd(title);
 		return block;
@@ -201,7 +222,12 @@ final class LabPanelWidgets implements LabControlPanel.Factory<Widget> {
 
 	@Override
 	public Widget action(final LabControl.Action control) {
-		final Button button = button(control.title());
+		return action(control, buttonWords(control.title()));
+	}
+
+	/** The button of an action, its {@code words} shortened when it is narrow. */
+	private Widget action(final LabControl.Action control, final LabLabel words) {
+		final Button button = button(words);
 		wide(button);
 		button.signalClick.connectAuto(this, (final LabPanelWidgets self) -> {
 			self.release.run();
@@ -212,13 +238,12 @@ final class LabPanelWidgets implements LabControlPanel.Factory<Widget> {
 
 	@Override
 	public Widget toggle(final LabControl.Toggle control) {
-		final Sizer row = row();
+		final LabRow row = new LabRow();
 		final Tick tick = new Tick();
 		tick.setPropertyGravity(Gravity.CENTER);
 		row.subWidgetAdd(tick);
-		final Label text = label(" " + control.title());
-		wide(text);
-		row.subWidgetAdd(text);
+		final LabLabel text = label(" " + control.title());
+		row.addShrinking(text, text);
 		// The tick sets the value it shows; a click on the words flips it.
 		tick.signalValue.connectAuto(this, (final LabPanelWidgets self, final Boolean value) -> {
 			if (value != null && value != self.controls.value(control)) {
@@ -244,26 +269,23 @@ final class LabPanelWidgets implements LabControlPanel.Factory<Widget> {
 	public Widget choice(final LabControl.Choice control) {
 		final Sizer block = new Sizer(Sizer.DisplayMode.VERTICAL);
 		wide(block);
-		final Sizer top = row();
-		final Label title = label(control.title());
-		wide(title);
-		top.subWidgetAdd(title);
-		final Button previous = button(" Prev ");
-		previous.setPropertyExpand(Vector2b.FALSE);
+		final LabRow top = new LabRow();
+		final LabLabel title = label(control.title());
+		top.addShrinking(title, title);
+		final Button previous = smallButton(" Prev ");
 		previous.signalClick.connectAuto(this, (final LabPanelWidgets self) -> {
 			self.release.run();
 			self.controls.step(control, -1);
 		});
 		top.subWidgetAdd(previous);
-		final Button next = button(" Next ");
-		next.setPropertyExpand(Vector2b.FALSE);
+		final Button next = smallButton(" Next ");
 		next.signalClick.connectAuto(this, (final LabPanelWidgets self) -> {
 			self.release.run();
 			self.controls.step(control, 1);
 		});
 		top.subWidgetAdd(next);
 		block.subWidgetAdd(top);
-		final Select select = new Select();
+		final LabSelect select = new LabSelect();
 		wide(select);
 		select.signalSelectionChanged.connectAuto(this, (final LabPanelWidgets self, final Integer index) -> {
 			if (index != null && index >= 0) {
@@ -287,34 +309,25 @@ final class LabPanelWidgets implements LabControlPanel.Factory<Widget> {
 
 	@Override
 	public Widget stepper(final LabControl.Stepper control) {
-		final Sizer row = row();
-		final Label title = label(control.title());
-		wide(title);
-		row.subWidgetAdd(title);
-		final Button less = button(" - ");
-		less.setPropertyExpand(Vector2b.FALSE);
+		final LabRow row = new LabRow();
+		final LabLabel title = label(control.title());
+		row.addShrinking(title, title);
+		final Button less = smallButton(" - ");
 		less.signalClick.connectAuto(this, (final LabPanelWidgets self) -> {
 			self.release.run();
 			self.controls.step(control, -1);
 		});
 		row.subWidgetAdd(less);
-		final Label value = label("");
+		final LabLabel value = new LabLabel("", 0, false, true, VALUE_WIDTH);
 		value.setPropertyGravity(Gravity.CENTER);
-		value.setPropertyMinSize(new Dimension2f(new Vector2f(VALUE_WIDTH, 10), Distance.PIXEL));
-		row.subWidgetAdd(value);
-		final Button more = button(" + ");
-		more.setPropertyExpand(Vector2b.FALSE);
+		row.addShrinking(value, value);
+		final Button more = smallButton(" + ");
 		more.signalClick.connectAuto(this, (final LabPanelWidgets self) -> {
 			self.release.run();
 			self.controls.step(control, 1);
 		});
 		row.subWidgetAdd(more);
-		this.syncs.add(() -> {
-			final String shown = LabText.ascii(this.controls.text(control));
-			if (!shown.equals(value.getPropertyValue())) {
-				value.setPropertyValue(shown);
-			}
-		});
+		this.syncs.add(() -> value.setText(this.controls.text(control)));
 		return row;
 	}
 
@@ -327,9 +340,7 @@ final class LabPanelWidgets implements LabControlPanel.Factory<Widget> {
 	public Widget text(final LabControl.Text control) {
 		final Sizer block = new Sizer(Sizer.DisplayMode.VERTICAL);
 		wide(block);
-		final Label title = label(control.title() + " (Enter)");
-		wide(title);
-		block.subWidgetAdd(title);
+		block.subWidgetAdd(label(control.title() + " (Enter)"));
 		final Entry entry = new Entry();
 		wide(entry);
 		entry.setPropertyPadding(new DimensionInsets(2));
@@ -358,24 +369,23 @@ final class LabPanelWidgets implements LabControlPanel.Factory<Widget> {
 	public Widget palette(final LabControl.Palette control) {
 		final Sizer block = new Sizer(Sizer.DisplayMode.VERTICAL);
 		wide(block);
-		final Label title = label(control.title());
-		wide(title);
-		block.subWidgetAdd(title);
+		block.subWidgetAdd(label(control.title()));
 		final List<Button> buttons = new ArrayList<>();
-		Sizer line = null;
+		LabRow line = null;
 		for (int i = 0; i < control.items().size(); i++) {
 			if (i % PALETTE_COLUMNS == 0) {
-				line = row();
+				line = new LabRow();
 				block.subWidgetAdd(line);
 			}
 			final int index = i;
-			final Button button = button(control.items().get(i).title());
+			final LabLabel words = buttonWords(control.items().get(i).title());
+			final Button button = button(words);
 			wide(button);
 			button.signalClick.connectAuto(this, (final LabPanelWidgets self) -> {
 				self.release.run();
 				self.controls.select(control, index);
 			});
-			line.subWidgetAdd(button);
+			line.addShrinking(button, words);
 			buttons.add(button);
 		}
 		if (line != null) {

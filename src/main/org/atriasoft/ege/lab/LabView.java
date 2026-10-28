@@ -118,6 +118,8 @@ public final class LabView extends Widget implements LabReporter {
 	private double sincePoll;
 	private Runnable afterUpdate;
 	private LabRenderer renderer;
+	/** Whether the camera may go under the ground (the ground is then left out from below). */
+	private boolean undergroundSeen;
 	/** Whether the renderer could not be made (told once, never tried again). */
 	private boolean rendererFailed;
 	private LabInfoPanel panel;
@@ -240,6 +242,20 @@ public final class LabView extends Widget implements LabReporter {
 	/** Show the human figure or hide it (the kit's toggle, F2, shows the same state). */
 	public void showHuman(final boolean shown) {
 		this.humanShown = shown;
+	}
+
+	/**
+	 * See under the ground (off by default, so the other labs are unchanged): the orbit may go below the ground
+	 * plane, and the ground is left out while the eye is under it, so the roots and the underside show.
+	 */
+	public void setUnderground(final boolean allowed) {
+		this.labCamera.setUnderground(allowed);
+		this.undergroundSeen = allowed;
+	}
+
+	/** Whether the lab may look from under the ground. */
+	public boolean underground() {
+		return this.undergroundSeen;
 	}
 
 	/** Whether the human figure is shown. */
@@ -515,6 +531,7 @@ public final class LabView extends Widget implements LabReporter {
 			}
 		}
 		if (this.renderer != null) {
+			this.renderer.setGroundHiddenBelow(this.undergroundSeen);
 			this.renderer.show(this.content, this.overlay, this.humanShown ? this.human : null);
 		}
 		final Matrix4f viewMatrix = this.labCamera.view();

@@ -49,6 +49,7 @@ public final class LabCamera {
 	private float distance = 12.0f;
 	private float azimuth = START_AZIMUTH;
 	private float elevation = START_ELEVATION;
+	private boolean underground;
 
 	public Mode mode() {
 		return this.mode;
@@ -60,6 +61,22 @@ public final class LabCamera {
 		if (next == Mode.ORBIT) {
 			this.elevation = clampOrbit(this.elevation);
 		}
+	}
+
+	/**
+	 * Let an orbit go under the ground plane of its target (down to {@code -89} degrees), or keep it over it (the
+	 * default). Off again, an eye below is brought back to the lowest elevation of an orbit.
+	 */
+	public void setUnderground(final boolean allowed) {
+		this.underground = allowed;
+		if (this.mode == Mode.ORBIT) {
+			this.elevation = clampOrbit(this.elevation);
+		}
+	}
+
+	/** Whether an orbit may go under the ground. */
+	public boolean underground() {
+		return this.underground;
 	}
 
 	public Vector3f target() {
@@ -272,8 +289,8 @@ public final class LabCamera {
 				0.0f, 1.0f);
 	}
 
-	private static float clampOrbit(final float elevation) {
-		return clamp(elevation, MIN_ORBIT_ELEVATION, MAX_ELEVATION);
+	private float clampOrbit(final float elevation) {
+		return clamp(elevation, this.underground ? -MAX_ELEVATION : MIN_ORBIT_ELEVATION, MAX_ELEVATION);
 	}
 
 	private static float clamp(final float value, final float min, final float max) {

@@ -94,6 +94,19 @@ class LabCameraTest {
 	}
 
 	@Test
+	void anOrbitGoesUnderTheGroundOnlyWhenAllowed() {
+		final LabCamera camera = new LabCamera();
+		camera.setUnderground(true);
+		camera.turn(0, -100000);
+		assertTrue(camera.eye().y() < camera.target().y() - 1.0f, "under the target: " + camera.eye());
+		assertEquals(-LabCamera.MAX_ELEVATION, camera.elevation(), EPSILON);
+		camera.setUnderground(false);
+		assertEquals(LabCamera.MIN_ORBIT_ELEVATION, camera.elevation(), EPSILON);
+		camera.turn(0, -100000);
+		assertEquals(LabCamera.MIN_ORBIT_ELEVATION, camera.elevation(), EPSILON);
+	}
+
+	@Test
 	void aPanMovesInThePlaneOfThePicture() {
 		final LabCamera camera = new LabCamera();
 		final Vector3f before = camera.target();

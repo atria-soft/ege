@@ -133,6 +133,8 @@ final class LabRenderer {
 	private final int lineProjection;
 	private final int lineView;
 	private final Layer ground = new Layer(LabMesh.LIT_FLOATS);
+	/** Whether the ground is left out while the eye is under it (off: it is drawn from both sides). */
+	private boolean groundHiddenBelow;
 	private final Layer opaque = new Layer(LabMesh.LIT_FLOATS);
 	private final Layer human = new Layer(LabMesh.LIT_FLOATS);
 	private final Layer translucent = new Layer(LabMesh.LIT_FLOATS);
@@ -248,6 +250,11 @@ final class LabRenderer {
 		this.human.draw(GL11.GL_TRIANGLES);
 	}
 
+	/** Leave the ground out while the eye is under it, to see what lies below (off by default). */
+	void setGroundHiddenBelow(final boolean hidden) {
+		this.groundHiddenBelow = hidden;
+	}
+
 	/**
 	 * Draw the scene: the projection and the view given, the depth test on
 	 * (left on), the shadow maps of this frame drawn already.
@@ -270,8 +277,10 @@ final class LabRenderer {
 		this.lit.uniformVector(this.litGroundAmbient, GROUND_AMBIENT);
 		this.lit.uniformFloat(this.litShadowStrength, SHADOW_STRENGTH);
 		this.shadows.bindForRendering(this.lit, this.shadowEngine);
-		this.lit.uniformInt(this.litGrid, 1);
-		this.ground.draw(GL11.GL_TRIANGLES);
+		if (!this.groundHiddenBelow || eye.y() >= 0.0f) {
+			this.lit.uniformInt(this.litGrid, 1);
+			this.ground.draw(GL11.GL_TRIANGLES);
+		}
 		this.lit.uniformInt(this.litGrid, 0);
 		this.opaque.draw(GL11.GL_TRIANGLES);
 		this.human.draw(GL11.GL_TRIANGLES);

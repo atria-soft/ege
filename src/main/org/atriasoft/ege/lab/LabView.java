@@ -46,8 +46,13 @@ import org.slf4j.LoggerFactory;
  * takes and its drag), else drives a {@link LabCamera}: left drag turns (around
  * the target, or the look in a flight), right or middle drag (or Shift and
  * left) pans, the wheel zooms; the arrows and Page up/down drive it too (held
- * keys: {@link #holdKey}). A press on the view takes the focus (a text field
- * of the panel gives the keys back).
+ * keys: {@link #holdKey}); on foot ({@link LabCamera.Mode#WALK}: a lab offers
+ * it with a control of its own, which leaves the footer of the panel as it is)
+ * the arrows walk, Shift held runs. A
+ * press on the view takes the focus (a text field of the panel gives the keys
+ * back). The content is one mesh ({@link #setContent}) or many parts
+ * ({@link #setContentParts}: only those that change are sent to the graphics
+ * card); {@link #framesPerSecond} tells the frames drawn.
  * <p>
  * Every throwable of the lab (an update, a control, a watcher) is caught and
  * shown in red at the top of the info panel until the same thing succeeds
@@ -71,6 +76,8 @@ public final class LabView extends Widget implements LabReporter {
 	static final String HUMAN = "Human figure 1.80 m";
 	static final String FLIGHT = "Free flight";
 	static final String HELP = "Key help";
+	/** Seconds over which the frames drawn are counted ({@link #framesPerSecond}). */
+	static final double FPS_SECONDS = 1.0;
 	/** What the problems are reported under. */
 	static final String UPDATE = "update";
 	static final String PANEL = "panel";
@@ -92,6 +99,8 @@ public final class LabView extends Widget implements LabReporter {
 	private Lab lab;
 	private List<LabText.Line> info = List.of();
 	private LabMesh content;
+	/** The parts of the content drawn: the content alone, or the parts given ({@link #setContentParts}). */
+	private List<LabMesh> parts = List.of();
 	private LabMesh overlay;
 	private LabMesh human;
 	/** Where the human figure stands, {@code null}: beside the content. */
@@ -122,6 +131,10 @@ public final class LabView extends Widget implements LabReporter {
 	private boolean undergroundSeen;
 	/** Whether the renderer could not be made (told once, never tried again). */
 	private boolean rendererFailed;
+	/** The frames drawn since {@link #fpsFrom} (nanoseconds), and their rate over the last count. */
+	private int fpsFrames;
+	private long fpsFrom;
+	private float fps;
 	private LabInfoPanel panel;
 	private boolean detached;
 
@@ -165,11 +178,54 @@ public final class LabView extends Widget implements LabReporter {
 	/** Show {@code mesh} from the next frame on (the one before is given back); framed when asked so. */
 	public void setContent(final LabMesh mesh) {
 		this.content = mesh;
+		this.parts = mesh != null ? List.of(mesh) : List.of();
 		this.human = humanBeside(mesh != null ? mesh.bounds() : null);
 		if (this.frameNext && mesh != null && !mesh.isEmpty()) {
 			this.frameNext = false;
 			frame();
 		}
+	}
+
+	/**
+	 * Show a content made of {@code meshes} from the next frame on, in place of a single one: a large scene in parts
+	 * (a forest in cells, each at its level of detail). A part given again (the same object) keeps what the renderer
+	 * sent of it to the graphics card: only the parts that change are sent. Framed when asked so, as
+	 * {@link #setContent}; {@link #content()} is then {@code null}.
+	 */
+	public void setContentParts(final List<LabMesh> meshes) {
+		this.content = null;
+		this.parts = List.copyOf(meshes);
+		// The box of the parts only when it is needed: a scene of millions of triangles.
+		this.human = humanBeside(this.humanSpot != null ? null : partsBounds());
+		if (this.frameNext && !this.parts.isEmpty()) {
+			this.frameNext = false;
+			frame();
+		}
+	}
+
+	/** The parts of the content shown (the content alone, or the parts given). */
+	public List<LabMesh> contentParts() {
+		return this.parts;
+	}
+
+	/** The box of every part of the content, {@code null} when they hold nothing. */
+	private float[] partsBounds() {
+		float[] box = null;
+		for (final LabMesh part : this.parts) {
+			final float[] its = part.bounds();
+			if (its == null) {
+				continue;
+			}
+			if (box == null) {
+				box = its.clone();
+				continue;
+			}
+			for (int axis = 0; axis < 3; axis++) {
+				box[axis] = Math.min(box[axis], its[axis]);
+				box[axis + 3] = Math.max(box[axis + 3], its[axis + 3]);
+			}
+		}
+		return box;
 	}
 
 	/**
@@ -210,8 +266,19 @@ public final class LabView extends Widget implements LabReporter {
 	 * now, in the part of the picture right of the info panel.
 	 */
 	public void frame() {
-		final LabMesh shown = this.content;
-		frame(shown != null ? shown.bounds() : null);
+		frame(partsBounds());
+	}
+
+	/**
+	 * Frame the model asked (F): a walker first stops walking, to see it from where an orbit frames it (from as high
+	 * as an orbit starts, not from the ground where he looked level).
+	 */
+	private void frameAsked() {
+		if (this.labCamera.mode() == LabCamera.Mode.WALK) {
+			this.labCamera.setMode(LabCamera.Mode.ORBIT);
+			this.labCamera.setDirection(this.labCamera.azimuth(), LabCamera.START_ELEVATION);
+		}
+		frame();
 	}
 
 	/**
@@ -236,7 +303,7 @@ public final class LabView extends Widget implements LabReporter {
 	 */
 	public void placeHuman(final Vector3f spot) {
 		this.humanSpot = spot;
-		this.human = humanBeside(this.content != null ? this.content.bounds() : null);
+		this.human = humanBeside(spot != null ? null : partsBounds());
 	}
 
 	/** Show the human figure or hide it (the kit's toggle, F2, shows the same state). */
@@ -350,7 +417,7 @@ public final class LabView extends Widget implements LabReporter {
 	void addViewControls() {
 		this.controls.declareAsKit(() -> {
 			this.controls.group(VIEW_GROUP);
-			this.controls.action(FRAME, LabKey.of('f'), this::frame);
+			this.controls.action(FRAME, LabKey.of('f'), this::frameAsked);
 			this.controls.toggle(HUMAN, LabKey.of(KeyKeyboard.F2), this::humanShown, this::showHuman);
 			this.controls.toggle(FLIGHT, LabKey.of(KeyKeyboard.F3), () -> this.labCamera.mode() == LabCamera.Mode.FLY,
 					value -> this.labCamera.setMode(value ? LabCamera.Mode.FLY : LabCamera.Mode.ORBIT));
@@ -386,6 +453,31 @@ public final class LabView extends Widget implements LabReporter {
 			}
 		}
 		return true;
+	}
+
+	/** Whether Shift is held: a walker runs. */
+	void setRunning(final boolean run) {
+		this.labCamera.setRunning(run);
+	}
+
+	/** The frames the view drew per second, counted over about a second (0 before the first count). */
+	public float framesPerSecond() {
+		return this.fps;
+	}
+
+	/** One more frame drawn at {@code nanos}: the rate counted again once {@link #FPS_SECONDS} passed. */
+	private void countFrame(final long nanos) {
+		if (this.fpsFrom == 0L) {
+			this.fpsFrom = nanos;
+			return;
+		}
+		this.fpsFrames++;
+		final double seconds = (nanos - this.fpsFrom) * 1.0e-9;
+		if (seconds >= FPS_SECONDS) {
+			this.fps = (float) (this.fpsFrames / seconds);
+			this.fpsFrames = 0;
+			this.fpsFrom = nanos;
+		}
 	}
 
 	/** The human figure where it was placed, else west of {@code box}, half way along it (or beside the origin). */
@@ -440,6 +532,7 @@ public final class LabView extends Widget implements LabReporter {
 		lines.add(LabText.Line.normal("  Wheel: closer, farther (ahead in a flight)"));
 		lines.add(LabText.Line.normal("  Arrows: turn and tilt (fly in a flight)"));
 		lines.add(LabText.Line.normal("  Page up / down: zoom (rise and sink in a flight)"));
+		lines.add(LabText.Line.normal("  Walking: arrows walk and step aside, Shift runs"));
 		return lines;
 	}
 
@@ -532,8 +625,9 @@ public final class LabView extends Widget implements LabReporter {
 		}
 		if (this.renderer != null) {
 			this.renderer.setGroundHiddenBelow(this.undergroundSeen);
-			this.renderer.show(this.content, this.overlay, this.humanShown ? this.human : null);
+			this.renderer.show(this.parts, this.overlay, this.humanShown ? this.human : null);
 		}
+		countFrame(System.nanoTime());
 		final Matrix4f viewMatrix = this.labCamera.view();
 		final Vector3f eyePosition = this.labCamera.eye();
 		this.egeCamera.setViewMatrix(viewMatrix);

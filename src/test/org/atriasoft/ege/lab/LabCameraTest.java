@@ -178,4 +178,54 @@ class LabCameraTest {
 		assertEquals(null, new LabPointer.Event(LabPointer.Action.HOVER, 0, 400.0f, 600.0f, level.eye(), level.ray(400.0f,
 				600.0f, 800.0f, 600.0f, fovX), false, false).ground());
 	}
+
+	@Test
+	void aWalkerKeepsHisEyeAtItsHeightWhateverHeDoes() {
+		final LabCamera camera = new LabCamera();
+		camera.lookAt(new Vector3f(4.0f, 3.0f, -6.0f), 40.0f);
+		final Vector3f before = camera.eye();
+		camera.setMode(LabCamera.Mode.WALK);
+		// Where the eye stood, down to the height of an eye, looking level.
+		assertNear(new Vector3f(before.x(), LabCamera.EYE_HEIGHT, before.z()), camera.eye());
+		assertEquals(0.0f, camera.elevation(), EPSILON);
+		camera.turn(35.0f, -80.0f);
+		camera.drive(1, 1, 1, 0.5f);
+		camera.zoom(3.0f);
+		camera.pan(30.0f, 40.0f, 600.0f, 1.0f);
+		camera.setDirection(1.0f, 1.2f);
+		camera.lookAt(new Vector3f(0.0f, 20.0f, 0.0f), 5.0f);
+		camera.frame(new float[] { -50, 0, -50, 50, 30, 50 }, (float) Math.toRadians(70.0), 1.5f);
+		for (int i = 0; i < 40; i++) {
+			camera.turn(7.0f, 13.0f);
+			camera.drive(1, -1, -1, 0.1f);
+		}
+		assertEquals(LabCamera.EYE_HEIGHT, camera.eye().y(), EPSILON, "never leaves the ground plane");
+	}
+
+	@Test
+	void aWalkerWalksOnTheGroundAndRunsWithShift() {
+		final LabCamera camera = new LabCamera();
+		// From (10, 20), looking north (an azimuth of 0: the eye south of what it looks at).
+		camera.walkFrom(10.0f, 20.0f, 0.0f);
+		assertNear(new Vector3f(10.0f, LabCamera.EYE_HEIGHT, 20.0f), camera.eye());
+		// Looking down does not walk into the ground: a second ahead is WALK_SPEED metres north.
+		camera.turn(0.0f, -100.0f);
+		camera.drive(1, 0, 1, 1.0f);
+		assertNear(new Vector3f(10.0f, LabCamera.EYE_HEIGHT, 20.0f - LabCamera.WALK_SPEED), camera.eye());
+		// A step aside: east, to the right of a walker looking north.
+		camera.drive(0, 1, 0, 1.0f);
+		assertNear(new Vector3f(10.0f + LabCamera.WALK_SPEED, LabCamera.EYE_HEIGHT, 20.0f - LabCamera.WALK_SPEED),
+				camera.eye());
+		// Running, on a diagonal: as fast.
+		camera.setRunning(true);
+		final Vector3f from = camera.eye();
+		camera.drive(-1, -1, 0, 1.0f);
+		assertEquals(LabCamera.RUN_SPEED, camera.eye().less(from).length(), EPSILON);
+		// Framing leaves the walker where he stands; an orbit again keeps the eye.
+		final Vector3f standing = camera.eye();
+		camera.frame(new float[] { -5, 0, -5, 5, 10, 5 }, (float) Math.toRadians(70.0), 1.5f);
+		assertNear(standing, camera.eye());
+		camera.setMode(LabCamera.Mode.ORBIT);
+		assertNear(standing, camera.eye());
+	}
 }

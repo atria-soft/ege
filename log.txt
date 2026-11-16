@@ -1,0 +1,6 @@
+2026-11-16  Lab kit, for the forest of the eFlora lab: LabCamera.Mode.WALK (eye at 1.70 m over the ground, arrows at
+            5 m/s, 12 with Shift, a drag turns the look; no capture of the mouse, no collision); the kit gives the
+            mode, each lab declares its own toggle (a row more in the footer would move Quit, which the smoke scripts
+            click at 1220,667). LabView.setContentParts: the content in several meshes, each with its own GPU
+            buffers kept by identity (a mesh is not changed once given); framesPerSecond() for an info panel.
+            Not checked: whether running stops when Shift is released without another key event.

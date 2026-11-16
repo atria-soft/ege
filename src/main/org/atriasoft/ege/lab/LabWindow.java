@@ -125,6 +125,8 @@ final class LabWindow extends Windows {
 	public boolean onEventShortCut(final KeySpecial special, final Character value, final KeyKeyboard type,
 			final boolean isDown) {
 		final LabKeyRepeat.Press press = this.repeats.onKey(type, value, isDown, System.nanoTime() * 1.0e-9);
+		// Shift held (its own key, or with another one): a walker runs.
+		this.view.setRunning(special != null && special.getShift());
 		if (!isDown) {
 			// A release always lets a camera key go, a list open or not.
 			this.view.holdKey(type, false);

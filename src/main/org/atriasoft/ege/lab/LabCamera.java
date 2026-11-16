@@ -13,9 +13,14 @@ import org.atriasoft.etk.math.Vector3f;
  * moves the target in the plane of the picture ({@link #pan});</li>
  * <li>{@link Mode#FLY}: a drag turns the look around the eye, the keys fly
  * the eye and the target together ({@link #drive}).</li>
+ * <li>{@link Mode#WALK}: on foot, the eye {@link #EYE_HEIGHT} over the ground
+ * (y = 0), never higher nor lower: a drag turns the look around the eye, the
+ * keys walk ahead, back and sideways on the ground, faster while running
+ * ({@link #setRunning}).</li>
  * </ul>
- * Changing mode keeps the eye and the look. Metres and radians; X east, Y up,
- * Z south. Pure Java, tested headless.
+ * Changing mode keeps the eye and the look (on foot, the eye comes down to
+ * its height and looks level). Metres and radians; X east, Y up, Z south.
+ * Pure Java, tested headless.
  */
 public final class LabCamera {
 
@@ -24,8 +29,21 @@ public final class LabCamera {
 		/** Around the target. */
 		ORBIT,
 		/** Free flight. */
-		FLY
+		FLY,
+		/** On foot. */
+		WALK
 	}
+
+	/** The height of the eye of a walker over the ground, metres. */
+	public static final float EYE_HEIGHT = 1.70f;
+	/** Metres per second of a walker, and of a walker running. */
+	public static final float WALK_SPEED = 5.0f;
+	public static final float RUN_SPEED = 12.0f;
+	/** Metres from the eye of a walker to its target (where an orbit turns around when the walk ends). */
+	static final float WALK_LOOK = 10.0f;
+	/** Metres a walker moves per step of the wheel, per pixel of a pan. */
+	static final float WALK_STEP = 1.0f;
+	static final float WALK_PER_PIXEL = 0.05f;
 
 	/** Where the eye starts: south-south-east of the target, a little above it. */
 	public static final float START_AZIMUTH = (float) Math.toRadians(35.0);
@@ -50,17 +68,53 @@ public final class LabCamera {
 	private float azimuth = START_AZIMUTH;
 	private float elevation = START_ELEVATION;
 	private boolean underground;
+	private boolean running;
 
 	public Mode mode() {
 		return this.mode;
 	}
 
-	/** Orbit or fly from now on (the eye and the look stay). */
+	/**
+	 * Orbit, fly or walk from now on (the eye and the look stay; on foot the eye comes down or up to
+	 * {@link #EYE_HEIGHT} where it stands and looks level).
+	 */
 	public void setMode(final Mode next) {
+		if (next == Mode.WALK && this.mode != Mode.WALK) {
+			final Vector3f eye = eye();
+			this.mode = next;
+			walkFrom(eye.x(), eye.z(), this.azimuth);
+			return;
+		}
 		this.mode = next;
 		if (next == Mode.ORBIT) {
 			this.elevation = clampOrbit(this.elevation);
 		}
+	}
+
+	/**
+	 * Walk from {@code (x, z)}, looking level from the direction {@code azimuth} (as {@link #setDirection}: 0 looks
+	 * north, {@code PI / 2} looks west).
+	 */
+	public void walkFrom(final float x, final float z, final float azimuth) {
+		this.mode = Mode.WALK;
+		this.azimuth = wrap(azimuth);
+		this.elevation = 0.0f;
+		this.distance = WALK_LOOK;
+		stand(new Vector3f(x, EYE_HEIGHT, z));
+	}
+
+	/** Whether a walker runs ({@link #RUN_SPEED}): Shift held. */
+	public void setRunning(final boolean run) {
+		this.running = run;
+	}
+
+	public boolean running() {
+		return this.running;
+	}
+
+	/** The target of an eye at {@code eye}, on foot ({@link #EYE_HEIGHT} over the ground), the look kept. */
+	private void stand(final Vector3f eye) {
+		this.target = new Vector3f(eye.x(), EYE_HEIGHT, eye.z()).less(back().multiply(this.distance));
 	}
 
 	/**
@@ -144,11 +198,29 @@ public final class LabCamera {
 		final Vector3f eye = eye();
 		this.azimuth = wrap(azimuth);
 		this.elevation = clamp(elevation, -MAX_ELEVATION, MAX_ELEVATION);
+		if (this.mode == Mode.WALK) {
+			stand(eye);
+			return;
+		}
 		this.target = eye.less(back().multiply(this.distance));
 	}
 
-	/** Look at {@code target} from {@code distance} metres, the direction kept. */
+	/**
+	 * Look at {@code target} from {@code distance} metres, the direction kept; on foot the walker stays where he
+	 * stands and turns towards it.
+	 */
 	public void lookAt(final Vector3f target, final float distance) {
+		if (this.mode == Mode.WALK) {
+			final Vector3f eye = eye();
+			final Vector3f to = target.less(eye);
+			final float level = (float) Math.sqrt(to.x() * to.x() + to.z() * to.z());
+			if (level > 1.0e-6f || Math.abs(to.y()) > 1.0e-6f) {
+				this.azimuth = wrap((float) Math.atan2(-to.x(), -to.z()));
+				this.elevation = clamp((float) Math.atan2(-to.y(), level), -MAX_ELEVATION, MAX_ELEVATION);
+			}
+			stand(eye);
+			return;
+		}
 		this.target = target;
 		this.distance = clamp(distance, MIN_DISTANCE, MAX_DISTANCE);
 	}
@@ -166,10 +238,11 @@ public final class LabCamera {
 	/**
 	 * {@link #frame(float[], float, float)} in the part of the picture right
 	 * of its left {@code leftShare} (0 to 1: a panel drawn over the picture
-	 * there): the box in the middle of that part.
+	 * there): the box in the middle of that part. Nothing changes on foot: the walker stays where he stands
+	 * (leave the walk to frame).
 	 */
 	public void frame(final float[] box, final float fovX, final float aspect, final float leftShare) {
-		if (box == null || box.length < 6) {
+		if (box == null || box.length < 6 || this.mode == Mode.WALK) {
 			return;
 		}
 		final Vector3f centre = new Vector3f((box[0] + box[3]) * 0.5f, (box[1] + box[4]) * 0.5f,
@@ -227,16 +300,32 @@ public final class LabCamera {
 		final Vector3f eye = eye();
 		this.azimuth = wrap(this.azimuth - dx * TURN_PER_PIXEL);
 		this.elevation = clamp(this.elevation - dy * TURN_PER_PIXEL, -MAX_ELEVATION, MAX_ELEVATION);
+		if (this.mode == Mode.WALK) {
+			stand(eye);
+			return;
+		}
 		this.target = eye.less(back().multiply(this.distance));
 	}
 
-	/** {@code steps} of the wheel: closer for a positive number (an orbit), forward (a flight). */
+	/**
+	 * {@code steps} of the wheel: closer for a positive number (an orbit), forward (a flight), a step of
+	 * {@link #WALK_STEP} ahead on the ground (on foot).
+	 */
 	public void zoom(final float steps) {
 		if (this.mode == Mode.ORBIT) {
 			this.distance = clamp(this.distance * (float) Math.pow(ZOOM_STEP, -steps), MIN_DISTANCE, MAX_DISTANCE);
 			return;
 		}
+		if (this.mode == Mode.WALK) {
+			stand(eye().add(ahead().multiply(steps * WALK_STEP)));
+			return;
+		}
 		this.target = this.target.less(back().multiply(steps * flySpeed() * 0.25f));
+	}
+
+	/** Unit vector ahead of a walker: the look, level. */
+	public Vector3f ahead() {
+		return new Vector3f(-(float) Math.sin(this.azimuth), 0.0f, -(float) Math.cos(this.azimuth));
 	}
 
 	/**
@@ -248,6 +337,11 @@ public final class LabCamera {
 		if (!(height > 0.0f)) {
 			return;
 		}
+		if (this.mode == Mode.WALK) {
+			// On foot the ground slides under the pointer: sideways and ahead, never up.
+			stand(eye().less(right().multiply(dx * WALK_PER_PIXEL)).less(ahead().multiply(dy * WALK_PER_PIXEL)));
+			return;
+		}
 		final float metresPerPixel = 2.0f * this.distance * (float) Math.tan(fovY * 0.5) / height;
 		this.target = this.target.less(right().multiply(dx * metresPerPixel)).less(up().multiply(dy * metresPerPixel));
 	}
@@ -255,9 +349,19 @@ public final class LabCamera {
 	/**
 	 * Held keys for {@code seconds}, each -1, 0 or 1. An orbit turns
 	 * ({@code side}), tilts ({@code ahead}) and zooms ({@code rise}); a flight
-	 * moves ahead along the look, sideways and up.
+	 * moves ahead along the look, sideways and up; a walker walks (or runs)
+	 * ahead and sideways on the ground, as fast on a diagonal, and never rises.
 	 */
 	public void drive(final int ahead, final int side, final int rise, final float seconds) {
+		if (this.mode == Mode.WALK) {
+			if (ahead == 0 && side == 0) {
+				return;
+			}
+			final float step = (this.running ? RUN_SPEED : WALK_SPEED) * seconds;
+			final Vector3f move = ahead().multiply(ahead).add(right().multiply(side));
+			stand(eye().add(move.multiply(step / move.length())));
+			return;
+		}
 		if (this.mode == Mode.ORBIT) {
 			this.azimuth = wrap(this.azimuth - side * TURN_PER_SECOND * seconds);
 			this.elevation = clampOrbit(this.elevation + ahead * TURN_PER_SECOND * seconds);

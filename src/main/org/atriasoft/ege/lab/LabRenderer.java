@@ -2,7 +2,9 @@ package org.atriasoft.ege.lab;
 
 import java.nio.FloatBuffer;
 import java.util.ArrayList;
+import java.util.IdentityHashMap;
 import java.util.List;
+import java.util.Map;
 
 import org.atriasoft.ege.components.part.ShadowRender;
 import org.atriasoft.ege.engines.EngineShadow;
@@ -32,7 +34,9 @@ import org.slf4j.LoggerFactory;
  * lit receives them; the overlay casts none), then the translucent triangles
  * (blended, the depth tested but not written), the lines, the lines on top
  * (those of the overlay after those of the content each time). One vertex
- * buffer per layer, filled again when the content (or the overlay) changes:
+ * buffer per layer and per part of the content (a content of many parts: a
+ * forest in cells), filled when the part comes and deleted when it goes, the
+ * overlay filled again when it changes:
  * nothing of OpenGL leaks from one content to the next; {@link #release()}
  * gives everything back. Every OpenGL state it changes is restored (blending
  * off with its default function, depth writes on, depth test as the caller
@@ -114,6 +118,31 @@ final class LabRenderer {
 		}
 	}
 
+	/** The layers of a part of the content, filled once when it comes and kept while it stays shown. */
+	private static final class Part {
+		private final Layer opaque = new Layer(LabMesh.LIT_FLOATS);
+		private final Layer translucent = new Layer(LabMesh.LIT_FLOATS);
+		private final Layer lines = new Layer(LabMesh.LINE_FLOATS);
+		private final Layer linesOnTop = new Layer(LabMesh.LINE_FLOATS);
+
+		Part(final LabMesh mesh, final FloatBuffer[] upload) {
+			fillIfAny(this.opaque, mesh.opaque(), upload);
+			fillIfAny(this.translucent, mesh.translucent(), upload);
+			fillIfAny(this.lines, mesh.lines(), upload);
+			fillIfAny(this.linesOnTop, mesh.linesOnTop(), upload);
+		}
+
+		private static void fillIfAny(final Layer layer, final LabMesh.Floats floats, final FloatBuffer[] upload) {
+			if (floats.size() > 0) {
+				layer.fill(floats.data(), floats.size(), upload);
+			}
+		}
+
+		Layer[] layers() {
+			return new Layer[] { this.opaque, this.translucent, this.lines, this.linesOnTop };
+		}
+	}
+
 	private final EngineShadow shadowEngine;
 	private final ResourceProgram litCreated;
 	private final ResourceProgram lineCreated;
@@ -135,11 +164,10 @@ final class LabRenderer {
 	private final Layer ground = new Layer(LabMesh.LIT_FLOATS);
 	/** Whether the ground is left out while the eye is under it (off: it is drawn from both sides). */
 	private boolean groundHiddenBelow;
-	private final Layer opaque = new Layer(LabMesh.LIT_FLOATS);
+	/** The parts of the content shown, each with its layers, in their order. */
+	private final Map<LabMesh, Part> parts = new IdentityHashMap<>();
+	private final List<Part> drawn = new ArrayList<>();
 	private final Layer human = new Layer(LabMesh.LIT_FLOATS);
-	private final Layer translucent = new Layer(LabMesh.LIT_FLOATS);
-	private final Layer lines = new Layer(LabMesh.LINE_FLOATS);
-	private final Layer linesOnTop = new Layer(LabMesh.LINE_FLOATS);
 	private final Layer overlayOpaque = new Layer(LabMesh.LIT_FLOATS);
 	private final Layer overlayTranslucent = new Layer(LabMesh.LIT_FLOATS);
 	private final Layer overlayLines = new Layer(LabMesh.LINE_FLOATS);
@@ -147,7 +175,7 @@ final class LabRenderer {
 	private final FloatBuffer[] upload = { BufferUtils.createFloatBuffer(4096) };
 	private final ShadowCaster caster = this::castShadows;
 	/** What the layers hold. */
-	private LabMesh shownContent;
+	private List<LabMesh> shownContent = List.of();
 	private LabMesh shownOverlay;
 	private LabMesh shownHuman;
 	private boolean released;
@@ -211,20 +239,36 @@ final class LabRenderer {
 	}
 
 	/**
-	 * Show {@code content}, the overlay ({@code null}: none) and the human figure ({@code null}: hidden) from this
-	 * frame on.
+	 * Show the parts of {@code content}, the overlay ({@code null}: none) and the human figure ({@code null}: hidden)
+	 * from this frame on. A part already shown (the same mesh) keeps its buffers: only the parts that come are filled,
+	 * those that go are deleted (on the rendering thread, where this runs).
 	 */
-	void show(final LabMesh content, final LabMesh overlay, final LabMesh figure) {
+	void show(final List<LabMesh> content, final LabMesh overlay, final LabMesh figure) {
 		if (this.lit == null || this.released) {
 			return;
 		}
-		if (content != this.shownContent) {
-			this.shownContent = content;
-			final LabMesh mesh = content != null ? content : new LabMesh();
-			this.opaque.fill(mesh.opaque().data(), mesh.opaque().size(), this.upload);
-			this.translucent.fill(mesh.translucent().data(), mesh.translucent().size(), this.upload);
-			this.lines.fill(mesh.lines().data(), mesh.lines().size(), this.upload);
-			this.linesOnTop.fill(mesh.linesOnTop().data(), mesh.linesOnTop().size(), this.upload);
+		if (!sameMeshes(content, this.shownContent)) {
+			this.shownContent = List.copyOf(content);
+			final Map<LabMesh, Part> kept = new IdentityHashMap<>();
+			this.drawn.clear();
+			for (final LabMesh mesh : this.shownContent) {
+				if (kept.containsKey(mesh)) {
+					continue;
+				}
+				Part part = this.parts.remove(mesh);
+				if (part == null) {
+					part = new Part(mesh, this.upload);
+				}
+				kept.put(mesh, part);
+				this.drawn.add(part);
+			}
+			for (final Part gone : this.parts.values()) {
+				for (final Layer layer : gone.layers()) {
+					delete(layer.objects());
+				}
+			}
+			this.parts.clear();
+			this.parts.putAll(kept);
 		}
 		if (overlay != this.shownOverlay) {
 			this.shownOverlay = overlay;
@@ -246,8 +290,33 @@ final class LabRenderer {
 		if (this.released) {
 			return;
 		}
-		this.opaque.draw(GL11.GL_TRIANGLES);
+		for (final Part part : this.drawn) {
+			part.opaque.draw(GL11.GL_TRIANGLES);
+		}
 		this.human.draw(GL11.GL_TRIANGLES);
+	}
+
+	/** Whether {@code a} and {@code b} hold the same meshes (the same objects) in the same order. */
+	private static boolean sameMeshes(final List<LabMesh> a, final List<LabMesh> b) {
+		if (a.size() != b.size()) {
+			return false;
+		}
+		for (int i = 0; i < a.size(); i++) {
+			if (a.get(i) != b.get(i)) {
+				return false;
+			}
+		}
+		return true;
+	}
+
+	/** Delete a vertex array and its buffer ({@code {array, buffer}}, -1: none), on the rendering thread. */
+	private static void delete(final int[] objects) {
+		if (objects[1] != -1) {
+			GL15.glDeleteBuffers(objects[1]);
+		}
+		if (objects[0] != -1) {
+			GL30.glDeleteVertexArrays(objects[0]);
+		}
 	}
 
 	/** Leave the ground out while the eye is under it, to see what lies below (off by default). */
@@ -282,14 +351,18 @@ final class LabRenderer {
 			this.ground.draw(GL11.GL_TRIANGLES);
 		}
 		this.lit.uniformInt(this.litGrid, 0);
-		this.opaque.draw(GL11.GL_TRIANGLES);
+		for (final Part part : this.drawn) {
+			part.opaque.draw(GL11.GL_TRIANGLES);
+		}
 		this.human.draw(GL11.GL_TRIANGLES);
 		this.overlayOpaque.draw(GL11.GL_TRIANGLES);
 		OpenGL.enable(Flag.flag_blend);
 		OpenGL.updateAllFlags();
 		OpenGL.blendFuncAuto();
 		GL11.glDepthMask(false);
-		this.translucent.draw(GL11.GL_TRIANGLES);
+		for (final Part part : this.drawn) {
+			part.translucent.draw(GL11.GL_TRIANGLES);
+		}
 		this.overlayTranslucent.draw(GL11.GL_TRIANGLES);
 		GL11.glDepthMask(true);
 		this.shadows.unBindForRendering();
@@ -299,11 +372,15 @@ final class LabRenderer {
 		this.line.use();
 		this.line.uniformMatrix(this.lineProjection, projection);
 		this.line.uniformMatrix(this.lineView, view);
-		this.lines.draw(GL11.GL_LINES);
+		for (final Part part : this.drawn) {
+			part.lines.draw(GL11.GL_LINES);
+		}
 		this.overlayLines.draw(GL11.GL_LINES);
 		OpenGL.disable(Flag.flag_depthTest);
 		OpenGL.updateAllFlags();
-		this.linesOnTop.draw(GL11.GL_LINES);
+		for (final Part part : this.drawn) {
+			part.linesOnTop.draw(GL11.GL_LINES);
+		}
 		this.overlayLinesOnTop.draw(GL11.GL_LINES);
 		OpenGL.enable(Flag.flag_depthTest);
 		OpenGL.updateAllFlags();
@@ -327,20 +404,22 @@ final class LabRenderer {
 			this.shadowEngine.removeShadowCaster(this.caster);
 		}
 		final List<int[]> objects = new ArrayList<>();
-		for (final Layer layer : new Layer[] { this.ground, this.opaque, this.human, this.translucent, this.lines,
-				this.linesOnTop, this.overlayOpaque, this.overlayTranslucent, this.overlayLines, this.overlayLinesOnTop }) {
+		for (final Layer layer : new Layer[] { this.ground, this.human, this.overlayOpaque, this.overlayTranslucent,
+				this.overlayLines, this.overlayLinesOnTop }) {
 			objects.add(layer.objects());
 		}
+		for (final Part part : this.parts.values()) {
+			for (final Layer layer : part.layers()) {
+				objects.add(layer.objects());
+			}
+		}
+		this.parts.clear();
+		this.drawn.clear();
 		this.litCreated.release();
 		this.lineCreated.release();
 		Gale.getContext().getResourcesManager().runOnGlThread(() -> {
 			for (final int[] object : objects) {
-				if (object[1] != -1) {
-					GL15.glDeleteBuffers(object[1]);
-				}
-				if (object[0] != -1) {
-					GL30.glDeleteVertexArrays(object[0]);
-				}
+				delete(object);
 			}
 		});
 	}

@@ -228,4 +228,27 @@ class LabCameraTest {
 		camera.setMode(LabCamera.Mode.ORBIT);
 		assertNear(standing, camera.eye());
 	}
+
+	@Test
+	void aTakenMouseTurnsTheLookTheWayItGoes() {
+		final LabCamera camera = new LabCamera();
+		camera.walkFrom(10.0f, 20.0f, 0.0f);
+		final Vector3f eye = camera.eye();
+		// The mouse to the right (gale: x negative, to the left positive): looking north, the walker turns east,
+		// the azimuth goes down (it grows towards the east for the eye, the look turning west).
+		camera.mouseLook(-50.0f, 0.0f);
+		assertEquals(-50.0f * LabCamera.TURN_PER_PIXEL, camera.azimuth(), EPSILON);
+		assertNear(eye, camera.eye());
+		// The mouse up (gale: y negative, down positive): the walker looks up, the eye under its target.
+		camera.mouseLook(0.0f, -40.0f);
+		assertEquals(-40.0f * LabCamera.TURN_PER_PIXEL, camera.elevation(), EPSILON);
+		assertNear(eye, camera.eye());
+		// The jump of a pointer just taken turns nothing.
+		final float azimuth = camera.azimuth();
+		final float elevation = camera.elevation();
+		camera.mouseLook(LabCamera.MOUSE_JUMP + 1.0f, 0.0f);
+		camera.mouseLook(0.0f, -LabCamera.MOUSE_JUMP - 1.0f);
+		assertEquals(azimuth, camera.azimuth(), EPSILON);
+		assertEquals(elevation, camera.elevation(), EPSILON);
+	}
 }

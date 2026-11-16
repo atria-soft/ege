@@ -22,6 +22,7 @@ import org.atriasoft.etk.math.Vector3f;
 import org.atriasoft.ewol.Ewol;
 import org.atriasoft.ewol.event.EventInput;
 import org.atriasoft.ewol.widget.Widget;
+import org.atriasoft.gale.Gale;
 import org.atriasoft.gale.backend3d.OpenGL;
 import org.atriasoft.gale.backend3d.OpenGL.Flag;
 import org.atriasoft.gale.key.KeyKeyboard;
@@ -48,7 +49,8 @@ import org.slf4j.LoggerFactory;
  * left) pans, the wheel zooms; the arrows and Page up/down drive it too (held
  * keys: {@link #holdKey}); on foot ({@link LabCamera.Mode#WALK}: a lab offers
  * it with a control of its own, which leaves the footer of the panel as it is)
- * the arrows walk, Shift held runs. A
+ * the arrows walk, Shift held runs, a click on the view takes the mouse (the
+ * look follows it with no button, {@link #takeMouse}; Escape gives it back). A
  * press on the view takes the focus (a text field of the panel gives the keys
  * back). The content is one mesh ({@link #setContent}) or many parts
  * ({@link #setContentParts}: only those that change are sent to the graphics
@@ -84,6 +86,8 @@ public final class LabView extends Widget implements LabReporter {
 	static final String READING = "reading the data";
 	static final String RENDERING = "3D view";
 	static final String POINTER = "pointer";
+	/** Pixels a press may move and still be a click (on foot, a click takes the mouse). */
+	static final float CLICK_SLOP = 4.0f;
 
 	/** Files watched and what their change runs. */
 	private record Watch(LabWatcher watcher, Runnable onChange) {}
@@ -123,6 +127,12 @@ public final class LabView extends Widget implements LabReporter {
 	private int dragButton;
 	private boolean dragPans;
 	private Vector2f dragFrom;
+	/** Where a press of the left button began on foot (a click there takes the mouse), {@code null}: none. */
+	private Vector2f clickFrom;
+	/** Whether the mouse is taken ({@link #takeMouse}): the look follows it, the pointer hidden. */
+	private boolean mouseTaken;
+	/** The mouse just taken: its first motion, from where it was clicked to the middle of the window, is no hand's. */
+	private boolean mouseJumps;
 	private long lastNanos;
 	private double sincePoll;
 	private Runnable afterUpdate;
@@ -460,6 +470,34 @@ public final class LabView extends Widget implements LabReporter {
 		this.labCamera.setRunning(run);
 	}
 
+	/** Whether the mouse is taken: the look follows it with no button held, the pointer hidden. */
+	public boolean mouseTaken() {
+		return this.mouseTaken;
+	}
+
+	/**
+	 * Take the mouse (on foot only: a click on the view) or give it back (Escape, the end of the walk, the
+	 * view closed). Taken, every motion turns the look ({@link LabCamera#mouseLook}) and every button goes to
+	 * the view, so the panel waits until it is given back; never taken by itself (the smoke tests click).
+	 */
+	void takeMouse(final boolean take) {
+		if (take == this.mouseTaken || take && this.labCamera.mode() != LabCamera.Mode.WALK) {
+			return;
+		}
+		this.mouseTaken = take;
+		this.mouseJumps = take;
+		this.dragFrom = null;
+		this.dragButton = 0;
+		this.clickFrom = null;
+		// ewol sends every event of the pointer to the view, gale hides the pointer and hands its motions.
+		if (take) {
+			grabCursor();
+		} else {
+			unGrabCursor();
+		}
+		Gale.getContext().grabPointerEvents(take, Vector2f.ZERO);
+	}
+
 	/** The frames the view drew per second, counted over about a second (0 before the first count). */
 	public float framesPerSecond() {
 		return this.fps;
@@ -504,15 +542,21 @@ public final class LabView extends Widget implements LabReporter {
 
 	/** The lines over the picture: the problems first (never cut off by a long panel), then those of the lab. */
 	private List<LabText.Line> infoLines() {
-		if (this.errors.isEmpty()) {
+		if (this.errors.isEmpty() && !this.mouseTaken) {
 			return this.info;
 		}
 		final List<LabText.Line> lines = new ArrayList<>();
-		lines.add(LabText.Line.bad("Problems"));
-		for (final String error : this.errors.values()) {
-			lines.add(LabText.Line.bad(error));
+		if (!this.errors.isEmpty()) {
+			lines.add(LabText.Line.bad("Problems"));
+			for (final String error : this.errors.values()) {
+				lines.add(LabText.Line.bad(error));
+			}
+			lines.add(LabText.Line.gap());
 		}
-		lines.add(LabText.Line.gap());
+		if (this.mouseTaken) {
+			lines.add(LabText.Line.warn("Mouse taken: Escape gives it back"));
+			lines.add(LabText.Line.gap());
+		}
 		lines.addAll(this.info);
 		return lines;
 	}
@@ -533,6 +577,8 @@ public final class LabView extends Widget implements LabReporter {
 		lines.add(LabText.Line.normal("  Arrows: turn and tilt (fly in a flight)"));
 		lines.add(LabText.Line.normal("  Page up / down: zoom (rise and sink in a flight)"));
 		lines.add(LabText.Line.normal("  Walking: arrows walk and step aside, Shift runs"));
+		lines.add(LabText.Line.normal("  Walking, a click: the look follows the mouse"));
+		lines.add(LabText.Line.normal("    (Escape gives the mouse back)"));
 		return lines;
 	}
 
@@ -560,6 +606,10 @@ public final class LabView extends Widget implements LabReporter {
 			final float seconds = this.lastNanos == 0L ? 0.0f : (float) Math.min(0.25, (now - this.lastNanos) * 1.0e-9);
 			this.lastNanos = now;
 			this.env.periodicCall();
+			if (this.mouseTaken && this.labCamera.mode() != LabCamera.Mode.WALK) {
+				// The walk ended (F11, F, a flight, the lab): the mouse is given back.
+				takeMouse(false);
+			}
 			this.labCamera.drive((this.up ? 1 : 0) - (this.down ? 1 : 0), (this.right ? 1 : 0) - (this.left ? 1 : 0),
 					(this.pageUp ? 1 : 0) - (this.pageDown ? 1 : 0), seconds);
 			final Lab driven = this.lab;
@@ -712,6 +762,18 @@ public final class LabView extends Widget implements LabReporter {
 			this.labCamera.zoom(button == 5 ? 1.0f : -1.0f);
 			return true;
 		}
+		if (this.mouseTaken) {
+			// Taken: every motion (gale hands the motion since the last one, not a place) turns the look; the
+			// buttons, enter and leave do nothing.
+			if (event.status() == KeyStatus.move) {
+				if (this.mouseJumps) {
+					this.mouseJumps = false;
+				} else {
+					this.labCamera.mouseLook(event.pos().x(), event.pos().y());
+				}
+			}
+			return true;
+		}
 		if (button == 0) {
 			// The pointer moving with no button held, or leaving the view.
 			if (this.pointerButton == 0) {
@@ -752,8 +814,14 @@ public final class LabView extends Widget implements LabReporter {
 				this.dragButton = button;
 				this.dragFrom = position;
 				this.dragPans = button != 1 || event.specialKey() != null && event.specialKey().getShift();
+				this.clickFrom = button == 1 && this.labCamera.mode() == LabCamera.Mode.WALK ? position : null;
 			}
 			case move -> {
+				if (this.clickFrom != null && (Math.abs(position.x() - this.clickFrom.x()) > CLICK_SLOP
+						|| Math.abs(position.y() - this.clickFrom.y()) > CLICK_SLOP)) {
+					// A drag, not a click: the look turns while the button is held, the mouse is not taken.
+					this.clickFrom = null;
+				}
 				if (this.dragFrom != null && button == this.dragButton) {
 					final float dx = position.x() - this.dragFrom.x();
 					final float dy = position.y() - this.dragFrom.y();
@@ -769,6 +837,12 @@ public final class LabView extends Widget implements LabReporter {
 				if (button == this.dragButton) {
 					this.dragFrom = null;
 					this.dragButton = 0;
+				}
+				// On foot, a click (a press that did not drag) takes the mouse: the look follows it.
+				final Vector2f click = this.clickFrom;
+				this.clickFrom = null;
+				if (button == 1 && event.status() == KeyStatus.up && click != null) {
+					takeMouse(true);
 				}
 			}
 			default -> {
@@ -787,6 +861,7 @@ public final class LabView extends Widget implements LabReporter {
 			return;
 		}
 		this.detached = true;
+		takeMouse(false);
 		this.lab = null;
 		if (this.renderer != null) {
 			this.renderer.release();

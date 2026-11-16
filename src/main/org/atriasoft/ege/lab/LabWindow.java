@@ -30,7 +30,9 @@ import org.slf4j.LoggerFactory;
  * drop-down list is open it has the keys, and while a text field has the
  * focus every key is its own but those with Control (a field types nothing
  * with them: Ctrl+S still saves), Escape giving the focus back to the 3D view
- * (a release still lets a camera key go).
+ * (a release still lets a camera key go). While the mouse is taken (on foot,
+ * {@link LabView#takeMouse}) Escape gives it back. Shift, its own key or with
+ * another, makes a walker run: its press and its release come here too.
  * <p>
  * Nothing a lab does while the window opens kills it: a lab that cannot be
  * made, a {@link Lab#start} that throws, a control the kit cannot add, a
@@ -136,6 +138,11 @@ final class LabWindow extends Windows {
 		final boolean ctrl = special != null && special.getCtrl() && !altGr;
 		final boolean other = special != null && (special.getAltLeft() || special.getMeta());
 		final boolean repeat = press == LabKeyRepeat.Press.REPEAT;
+		if (isDown && this.view.mouseTaken() && type == KeyKeyboard.CHARACTER && value != null && value == '\u001b') {
+			// The mouse taken on foot: Escape gives it back (the pointer shown, the panel usable again).
+			this.view.takeMouse(false);
+			return true;
+		}
 		if (typing()) {
 			// A text field has the focus: the keys are its own, but the controls with Control (the field types nothing
 			// with Control: Ctrl+S saves); Escape gives the focus back to the view.

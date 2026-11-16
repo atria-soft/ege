@@ -16,7 +16,7 @@ import org.atriasoft.etk.math.Vector3f;
  * <li>{@link Mode#WALK}: on foot, the eye {@link #EYE_HEIGHT} over the ground
  * (y = 0), never higher nor lower: a drag turns the look around the eye, the
  * keys walk ahead, back and sideways on the ground, faster while running
- * ({@link #setRunning}).</li>
+ * ({@link #setRunning}); a taken mouse turns the look too ({@link #mouseLook}).</li>
  * </ul>
  * Changing mode keeps the eye and the look (on foot, the eye comes down to
  * its height and looks level). Metres and radians; X east, Y up, Z south.
@@ -50,6 +50,8 @@ public final class LabCamera {
 	public static final float START_ELEVATION = (float) Math.toRadians(18.0);
 	/** Radians turned per pixel of a drag. */
 	static final float TURN_PER_PIXEL = (float) Math.toRadians(0.4);
+	/** Pixels of one motion of a taken mouse past which it is the jump of a pointer just taken, not a hand. */
+	static final float MOUSE_JUMP = 250.0f;
 	/** Radians turned per second by a held arrow key (orbit). */
 	static final float TURN_PER_SECOND = (float) Math.toRadians(60.0);
 	/** Factor of the distance per step of the wheel. */
@@ -305,6 +307,18 @@ public final class LabCamera {
 			return;
 		}
 		this.target = eye.less(back().multiply(this.distance));
+	}
+
+	/**
+	 * One motion of a taken mouse (the look follows it with no button held), as gale hands it: {@code x} pixels
+	 * to the left, {@code y} down. The look turns the way the mouse goes, as a drag does; a motion farther than
+	 * {@link #MOUSE_JUMP} is the jump of a pointer just taken (from where it was clicked): nothing turns.
+	 */
+	public void mouseLook(final float x, final float y) {
+		if (Math.abs(x) > MOUSE_JUMP || Math.abs(y) > MOUSE_JUMP) {
+			return;
+		}
+		turn(-x, -y);
 	}
 
 	/**

@@ -4,3 +4,9 @@
             click at 1220,667). LabView.setContentParts: the content in several meshes, each with its own GPU
             buffers kept by identity (a mesh is not changed once given); framesPerSecond() for an info panel.
             Not checked: whether running stops when Shift is released without another key event.
+
+2026-11-16  Lab kit: on foot a click on the view takes the mouse (ewol grabCursor + gale grabPointerEvents, as the
+            game does), the look follows it, Escape or the end of the walk gives it back; never taken by itself
+            (the smoke scripts click). Shift: its release does come to LabWindow (read in ewol/gale), running stops.
+            Known gap, in gale: a key released while the window has lost the focus stays held (no keyReleased from
+            AWT); a FocusListener on the canvas would fix it. Not seen on a real screen, Xvfb only.

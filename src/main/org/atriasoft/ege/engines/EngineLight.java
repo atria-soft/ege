@@ -1,5 +1,7 @@
 package org.atriasoft.ege.engines;
 
+import java.util.Collections;
+import java.util.List;
 import java.util.Map;
 import java.util.Vector;
 import java.util.concurrent.ConcurrentHashMap;
@@ -9,6 +11,7 @@ import org.atriasoft.ege.Engine;
 import org.atriasoft.ege.Environement;
 import org.atriasoft.ege.Light;
 import org.atriasoft.ege.camera.Camera;
+import org.atriasoft.ege.geometry.AABB;
 import org.atriasoft.ege.components.ComponentLight;
 import org.atriasoft.ege.components.ComponentLightSun;
 import org.atriasoft.etk.math.Vector3f;
@@ -133,6 +136,47 @@ public class EngineLight extends Engine {
 	 * @param position reference point of the drawn object (its centre)
 	 */
 	public Light[] getNearest(final Vector3f position) {
+		return pick(position.x(), position.y(), position.z(), position.x(), position.y(), position.z());
+	}
+
+	/**
+	 * Same choice as {@link #getNearest(Vector3f)} for an object drawn inside a
+	 * bounding box: a local light is kept when its distance to the BOX (zero
+	 * inside it) is within its reach, and the nearest to the box come first.
+	 * A large object (a terrain chunk) is no longer judged from its centre.
+	 *
+	 * @param box bounding box of the drawn object (position is its centre, size its half extents)
+	 */
+	public Light[] getNearest(final AABB box) {
+		final Vector3f min = box.getMin();
+		final Vector3f max = box.getMax();
+		return pick(min.x(), min.y(), min.z(), max.x(), max.y(), max.z());
+	}
+
+	/** Distance from {@code value} to the segment [{@code min}, {@code max}], zero inside. */
+	private static float beside(final float value, final float min, final float max) {
+		if (value < min) {
+			return min - value;
+		}
+		return value > max ? value - max : 0.0f;
+	}
+
+	/**
+	 * Read-only view of the local lights (suns excluded), in the order they were
+	 * added. Not a snapshot: it follows the engine, so iterate it from the thread
+	 * that adds and removes components or copy it first.
+	 */
+	public List<ComponentLight> getLights() {
+		return Collections.unmodifiableList(this.componentLights);
+	}
+
+	/** Read-only view of the suns, in the order they were added (see {@link #getLights()}). */
+	public List<ComponentLightSun> getSuns() {
+		return Collections.unmodifiableList(this.componentSuns);
+	}
+
+	private Light[] pick(final float minX, final float minY, final float minZ, final float maxX, final float maxY,
+			final float maxZ) {
 		final Light[] out = new Light[MAX_LIGHTS];
 		int count = 0;
 		for (final ComponentLightSun elem : this.componentSuns) {
@@ -167,7 +211,10 @@ public class EngineLight extends Engine {
 					maxDistance2 = own * own;
 				}
 			}
-			final float distance2 = where.distance2(position);
+			final float dx = beside(where.x(), minX, maxX);
+			final float dy = beside(where.y(), minY, maxY);
+			final float dz = beside(where.z(), minZ, maxZ);
+			final float distance2 = dx * dx + dy * dy + dz * dz;
 			if (!(distance2 < maxDistance2) || (kept == free && distance2 >= distances[kept - 1])) {
 				continue;
 			}

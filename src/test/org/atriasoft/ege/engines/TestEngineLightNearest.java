@@ -14,6 +14,7 @@ import java.util.concurrent.Future;
 import org.atriasoft.ege.Light;
 import org.atriasoft.ege.components.ComponentLight;
 import org.atriasoft.ege.components.ComponentLightSun;
+import org.atriasoft.ege.geometry.AABB;
 import org.atriasoft.etk.Color;
 import org.atriasoft.etk.math.Vector3f;
 import org.junit.jupiter.api.Test;
@@ -142,6 +143,46 @@ class TestEngineLightNearest {
 		assertThrows(IllegalArgumentException.class, () -> engine.setLightRange(scopedLamp, -1.0f));
 		engine.componentRemove(scopedLamp);
 		assertEquals(EngineLight.DEFAULT_LIGHT_RANGE, engine.getLightRange(scopedLamp), "forgotten with the light");
+	}
+
+	@Test
+	void aBoxIsJudgedByItsDistanceNotByItsCentre() {
+		final EngineLight engine = new EngineLight(null);
+		final Color edge = new Color(0.2f, 0.0f, 0.0f, 1.0f);
+		final Color centre = new Color(0.8f, 0.0f, 0.0f, 1.0f);
+		engine.componentAdd(lampAt(0.0f, 0.0f, edge));
+		engine.componentAdd(lampAt(20.0f, 0.0f, centre));
+		// A box x in [0, 40], y in [-5, 5], z in [-5, 5]: both lamps (3 m up) are over it, at no distance.
+		final AABB box = new AABB(new Vector3f(20.0f, 0.0f, 0.0f), new Vector3f(20.0f, 5.0f, 5.0f));
+		final Light[] byBox = engine.getNearest(box);
+		assertEquals(edge, byBox[0].getColor(), "both touch the box: the first added stays first");
+		assertEquals(centre, byBox[1].getColor());
+		final Light[] byCentre = engine.getNearest(box.position);
+		assertEquals(centre, byCentre[0].getColor(), "by the centre the middle lamp wins");
+	}
+
+	@Test
+	void aBoxReachesALightItsCentreDoesNot() {
+		final EngineLight engine = new EngineLight(null);
+		engine.componentAdd(lampAt(60.0f, 0.0f, new Color(1.0f, 1.0f, 1.0f, 1.0f)));
+		final AABB box = new AABB(new Vector3f(0.0f, 3.0f, 0.0f), new Vector3f(30.0f, 1.0f, 1.0f));
+		assertNull(engine.getNearest(box.position)[0], "60 m from the centre, out of the 50 m");
+		assertEquals(new Color(1.0f, 1.0f, 1.0f, 1.0f), engine.getNearest(box)[0].getColor(), "30 m from the box");
+		final AABB far = new AABB(new Vector3f(-100.0f, 3.0f, 0.0f), new Vector3f(30.0f, 1.0f, 1.0f));
+		assertNull(engine.getNearest(far)[0], "130 m from the box");
+	}
+
+	@Test
+	void theLightsAreReadableButNotWritable() {
+		final EngineLight engine = new EngineLight(null);
+		final ComponentLight lamp = lampAt(1.0f, 0.0f, new Color(1.0f, 1.0f, 1.0f, 1.0f));
+		engine.componentAdd(lamp);
+		assertEquals(1, engine.getLights().size());
+		assertEquals(lamp, engine.getLights().get(0));
+		assertTrue(engine.getSuns().isEmpty());
+		assertThrows(UnsupportedOperationException.class, () -> engine.getLights().clear());
+		engine.componentRemove(lamp);
+		assertTrue(engine.getLights().isEmpty(), "a view, not a copy");
 	}
 
 	@Test

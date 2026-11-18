@@ -175,6 +175,54 @@ public class EngineLight extends Engine {
 		return Collections.unmodifiableList(this.componentSuns);
 	}
 
+	/**
+	 * Order of two candidate lights, negative when the first comes first: by distance to the box, then by
+	 * distance to its centre, then by a stable key of the light itself (position, colour, attenuation), so that
+	 * the lights kept do not depend on the order they were added in.
+	 */
+	private static int compare(final float distance1, final float centre1, final ComponentLight light1,
+			final Vector3f where1, final float distance2, final float centre2, final ComponentLight light2,
+			final Vector3f where2) {
+		int order = Float.compare(distance1, distance2);
+		if (order == 0) {
+			order = Float.compare(centre1, centre2);
+		}
+		if (order == 0) {
+			order = Float.compare(where1.x(), where2.x());
+		}
+		if (order == 0) {
+			order = Float.compare(where1.y(), where2.y());
+		}
+		if (order == 0) {
+			order = Float.compare(where1.z(), where2.z());
+		}
+		if (order != 0) {
+			return order;
+		}
+		final Light a = light1.getLight();
+		final Light b = light2.getLight();
+		order = Float.compare(a.getColor().r(), b.getColor().r());
+		if (order == 0) {
+			order = Float.compare(a.getColor().g(), b.getColor().g());
+		}
+		if (order == 0) {
+			order = Float.compare(a.getColor().b(), b.getColor().b());
+		}
+		if (order == 0) {
+			order = Float.compare(a.getColor().a(), b.getColor().a());
+		}
+		if (order == 0) {
+			order = Float.compare(a.getAttenuation().x(), b.getAttenuation().x());
+		}
+		if (order == 0) {
+			order = Float.compare(a.getAttenuation().y(), b.getAttenuation().y());
+		}
+		if (order == 0) {
+			order = Float.compare(a.getAttenuation().z(), b.getAttenuation().z());
+		}
+		return order;
+	}
+
 	private Light[] pick(final float minX, final float minY, final float minZ, final float maxX, final float maxY,
 			final float maxZ) {
 		final Light[] out = new Light[MAX_LIGHTS];
@@ -196,6 +244,10 @@ public class EngineLight extends Engine {
 		final ComponentLight[] nearest = new ComponentLight[free];
 		final Vector3f[] positions = new Vector3f[free];
 		final float[] distances = new float[free];
+		final float[] centres = new float[free];
+		final float centreX = (minX + maxX) * 0.5f;
+		final float centreY = (minY + maxY) * 0.5f;
+		final float centreZ = (minZ + maxZ) * 0.5f;
 		final float defaultDistance2 = this.lightRange * this.lightRange;
 		final boolean anyOwnRange = !this.ownRanges.isEmpty();
 		int kept = 0;
@@ -215,18 +267,29 @@ public class EngineLight extends Engine {
 			final float dy = beside(where.y(), minY, maxY);
 			final float dz = beside(where.z(), minZ, maxZ);
 			final float distance2 = dx * dx + dy * dy + dz * dz;
-			if (!(distance2 < maxDistance2) || (kept == free && distance2 >= distances[kept - 1])) {
+			if (!(distance2 < maxDistance2)) {
 				continue;
 			}
-			// Insert after the lights at the same distance (the first added stays first); drop the farthest when full.
+			final float cx = where.x() - centreX;
+			final float cy = where.y() - centreY;
+			final float cz = where.z() - centreZ;
+			final float centre2 = cx * cx + cy * cy + cz * cz;
+			if (kept == free && compare(distance2, centre2, elem, where, distances[kept - 1], centres[kept - 1],
+					nearest[kept - 1], positions[kept - 1]) >= 0) {
+				continue;
+			}
+			// Insert before the lights that sort after it; drop the last one when full.
 			int index = kept < free ? kept++ : free - 1;
-			while (index > 0 && distances[index - 1] > distance2) {
+			while (index > 0 && compare(distance2, centre2, elem, where, distances[index - 1], centres[index - 1],
+					nearest[index - 1], positions[index - 1]) < 0) {
 				distances[index] = distances[index - 1];
+				centres[index] = centres[index - 1];
 				positions[index] = positions[index - 1];
 				nearest[index] = nearest[index - 1];
 				index--;
 			}
 			distances[index] = distance2;
+			centres[index] = centre2;
 			positions[index] = where;
 			nearest[index] = elem;
 		}

@@ -5,6 +5,10 @@ import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
+import java.util.Random;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
@@ -96,7 +100,7 @@ class TestEngineLightNearest {
 	}
 
 	@Test
-	void equalDistancesKeepTheOrderOfAdditionAndLightsWithoutPlaceAreSkipped() {
+	void equalDistancesDoNotDependOnTheOrderOfAdditionAndLightsWithoutPlaceAreSkipped() {
 		final EngineLight engine = new EngineLight(null);
 		final Color first = new Color(0.2f, 0.0f, 0.0f, 1.0f);
 		final Color second = new Color(0.4f, 0.0f, 0.0f, 1.0f);
@@ -104,9 +108,37 @@ class TestEngineLightNearest {
 		engine.componentAdd(lampAt(5.0f, 0.0f, first));
 		engine.componentAdd(lampAt(-5.0f, 0.0f, second));
 		final Light[] lights = engine.getNearest(Vector3f.ZERO);
-		assertEquals(first, lights[0].getColor());
-		assertEquals(second, lights[1].getColor());
+		assertEquals(second, lights[0].getColor(), "same distance: the stable key (position) decides, x = -5 first");
+		assertEquals(first, lights[1].getColor());
 		assertNull(lights[2], "the light without position is not given");
+	}
+
+	@Test
+	void lightsInsideTheBoxKeepTheSameSetWhateverTheInsertionOrder() {
+		final AABB box = new AABB(new Vector3f(0.0f, 0.0f, 0.0f), new Vector3f(40.0f, 10.0f, 40.0f));
+		final List<ComponentLight> lamps = new ArrayList<>();
+		for (int i = 0; i < 12; i++) {
+			// All inside the box (distance 0), at different places round its centre.
+			lamps.add(lampAt((i % 6) * 5.0f - 12.0f, (i / 6) * 7.0f - 3.0f, new Color(i / 12.0f, 0.0f, 0.0f, 1.0f)));
+		}
+		final List<Float> expected = new ArrayList<>();
+		for (int round = 0; round < 5; round++) {
+			Collections.shuffle(lamps, new Random(round));
+			final EngineLight engine = new EngineLight(null);
+			for (final ComponentLight lamp : lamps) {
+				engine.componentAdd(lamp);
+			}
+			final List<Float> got = new ArrayList<>();
+			for (final Light light : engine.getNearest(box)) {
+				got.add(light.getColor().r());
+			}
+			if (round == 0) {
+				expected.addAll(got);
+				assertEquals(EngineLight.MAX_LIGHTS, got.size());
+			} else {
+				assertEquals(expected, got, "round " + round);
+			}
+		}
 	}
 
 	@Test
@@ -155,8 +187,8 @@ class TestEngineLightNearest {
 		// A box x in [0, 40], y in [-5, 5], z in [-5, 5]: both lamps (3 m up) are over it, at no distance.
 		final AABB box = new AABB(new Vector3f(20.0f, 0.0f, 0.0f), new Vector3f(20.0f, 5.0f, 5.0f));
 		final Light[] byBox = engine.getNearest(box);
-		assertEquals(edge, byBox[0].getColor(), "both touch the box: the first added stays first");
-		assertEquals(centre, byBox[1].getColor());
+		assertEquals(centre, byBox[0].getColor(), "both are inside the box: the nearer to its centre comes first");
+		assertEquals(edge, byBox[1].getColor());
 		final Light[] byCentre = engine.getNearest(box.position);
 		assertEquals(centre, byCentre[0].getColor(), "by the centre the middle lamp wins");
 	}

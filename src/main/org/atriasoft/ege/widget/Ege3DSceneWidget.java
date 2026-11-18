@@ -73,6 +73,13 @@ public class Ege3DSceneWidget extends Widget {
 				.connect(this, Ege3DSceneWidget::periodicCall);
 	}
 
+	@Override
+	public void destroy() {
+		// Stop the periodic redraw: the connection is not tied to the widget's life otherwise.
+		this.periodicConnectionHandle.close();
+		super.destroy();
+	}
+
 	public Environement getEnvironement() {
 		return this.env;
 	}
@@ -98,6 +105,9 @@ public class Ege3DSceneWidget extends Widget {
 	}
 
 	protected float getAspectRatio() {
+		if (this.size.y() == 0.0f) {
+			return 1.0f;
+		}
 		return this.size.x() / this.size.y();
 	}
 

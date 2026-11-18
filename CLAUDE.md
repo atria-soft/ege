@@ -97,6 +97,11 @@ for a panel of 530 px). The splitter is at x = 946 at the default width (drag it
 `mouseup=1`; `dblclick=1` on it: the default back). Resizing the window from xdotool does nothing in Xvfb (no window
 manager): the width kept across window sizes is checked by `LabPanelSizeTest` only.
 
+## Editor building blocks
+
+- `widget/Ege3DSceneWidget`: ewol widget owning an `Environement` and a default camera, redrawn every periodic call; subclasses draw their overlay in `onDrawScene()` (eMapFactory's `ApplScene`).
+- `ControlCameraTerrainFPS`: free walk over a terrain for map previews (WASD or arrows, right-drag look, eye at a fixed height over a `TerrainHeight` function). Not a `ControlCameraPlayerFPS` variant: that one drives a player entity (components, grabbed pointer), this one drives a bare camera.
+
 ## Common Pitfalls
 
 ### Shadow mapping

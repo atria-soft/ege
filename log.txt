@@ -10,3 +10,5 @@
             (the smoke scripts click). Shift: its release does come to LabWindow (read in ewol/gale), running stops.
             Known gap, in gale: a key released while the window has lost the focus stays held (no keyReleased from
             AWT); a FocusListener on the canvas would fix it. Not seen on a real screen, Xvfb only.
+
+2026-11-18 — Ege3DSceneWidget (widget/) extrait de eMapFactory.EgeScene et ControlCameraTerrainFPS (ex eMapFactory ControlCameraFPS) ajoutes, purement additifs. Decision etape F : ControlCameraPlayerFPS pilote une entite joueur (ComponentPlayer/PositionPlayer, pointeur capture), pas un sous-ensemble -> classe soeur separee, sans dependance a eMap (hauteur via une interface TerrainHeight). Tests ege : TestTransformation3D (3) et TestShadowCascadeMatrix (2) echouent deja, non touches.

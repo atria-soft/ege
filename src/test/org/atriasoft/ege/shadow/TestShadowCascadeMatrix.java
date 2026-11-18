@@ -33,10 +33,11 @@ class TestShadowCascadeMatrix {
 
 	@Test
 	void testDirectionAngle90() {
-		// angle=π/2, incl=0 → direction should be (0, 0, 1) — zenith
+		// angle=π/2, incl=0 → direction should be (0, 1, 0) — zenith (the world is Y-up,
+		// CelestialBody.getDirection(): y > 0 means above the horizon)
 		final CelestialBody body = createBody((float) (Math.PI / 2), 0.0f);
 		final Vector3f dir = body.getDirection();
-		assertVec3(0, 0, 1, dir, "angle=90, zenith");
+		assertVec3(0, 1, 0, dir, "angle=90, zenith");
 	}
 
 	@Test
@@ -49,21 +50,21 @@ class TestShadowCascadeMatrix {
 
 	@Test
 	void testDirectionAngle270() {
-		// angle=3π/2, incl=0 → direction should be (0, 0, -1) — nadir (below horizon)
+		// angle=3π/2, incl=0 → direction should be (0, -1, 0) — nadir (below horizon, Y-up)
 		final CelestialBody body = createBody((float) (3 * Math.PI / 2), 0.0f);
 		final Vector3f dir = body.getDirection();
-		assertVec3(0, 0, -1, dir, "angle=270, nadir");
+		assertVec3(0, -1, 0, dir, "angle=270, nadir");
 	}
 
 	@Test
 	void testDirectionWithInclination() {
 		// angle=π/2, incl=π/4
-		// base orbit: ox=0, oy=sin(π/4)=0.707, oz=cos(π/4)=0.707
+		// Y-up: y = sin(angle)*cos(incl) = 0.707, z = sin(angle)*sin(incl) = 0.707
 		final CelestialBody body = createBody((float) (Math.PI / 2), (float) (Math.PI / 4));
 		final Vector3f dir = body.getDirection();
 		final float s = (float) (1.0 / Math.sqrt(2));
 		assertVec3(0, s, s, dir, "angle=90, incl=45");
-		assertTrue(dir.z() > 0, "should be above horizon");
+		assertTrue(dir.y() > 0, "should be above horizon");
 	}
 
 	// === Camera forward/right/up tests ===

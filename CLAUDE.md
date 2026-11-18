@@ -38,6 +38,10 @@ The engine implements cascaded shadow mapping for directional lights (celestial 
 - Sample shaders: `samples/src/resources/resources/shadowTest/data/shadowMaterial.vert/frag`, `basicPalette.vert/frag`
 - Tests: `src/test/org/atriasoft/ege/shadow/TestShadowCascadeMatrix.java`
 
+### Shared GLSL (`#include`)
+
+gale's shader loader has no include: `shader/ShaderAssembler.assemble(Uri)` expands `#include "shadow/csm.glsl"` lines (files of ege's DATA) into a temp file named after the content and returns its `FILE` Uri (unchanged when there is no directive). `ComponentRenderMeshPalette`, `ComponentRenderTexturedMaterialsStaticMesh` and `LabRenderer` call it; an application loading a program itself calls it on its fragment Uri. `csm.glsl` holds the CSM constants, uniforms, `computeBias` and `selectCascade(depth, blend)`; each shader keeps its own projection and sampling. Tested headless (`ShaderAssemblerTest`, glslangValidator when installed). dementia's and eMapRender's copies are not yet on it.
+
 ### Shadow-receiving render components
 
 Any `ComponentRender` that wants shadows must:

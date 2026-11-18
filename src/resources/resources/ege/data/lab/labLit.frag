@@ -9,10 +9,8 @@ precision mediump int;
 // which the cascaded shadows of ege's shadow engine take a share. Each face is lit on the side the eye sees:
 // the winding of the shapes does not matter. The ground (in_grid = 1) draws its lines every 1, 5 and 25 m,
 // and the axes through the origin: X (east) red, Z (south) blue.
-const int MAX_SHADOW_MAPS = 12; // MAX_CASTERS(3) * MAX_CASCADES(4)
-const int MAX_CASCADES = 4;
-// Fraction of a cascade range blended with the next one
-const float CASCADE_BLEND_BAND = 0.1;
+// Constants, uniforms, computeBias and selectCascade of the cascaded shadows, shared with ege's other shaders.
+#include "shadow/csm.glsl"
 
 in vec4 io_color;
 in vec3 io_normal;
@@ -30,24 +28,13 @@ uniform float in_shadowStrength;
 // 1 while the ground is drawn.
 uniform int in_grid;
 
-// CSM shadow uniforms (ege ShadowRender)
-uniform int in_shadowCasterCount;
-uniform int in_cascadeCount;
+// Light-space matrix of each shadow map (the other CSM uniforms come with the include)
 uniform mat4 in_lightSpaceMatrix[MAX_SHADOW_MAPS];
-uniform sampler2DShadow in_shadowMap[MAX_SHADOW_MAPS];
-uniform float in_cascadeSplits[MAX_CASCADES];
-// PCF kernel half-size: 0 = hard (1x1), 1 = medium (3x3), 2 = soft (5x5)
-uniform int in_pcfHalfKernel;
 
 out vec4 out_Color;
 
 // ---- Cascaded shadow maps: COPIED CODE (dementia surface.frag, eMapRender terrain.frag) ----------
-// Adaptive slope-scaled bias to reduce shadow acne on angled surfaces.
-float computeBias(vec3 normal, vec3 lightDir) {
-	float cosTheta = abs(dot(normal, lightDir));
-	return max(0.001 * (1.0 - cosTheta), 0.0002);
-}
-
+// (the bias and the cascade selection are shadow/csm.glsl, included above)
 // Hardware comparison of shadow map mapIndex at coord (xy, reference depth): 1.0 lit, 0.0 in shadow. GLSL 4.00
 // only indexes an array of samplers by a dynamically uniform value: each map through a constant index.
 float shadowSample(int mapIndex, vec3 coord) {
@@ -90,28 +77,11 @@ float calculateShadow(int mapIndex, float bias) {
 	return 1.0 - lit / float(sampleCount);
 }
 
-// Cascade of the fragment (by view depth) and the blend factor with the next one.
-int selectCascade(out float blendFactor) {
-	blendFactor = 0.0;
-	for (int i = 0; i < in_cascadeCount - 1; i++) {
-		if (io_viewDepth < in_cascadeSplits[i]) {
-			float cascadeNear = (i == 0) ? 0.0 : in_cascadeSplits[i - 1];
-			float cascadeRange = in_cascadeSplits[i] - cascadeNear;
-			float blendStart = in_cascadeSplits[i] - cascadeRange * CASCADE_BLEND_BAND;
-			if (io_viewDepth > blendStart) {
-				blendFactor = (io_viewDepth - blendStart) / (cascadeRange * CASCADE_BLEND_BAND);
-			}
-			return i;
-		}
-	}
-	return in_cascadeCount - 1;
-}
-
 // How much of the sun the fragment misses, 0 (lit) to 1 (in shadow).
 float sunShadow(vec3 normal, vec3 toSun) {
 	float bias = computeBias(normal, toSun);
 	float blendFactor;
-	int cascade = selectCascade(blendFactor);
+	int cascade = selectCascade(io_viewDepth, blendFactor);
 	float maxShadow = 0.0;
 	for (int caster = 0; caster < in_shadowCasterCount; caster++) {
 		int mapIndex = caster * in_cascadeCount + cascade;

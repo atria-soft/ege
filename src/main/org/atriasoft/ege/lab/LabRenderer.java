@@ -9,6 +9,7 @@ import java.util.Map;
 import org.atriasoft.ege.components.part.ShadowRender;
 import org.atriasoft.ege.engines.EngineShadow;
 import org.atriasoft.ege.engines.ShadowCaster;
+import org.atriasoft.ege.shader.ShaderAssembler;
 import org.atriasoft.etk.Color;
 import org.atriasoft.etk.Uri;
 import org.atriasoft.etk.math.Matrix4f;
@@ -184,7 +185,7 @@ final class LabRenderer {
 	LabRenderer(final EngineShadow shadowEngine) {
 		this.shadowEngine = shadowEngine;
 		this.litCreated = ResourceProgram.create(new Uri("DATA", "lab/labLit.vert", "ege"),
-				new Uri("DATA", "lab/labLit.frag", "ege"));
+				ShaderAssembler.assemble(new Uri("DATA", "lab/labLit.frag", "ege")));
 		this.lineCreated = ResourceProgram.create(new Uri("DATA", "lab/labLine.vert", "ege"),
 				new Uri("DATA", "lab/labLine.frag", "ege"));
 		final boolean usable = usable(this.litCreated, "labLit") & usable(this.lineCreated, "labLine");

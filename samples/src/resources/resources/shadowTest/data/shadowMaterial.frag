@@ -22,10 +22,8 @@ struct Material {
     float shininess;
 };
 const int MAX_LIGHT_NUMBER = 8;
-const int MAX_SHADOW_MAPS = 12; // MAX_CASTERS(3) * MAX_CASCADES(4)
-const int MAX_CASCADES = 4;
-// Fraction of cascade range used for blending between adjacent cascades
-const float CASCADE_BLEND_BAND = 0.1;
+// Constants, uniforms, computeBias and selectCascade of the cascaded shadows (ege's shadow/csm.glsl)
+#include "shadow/csm.glsl"
 
 
 in vec2 io_textureCoords;
@@ -48,23 +46,8 @@ uniform Light in_lights[MAX_LIGHT_NUMBER];
 // global color of the sky
 const vec3 in_sky_color = vec3(0.5, 0.7, 1.0);
 
-// CSM shadow uniforms
-uniform int in_shadowCasterCount;
-uniform int in_cascadeCount;
-uniform sampler2DShadow in_shadowMap[MAX_SHADOW_MAPS];
-uniform float in_cascadeSplits[MAX_CASCADES];
-// PCF kernel half-size: 0 = hard (1x1), 1 = medium (3x3), 2 = soft (5x5)
-uniform int in_pcfHalfKernel;
-
 // output:
 out vec4 out_Color;
-
-// Adaptive slope-scaled bias to reduce shadow acne on angled surfaces.
-// Keep values very small — polygon offset handles most of the bias.
-float computeBias(vec3 normal, vec3 lightDir) {
-	float cosTheta = abs(dot(normal, lightDir));
-	return max(0.001 * (1.0 - cosTheta), 0.0002);
-}
 
 // PCF shadow calculation using hardware shadow comparison (sampler2DShadow).
 // Each texture() call performs a bilinear-interpolated depth comparison,
@@ -91,26 +74,6 @@ float calculateShadow(vec4 fragPosLightSpace, sampler2DShadow shadowTex, float b
 	}
 	// Invert: texture() returns 1.0 when lit (depth <= ref), we want 1.0 when shadowed
 	return 1.0 - shadow / float(sampleCount);
-}
-
-// Select the cascade index and compute blend factor with the next cascade.
-// blendFactor = 0.0 means fully in the selected cascade,
-// blendFactor > 0.0 means blending towards the next cascade.
-int selectCascade(out float blendFactor) {
-	blendFactor = 0.0;
-	for (int i = 0; i < in_cascadeCount - 1; i++) {
-		if (io_distanceFromCamera < in_cascadeSplits[i]) {
-			// Compute blend band: last CASCADE_BLEND_BAND fraction of this cascade's range
-			float cascadeNear = (i == 0) ? 0.0 : in_cascadeSplits[i - 1];
-			float cascadeRange = in_cascadeSplits[i] - cascadeNear;
-			float blendStart = in_cascadeSplits[i] - cascadeRange * CASCADE_BLEND_BAND;
-			if (io_distanceFromCamera > blendStart) {
-				blendFactor = (io_distanceFromCamera - blendStart) / (cascadeRange * CASCADE_BLEND_BAND);
-			}
-			return i;
-		}
-	}
-	return in_cascadeCount - 1;
 }
 
 void main(void) {
@@ -173,7 +136,7 @@ void main(void) {
 		float bias = computeBias(unitNormal, lightDir);
 
 		float blendFactor;
-		int cascade = selectCascade(blendFactor);
+		int cascade = selectCascade(io_distanceFromCamera, blendFactor);
 		float maxShadow = 0.0;
 		for (int caster = 0; caster < in_shadowCasterCount; caster++) {
 			int mapIndex = caster * in_cascadeCount + cascade;

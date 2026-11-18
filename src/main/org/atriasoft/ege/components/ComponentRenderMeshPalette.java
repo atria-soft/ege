@@ -6,6 +6,7 @@ import org.atriasoft.ege.components.part.PositionningInterface;
 import org.atriasoft.ege.components.part.RenderContext;
 import org.atriasoft.ege.components.part.ShadowRender;
 import org.atriasoft.ege.components.part.TransformRender;
+import org.atriasoft.ege.shader.ShaderAssembler;
 import org.atriasoft.etk.Uri;
 import org.atriasoft.gale.backend3d.OpenGL;
 import org.atriasoft.gale.resource.ResourceProgram;
@@ -23,7 +24,7 @@ public class ComponentRenderMeshPalette extends ComponentRender {
 
 	public ComponentRenderMeshPalette(final Uri vertexShader, final Uri fragmentShader) {
 		this.renderTransform = new TransformRender();
-		this.program = ResourceProgram.create(vertexShader, fragmentShader);
+		this.program = ResourceProgram.create(ShaderAssembler.assemble(vertexShader), ShaderAssembler.assemble(fragmentShader));
 		if (this.program != null) {
 			this.renderTransform.init(this.program);
 		}

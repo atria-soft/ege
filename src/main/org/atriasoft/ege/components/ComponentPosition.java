@@ -9,6 +9,7 @@ import org.atriasoft.etk.math.Vector3f;
 public class ComponentPosition extends Component implements PositionningInterface {
 	public final Signal<Transform3D> signalPosition = new Signal<>();
 	protected Transform3D transform;
+	private boolean externalChange = false;
 	
 	/**
 	 * Create a basic position component (no orientation and position (0,0,0))
@@ -57,6 +58,31 @@ public class ComponentPosition extends Component implements PositionningInterfac
 			return;
 		}
 		this.transform = transform;
+		this.externalChange = true;
 		this.signalPosition.emit(this.transform);
+	}
+
+	/**
+	 * Set the transformation coming from the physics simulation: it is not an external move,
+	 * so it is never pushed back to the body.
+	 * @param transform transformation computed by the physics
+	 */
+	public void setTransformFromPhysics(final Transform3D transform) {
+		if (this.transform.isEqual(transform)) {
+			return;
+		}
+		this.transform = transform;
+		this.signalPosition.emit(this.transform);
+	}
+
+	/**
+	 * Tell and clear whether the transformation was set from outside (teleport, respawn, editor move)
+	 * since the last call.
+	 * @return true if {@link #setTransform(Transform3D)} changed the transformation
+	 */
+	public boolean consumeExternalChange() {
+		final boolean changed = this.externalChange;
+		this.externalChange = false;
+		return changed;
 	}
 }

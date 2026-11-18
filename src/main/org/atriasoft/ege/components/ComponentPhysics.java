@@ -257,7 +257,24 @@ public class ComponentPhysics extends Component {
 				this.rigidBody.setLinearVelocity(velocity.safeNormalize().multiply(this.maxSpeed));
 			}
 		}
-		this.position.setTransform(this.rigidBody.getTransform());
+		this.position.setTransformFromPhysics(this.rigidBody.getTransform());
+	}
+
+	/**
+	 * Move the body to a transform (teleport, respawn): the velocities are reset.
+	 * The position component is updated too.
+	 * @param transform The new world transform
+	 */
+	public void teleport(final Transform3D transform) {
+		if (this.position != null) {
+			this.position.setTransformFromPhysics(transform);
+			this.position.consumeExternalChange();
+		}
+		if (this.rigidBody != null) {
+			this.rigidBody.setTransform(transform);
+			this.rigidBody.setLinearVelocity(Vector3f.ZERO);
+			this.rigidBody.setAngularVelocity(Vector3f.ZERO);
+		}
 	}
 
 	/**
@@ -269,8 +286,15 @@ public class ComponentPhysics extends Component {
 			return;
 		}
 		if (this.bodyType == PhysicBodyType.BODY_DYNAMIC) {
+			// Physics drives the position; only an external move (teleport, respawn) goes to the body.
+			if (this.position.consumeExternalChange()) {
+				this.rigidBody.setTransform(this.position.getTransform());
+				this.rigidBody.setLinearVelocity(Vector3f.ZERO);
+				this.rigidBody.setAngularVelocity(Vector3f.ZERO);
+			}
 			return;
 		}
+		this.position.consumeExternalChange();
 		this.rigidBody.setTransform(this.position.getTransform());
 	}
 

@@ -141,6 +141,17 @@ public class LoxelApplicationPerso extends GaleApplication {
 			this.env.addEntity(localBox);
 		}
 
+		{
+			// static floor under the grid (top face at y = 0) so the dynamic box rests on it
+			final Entity floor = new Entity(this.env);
+			floor.addComponent(new ComponentPosition(new Transform3D(new Vector3f(0, -0.5f, 0))));
+			final ComponentPhysics floorPhysics = new ComponentPhysics();
+			floorPhysics.setBodyType(PhysicBodyType.BODY_STATIC);
+			floorPhysics.addShape(new BoxShape(new Vector3f(20.0f, 0.5f, 20.0f), 0.0f), 1.0f);
+			floor.addComponent(floorPhysics);
+			this.env.addEntity(floor);
+		}
+
 		final Entity gird = new Entity(this.env);
 		gird.addComponent(new ComponentPosition(new Transform3D(new Vector3f(0, 0, 0))));
 		gird.addComponent(new ComponentStaticMesh(MeshGenerator.createGrid(5)));
@@ -162,7 +173,8 @@ public class LoxelApplicationPerso extends GaleApplication {
 					new ComponentRenderTexturedMaterialsStaticMesh(new Uri("DATA", "basicMaterial.vert", "loxelEngine"),
 							new Uri("DATA", "basicMaterial.frag", "loxelEngine")));
 			final ComponentPhysics physics = new ComponentPhysics();
-			physics.setBodyType(PhysicBodyType.BODY_DYNAMIC);
+			// moved by the camera controller: kinematic, so the simulation never overwrites its position
+			physics.setBodyType(PhysicBodyType.BODY_KINEMATIC);
 			player.addComponent(physics);
 			this.env.addEntity(player);
 		}

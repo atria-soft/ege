@@ -12,3 +12,5 @@
             AWT); a FocusListener on the canvas would fix it. Not seen on a real screen, Xvfb only.
 
 2026-11-18 — Ege3DSceneWidget (widget/) extrait de eMapFactory.EgeScene et ControlCameraTerrainFPS (ex eMapFactory ControlCameraFPS) ajoutes, purement additifs. Decision etape F : ControlCameraPlayerFPS pilote une entite joueur (ComponentPlayer/PositionPlayer, pointeur capture), pas un sous-ensemble -> classe soeur separee, sans dependance a eMap (hauteur via une interface TerrainHeight). Tests ege : TestTransformation3D (3) et TestShadowCascadeMatrix (2) echouent deja, non touches.
+
+2026-11-18 Dynamic bodies now really move (ephysics fix): MapVoxel chunk bodies are static; loxel sample player is kinematic and has a static floor; ComponentPosition.setTransform marks an external move that ComponentPhysics pushes to a dynamic body (velocities reset), ComponentPhysics.teleport(Transform3D) added; physics writes use setTransformFromPhysics. Test: TestComponentPhysicsSync.

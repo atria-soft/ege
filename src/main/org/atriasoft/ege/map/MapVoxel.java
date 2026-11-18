@@ -23,6 +23,7 @@ import org.atriasoft.ege.components.ComponentStaticMesh;
 import org.atriasoft.ege.components.ComponentStaticMeshs;
 import org.atriasoft.ege.components.ComponentTexture;
 import org.atriasoft.ege.components.ComponentTextures;
+import org.atriasoft.ege.components.PhysicBodyType;
 import org.atriasoft.ege.engines.EngineMap;
 
 public class MapVoxel extends EngineMap {
@@ -71,6 +72,8 @@ public class MapVoxel extends EngineMap {
 				new Uri("DATA", "basicMaterial.vert"),
 				new Uri("DATA", "basicMaterial.frag")));
 		ComponentPhysics physics = new ComponentPhysics();
+		// the terrain never moves: a dynamic (default) shapeless body would sink under gravity
+		physics.setBodyType(PhysicBodyType.BODY_STATIC);
 		//PhysicMapVoxel box = new PhysicMapVoxel(tmpVoxelChunk);
 		//physics.addShape(box);
 		//physics.setStaticObject(true);

@@ -116,4 +116,4 @@ manager): the width kept across window sizes is checked by `LabPanelSizeTest` on
 - **General rule:** any OpenGL state changed during a render pass (`blendFunc`, `depthFunc`, `stencilOp`, `cullFace`, etc.) must be restored before returning. OpenGL is global mutable state — treat every setter as requiring a matching restore.
 
 ### Build
-- **Pre-existing test failures:** `TestTransformation3D` and other tests may fail. Use `-DskipTests` to build successfully.
+- **Tests:** all pass since 2026-11-18 (`TestTransformation3D` and `TestShadowCascadeMatrix` fixed): a failing test is a regression.

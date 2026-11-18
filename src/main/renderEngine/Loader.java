@@ -3,6 +3,7 @@ package renderEngine;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.UncheckedIOException;
 import java.nio.ByteBuffer;
 import java.nio.FloatBuffer;
 import java.nio.IntBuffer;
@@ -32,12 +33,7 @@ public class Loader {
         int errorValue = GL11.glGetError();
          
         if (errorValue != GL11.GL_NO_ERROR) {
-        	System.err.println("ERROR - " + errorMessage + ": ???" );
-//            String errorString = GLU.gluErrorString(errorValue);
-//            System.err.println("ERROR - " + errorMessage + ": " + errorString);
-//             
-//            if (Display.isCreated()) Display.destroy();
-            System.exit(-1);
+            throw new IllegalStateException("OpenGL error 0x" + Integer.toHexString(errorValue) + " in " + errorMessage);
         }
     }
 	public RawModel loadToVAO(float[] positions, float[] textureCoordinates, float[] normals, int[] indices) {
@@ -96,8 +92,7 @@ public class Loader {
             java.awt.image.BufferedImage image = ImageIO.read(in);
             in.close();
             if (image == null) {
-                System.err.println("Unsupported image format: " + filename);
-                System.exit(-1);
+                throw new IllegalStateException("Unsupported image format: " + filename);
             }
             tWidth = image.getWidth();
             tHeight = image.getHeight();
@@ -113,9 +108,7 @@ public class Loader {
             }
             buf.flip();
         } catch (IOException e) {
-            e.printStackTrace();
-            System.err.println("try to load texture " + filename + ", didn't work");
-            System.exit(-1);
+            throw new UncheckedIOException("Can not load the texture " + filename, e);
         }
         return new TextureData(buf, tWidth, tHeight);
     }

@@ -20,3 +20,5 @@
 2026-11-18 Engine debt: EngineLight.getLights()/getSuns() (unmodifiable views) and getNearest(AABB) (distance to the box; getNearest(Vector3f) unchanged, LightRender keeps it). GLSL: gale has no include, so ShaderAssembler (shader/) expands `#include "shadow/csm.glsl"` into a content-named temp file; labLit.frag, basicPalette.frag, shadowMaterial.frag share csm.glsl (consts, uniforms, computeBias, selectCascade(depth, blend)). The copies in dementia and eMapRender terrain.frag are left for their owners.
 
 2026-11-18 ShaderAssembler no longer writes temp files: assembled in memory (cached per Uri, #line around includes, strict #include parsing, block comments skipped), fed to gale ShaderText. EngineLight.getNearest ties: box distance, then centre distance, then position/colour/attenuation (insertion-order independent).
+
+2026-11-18 ege no longer calls System.exit: Loader (GL error, unreadable texture), EnginePhysics (no gravity engine) throw IllegalStateException/UncheckedIOException; ComponentStaticMeshs(Uri) loads the mesh again. No caller relied on the exit.

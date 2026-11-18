@@ -32,8 +32,7 @@ public class EnginePhysics extends Engine {
 		super(env);
 		this.gravity = (EngineGravity) env.getEngine("gravity");
 		if (this.gravity == null) {
-			LOGGER.error("[CRITICAL] Must initialise Gravity before physics...");
-			System.exit(-1);
+			throw new IllegalStateException("The gravity engine must be added to the environment before the physics engine");
 		}
 		final Vector3f initialGravity = this.gravity.getGravityAtPosition(Vector3f.ZERO);
 		this.dynamicsWorld = new DynamicsWorld(initialGravity);

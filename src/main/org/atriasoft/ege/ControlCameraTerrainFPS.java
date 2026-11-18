@@ -66,10 +66,16 @@ public class ControlCameraTerrainFPS implements ControlInterface {
 
 	public void setEyeHeight(final float eyeHeight) {
 		this.eyeHeight = eyeHeight;
+		updateCamera();
 	}
 
 	public void setMoveSpeed(final float moveSpeed) {
 		this.moveSpeed = moveSpeed;
+	}
+
+	/** Put the eye back at the right height after the terrain changed under it. */
+	public void refreshHeight() {
+		updateCamera();
 	}
 
 	private void updateCamera() {

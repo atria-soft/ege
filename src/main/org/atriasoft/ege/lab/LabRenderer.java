@@ -184,8 +184,8 @@ final class LabRenderer {
 	/** Compile the programs and register the caster of the shadows with {@code shadowEngine}. */
 	LabRenderer(final EngineShadow shadowEngine) {
 		this.shadowEngine = shadowEngine;
-		this.litCreated = ResourceProgram.create(new Uri("DATA", "lab/labLit.vert", "ege"),
-				ShaderAssembler.assemble(new Uri("DATA", "lab/labLit.frag", "ege")));
+		this.litCreated = ShaderAssembler.program(new Uri("DATA", "lab/labLit.vert", "ege"),
+				new Uri("DATA", "lab/labLit.frag", "ege"));
 		this.lineCreated = ResourceProgram.create(new Uri("DATA", "lab/labLine.vert", "ege"),
 				new Uri("DATA", "lab/labLine.frag", "ege"));
 		final boolean usable = usable(this.litCreated, "labLit") & usable(this.lineCreated, "labLine");

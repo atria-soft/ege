@@ -12,6 +12,8 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.Map;
 
+import org.atriasoft.etk.Uri;
+import org.atriasoft.gale.backend3d.OpenGL.ShaderType;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 
@@ -39,7 +41,58 @@ class ShaderAssemblerTest {
 	void anIncludeIsReplacedWhereItStands() {
 		final Map<String, String> files = Map.of("a.glsl", "float a;\n", "b.glsl", "#include \"a.glsl\"\nfloat b;");
 		final String out = ShaderAssembler.expand("#version 400\n  #include \"b.glsl\"\nvoid main() {}\n", files::get);
-		assertEquals("#version 400\nfloat a;\nfloat b;\nvoid main() {}\n", out);
+		assertEquals("#version 400\n#line 1\n#line 1\nfloat a;\n#line 2\nfloat b;\n#line 3\nvoid main() {}\n", out);
+	}
+
+	@Test
+	void lineDirectivesPointBackAtTheRealLines() {
+		final String out = ShaderAssembler.expand("a\nb\n#include \"x\"\nc", name -> "x1\nx2\n");
+		assertEquals("a\nb\n#line 1\nx1\nx2\n#line 4\nc", out);
+	}
+
+	@Test
+	void onlyTheFirstQuotedTokenCounts() {
+		final String out = ShaderAssembler.expand("#include \"a\" \"b\" // \"c\"\n", name -> "[" + name + "]");
+		assertEquals("#line 1\n[a]\n#line 2\n", out);
+	}
+
+	@Test
+	void theDirectiveMustBeExactlyInclude() {
+		final String source = "#includes \"a\"\n#include_next \"a\"\n";
+		assertEquals(source, ShaderAssembler.expand(source, name -> {
+			throw new AssertionError(name);
+		}));
+		assertThrows(IllegalArgumentException.class, () -> ShaderAssembler.expand("#include\n", name -> ""));
+		assertEquals("#line 1\nz\n#line 2", ShaderAssembler.expand("\t#include\t\"a\"", name -> "z"));
+	}
+
+	@Test
+	void anIncludeInsideABlockCommentIsIgnored() {
+		final String source = "/*\n#include \"nope\"\n*/\n// #include \"nope\"\nfloat a; /* x\n#include \"nope\" */\n";
+		assertEquals(source, ShaderAssembler.expand(source, name -> {
+			throw new AssertionError(name);
+		}));
+		final String after = "/* c */ float a;\n#include \"a\"";
+		assertEquals("/* c */ float a;\n#line 1\nz\n#line 3", ShaderAssembler.expand(after, name -> "z"));
+	}
+
+	@Test
+	void theAssembledTextIsCachedUntilInvalidated(@TempDir final Path directory) throws IOException {
+		final Path file = directory.resolve("t.frag");
+		Files.writeString(file, "one", StandardCharsets.UTF_8);
+		final Uri uri = new Uri("FILE", file.toAbsolutePath().toString());
+		ShaderAssembler.invalidate();
+		assertEquals("one", ShaderAssembler.assemble(uri));
+		Files.writeString(file, "two", StandardCharsets.UTF_8);
+		assertEquals("one", ShaderAssembler.assemble(uri));
+		ShaderAssembler.invalidate();
+		assertEquals("two", ShaderAssembler.assemble(uri));
+		assertEquals("two", ShaderAssembler.shader(uri, ShaderType.FRAGMENT).firstText());
+		Files.delete(file);
+		ShaderAssembler.invalidate();
+		final IllegalArgumentException error = assertThrows(IllegalArgumentException.class,
+				() -> ShaderAssembler.assemble(uri));
+		assertTrue(error.getMessage().contains(uri.toString()), error.getMessage());
 	}
 
 	@Test

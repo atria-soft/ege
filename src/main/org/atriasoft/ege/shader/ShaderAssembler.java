@@ -1,34 +1,35 @@
 package org.atriasoft.ege.shader;
 
-import java.io.IOException;
-import java.io.UncheckedIOException;
-import java.nio.charset.StandardCharsets;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.nio.file.StandardCopyOption;
-import java.security.MessageDigest;
-import java.security.NoSuchAlgorithmException;
 import java.util.ArrayList;
-import java.util.HexFormat;
 import java.util.List;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.Function;
 
 import org.atriasoft.etk.Uri;
+import org.atriasoft.gale.backend3d.OpenGL.ShaderType;
+import org.atriasoft.gale.resource.ResourceProgram;
+import org.atriasoft.gale.resource.ShaderText;
 
 /**
  * Include mechanism for the GLSL sources of ege (gale's shader loader has none).
  * <p>
  * A line {@code #include "shadow/csm.glsl"} of a shader is replaced by the text of the file of ege's data
  * ({@code DATA:shadow/csm.glsl} of the library {@code ege}), before the shader is compiled. The included text
- * goes where the directive stood, so a {@code #version} line stays first. {@link #assemble(Uri)} does it for a
- * shader that is about to be given to {@code ResourceProgram.create}: a source without a directive is returned
- * unchanged (same {@link Uri}), otherwise the assembled text is written to a file of the temporary directory
- * named after its content, and its {@code FILE} {@link Uri} is returned. {@link #expand} is the pure part.
+ * goes where the directive stood, so a {@code #version} line stays first, between {@code #line 1} and
+ * {@code #line N+1} directives so that a compile error points at the real line of the real source. Nothing is
+ * written to disk: {@link #assemble(Uri)} gives the assembled text (cached per source {@link Uri} until
+ * {@link #invalidate()}), {@link #shader(Uri, ShaderType)} a gale {@link ShaderText} that assembles again at each
+ * reload of the resource (live edits of the shader or of an included file show up) and
+ * {@link #program(Uri, Uri)} the program. {@link #expand} is the pure part.
+ * <p>
+ * Directive: {@code #include} (after blanks) followed by blanks and a quoted name; only the first quoted token
+ * counts, whatever follows is ignored. A line inside a block comment is never a directive.
  */
 public final class ShaderAssembler {
-	/** Directive recognised at the start of a line (after blanks). */
 	private static final String INCLUDE = "#include";
 	private static final int MAX_DEPTH = 8;
+	private static final ConcurrentHashMap<String, String> CACHE = new ConcurrentHashMap<>();
 
 	private ShaderAssembler() {
 	}
@@ -51,18 +52,17 @@ public final class ShaderAssembler {
 			return source;
 		}
 		final List<String> out = new ArrayList<>();
-		for (final String line : source.split("\n", -1)) {
-			final String trimmed = line.strip();
-			if (!trimmed.startsWith(INCLUDE)) {
+		final String[] lines = source.split("\n", -1);
+		boolean inComment = false;
+		for (int index = 0; index < lines.length; index++) {
+			final String line = lines[index];
+			final boolean startsInComment = inComment;
+			inComment = endsInComment(line, inComment);
+			final String name = startsInComment ? null : includeName(line);
+			if (name == null) {
 				out.add(line);
 				continue;
 			}
-			final int open = trimmed.indexOf('"');
-			final int close = trimmed.lastIndexOf('"');
-			if (open < 0 || close <= open) {
-				throw new IllegalArgumentException("malformed include: " + trimmed);
-			}
-			final String name = trimmed.substring(open + 1, close);
 			if (stack.contains(name) || stack.size() >= MAX_DEPTH) {
 				throw new IllegalArgumentException("include cycle or too deep: " + stack + " -> " + name);
 			}
@@ -76,45 +76,121 @@ public final class ShaderAssembler {
 			if (expanded.endsWith("\n")) {
 				expanded = expanded.substring(0, expanded.length() - 1);
 			}
+			out.add("#line 1");
 			out.add(expanded);
+			out.add("#line " + (index + 2));
 		}
 		return String.join("\n", out);
 	}
 
 	/**
-	 * The shader {@code uri} ready to compile: itself when it holds no include, else a file of the temporary
-	 * directory holding the assembled text. Includes name files of ege's data.
+	 * The name of the include directive that {@code line} holds, {@code null} when it is not one.
 	 *
-	 * @throws IllegalArgumentException when the shader or an included file is not found
+	 * @throws IllegalArgumentException when it is one but has no quoted name
 	 */
-	public static Uri assemble(final Uri uri) {
+	private static String includeName(final String line) {
+		final String trimmed = line.strip();
+		if (!trimmed.startsWith(INCLUDE)) {
+			return null;
+		}
+		final String rest = trimmed.substring(INCLUDE.length());
+		if (!rest.isEmpty() && !Character.isWhitespace(rest.charAt(0))) {
+			return null; // another word, such as #includes
+		}
+		final String argument = rest.strip();
+		if (argument.isEmpty() || argument.charAt(0) != '"') {
+			throw new IllegalArgumentException("malformed include: " + trimmed);
+		}
+		final int close = argument.indexOf('"', 1);
+		if (close < 0) {
+			throw new IllegalArgumentException("malformed include: " + trimmed);
+		}
+		final String name = argument.substring(1, close);
+		if (name.isEmpty()) {
+			throw new IllegalArgumentException("malformed include: " + trimmed);
+		}
+		return name;
+	}
+
+	/** Whether a block comment is still open at the end of {@code line}, which starts in the state given. */
+	private static boolean endsInComment(final String line, final boolean startsInComment) {
+		boolean inComment = startsInComment;
+		int position = 0;
+		while (position < line.length()) {
+			if (inComment) {
+				final int end = line.indexOf("*/", position);
+				if (end < 0) {
+					return true;
+				}
+				inComment = false;
+				position = end + 2;
+			} else {
+				final int block = line.indexOf("/*", position);
+				final int lineComment = line.indexOf("//", position);
+				if (block < 0 || (lineComment >= 0 && lineComment < block)) {
+					return false;
+				}
+				inComment = true;
+				position = block + 2;
+			}
+		}
+		return inComment;
+	}
+
+	/**
+	 * The assembled text of the shader {@code uri} (its includes name files of ege's data), cached per source
+	 * Uri until {@link #invalidate()}.
+	 *
+	 * @throws IllegalArgumentException when the shader or an included file is not found, or an include is malformed;
+	 *         the message names the shader
+	 */
+	public static String assemble(final Uri uri) {
+		final String key = uri.toString();
+		final String cached = CACHE.get(key);
+		if (cached != null) {
+			return cached;
+		}
+		return assembleFresh(uri);
+	}
+
+	/** Forget every cached text: the next {@link #assemble(Uri)} reads the files again. */
+	public static void invalidate() {
+		CACHE.clear();
+	}
+
+	private static String assembleFresh(final Uri uri) {
 		final String source = Uri.getAllDataString(uri);
 		if (source == null) {
-			// Left to the loader, which reports the missing file its own way.
-			return uri;
+			throw new IllegalArgumentException("Cannot assemble the shader " + uri + ": source not found");
 		}
-		if (!source.contains(INCLUDE)) {
-			return uri;
-		}
-		final String text = expand(source, name -> Uri.getAllDataString(new Uri("DATA", name, "ege")));
-		final String path = uri.getPath();
-		final String file = path.substring(path.lastIndexOf('/') + 1);
+		final String text;
 		try {
-			final byte[] digest = MessageDigest.getInstance("SHA-1").digest(text.getBytes(StandardCharsets.UTF_8));
-			final Path directory = Path.of(System.getProperty("java.io.tmpdir"), "ege-shaders",
-					HexFormat.of().formatHex(digest));
-			final Path target = directory.resolve(file);
-			if (!Files.exists(target)) {
-				Files.createDirectories(directory);
-				final Path temporary = Files.createTempFile(directory, "part", ".tmp");
-				Files.writeString(temporary, text, StandardCharsets.UTF_8);
-				Files.move(temporary, target, StandardCopyOption.REPLACE_EXISTING);
-			}
-			return new Uri("FILE", target.toAbsolutePath().toString());
-		} catch (final IOException e) {
-			throw new UncheckedIOException("Cannot write the assembled shader " + uri, e);
-		} catch (final NoSuchAlgorithmException e) {
-			throw new IllegalStateException(e);
+			text = expand(source, name -> Uri.getAllDataString(new Uri("DATA", name, "ege")));
+		} catch (final IllegalArgumentException e) {
+			throw new IllegalArgumentException("Cannot assemble the shader " + uri + ": " + e.getMessage(), e);
 		}
+		CACHE.put(uri.toString(), text);
+		return text;
+	}
+
+	/**
+	 * The shader {@code uri} as a gale {@link ShaderText}: the first text comes from the cache, each reload of
+	 * the resource assembles it again from the files (and refreshes the cache).
+	 *
+	 * @throws IllegalArgumentException as {@link #assemble(Uri)}
+	 */
+	public static ShaderText shader(final Uri uri, final ShaderType type) {
+		final AtomicBoolean first = new AtomicBoolean(true);
+		return ShaderText.of(uri.toString(), type, () -> first.getAndSet(false) ? assemble(uri) : assembleFresh(uri));
+	}
+
+	/**
+	 * The program of a vertex and a fragment shader, assembled.
+	 *
+	 * @throws IllegalArgumentException when a shader cannot be assembled; the message names its Uri
+	 */
+	public static ResourceProgram program(final Uri vertexShader, final Uri fragmentShader) {
+		return ResourceProgram.create(shader(vertexShader, ShaderType.VERTEX),
+				shader(fragmentShader, ShaderType.FRAGMENT));
 	}
 }

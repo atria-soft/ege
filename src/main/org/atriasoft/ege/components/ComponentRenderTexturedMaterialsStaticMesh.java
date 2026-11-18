@@ -28,7 +28,7 @@ public class ComponentRenderTexturedMaterialsStaticMesh extends ComponentRender 
 	public ComponentRenderTexturedMaterialsStaticMesh(final Uri vertexShader, final Uri fragmentShader) {
 		this.renderTransform = new TransformRender();
 		this.renderMaterial = new MaterialRender();
-		this.program = ResourceProgram.create(ShaderAssembler.assemble(vertexShader), ShaderAssembler.assemble(fragmentShader));
+		this.program = ShaderAssembler.program(vertexShader, fragmentShader);
 		if (this.program != null) {
 			this.renderTransform.init(this.program);
 			this.renderMaterial.init(this.program);

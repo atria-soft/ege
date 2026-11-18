@@ -24,7 +24,7 @@ public class ComponentRenderMeshPalette extends ComponentRender {
 
 	public ComponentRenderMeshPalette(final Uri vertexShader, final Uri fragmentShader) {
 		this.renderTransform = new TransformRender();
-		this.program = ResourceProgram.create(ShaderAssembler.assemble(vertexShader), ShaderAssembler.assemble(fragmentShader));
+		this.program = ShaderAssembler.program(vertexShader, fragmentShader);
 		if (this.program != null) {
 			this.renderTransform.init(this.program);
 		}

@@ -20,35 +20,18 @@ public class Geometry3D {
 	}
 	
 	public static boolean pointInOBB(final Vector3f point, final OBB obb) {
-		Vector3f dir = point.less(obb.position);
-		{
-			int iii = 0;
-			Vector3f axis = obb.orientation.getRow(iii * 3);
-			float distance = Vector3f.length2(dir, axis);
-			float squareDistance = obb.size.x() * obb.size.x();
-			if (distance > squareDistance || distance < -squareDistance) {
-				return false;
-			}
+		// The point, relative to the center, projected on each axis of the box (the rows of the orientation)
+		// must not go further than the half size on that axis.
+		final Vector3f dir = point.less(obb.position);
+		if (Math.abs(dir.dot(obb.orientation.getRow(0))) > obb.size.x()) {
+			return false;
 		}
-		{
-			int iii = 1;
-			Vector3f axis = obb.orientation.getRow(iii * 3);
-			float distance = Vector3f.length2(dir, axis);
-			float squareDistance = obb.size.y() * obb.size.y();
-			if (distance > squareDistance || distance < -squareDistance) {
-				return false;
-			}
+		if (Math.abs(dir.dot(obb.orientation.getRow(1))) > obb.size.y()) {
+			return false;
 		}
-		{
-			int iii = 2;
-			Vector3f axis = obb.orientation.getRow(iii * 3);
-			float distance = Vector3f.length2(dir, axis);
-			float squareDistance = obb.size.z() * obb.size.z();
-			if (distance > squareDistance || distance < -squareDistance) {
-				return false;
-			}
+		if (Math.abs(dir.dot(obb.orientation.getRow(2))) > obb.size.z()) {
+			return false;
 		}
-		
 		return true;
 	}
 	
@@ -63,29 +46,31 @@ public class Geometry3D {
 	}
 	
 	public static boolean pointInTriangle(final Vector3f p, final Triangle t) {
-		// Move the triangle so that the point is  
-		// now at the origin of the triangle
-		Vector3f a = t.p1.less(p);
-		Vector3f b = t.p2.less(p);
-		Vector3f c = t.p3.less(p);
-		// The point should be moved too, so they are both
-		// relative, but because we don't use p in the
-		// equation anymore, we don't need it!
-		// p -= p; // This would just equal the zero vector!
-		Vector3f normPBC = b.cross(c); // Normal of PBC (u)
-		Vector3f normPCA = c.cross(a); // Normal of PCA (v)
-		Vector3f normPAB = a.cross(b); // Normal of PAB (w)
-		// Test to see if the normals are facing 
-		// the same direction, return false if not
-		float val = normPBC.dot(normPCA);
-		if (CMP(val, 0.0f) == false) {
+		// The point must lie in the plane of the triangle (a point beside it is not in it).
+		final Vector3f faceNormal = t.p2.less(t.p1).cross(t.p3.less(t.p1));
+		final float faceLength = faceNormal.length();
+		if (faceLength < 1e-12f) {
+			return false; // degenerate triangle
+		}
+		final float tolerance = 1e-5f;
+		if (Math.abs(faceNormal.dot(p.less(t.p1))) > tolerance * faceLength) {
 			return false;
 		}
-		val = normPBC.dot(normPAB);
-		if (CMP(val, 0.0f) == false) {
+		// Move the triangle so that the point is at the origin
+		final Vector3f a = t.p1.less(p);
+		final Vector3f b = t.p2.less(p);
+		final Vector3f c = t.p3.less(p);
+		final Vector3f normPBC = b.cross(c); // Normal of PBC (u)
+		final Vector3f normPCA = c.cross(a); // Normal of PCA (v)
+		final Vector3f normPAB = a.cross(b); // Normal of PAB (w)
+		// Inside (or on an edge) when the three normals face the same way: no negative dot product
+		// (a null one is a point on an edge or a vertex).
+		if (normPBC.dot(normPCA) < -tolerance) {
 			return false;
 		}
-		// All normals facing the same way, return true
+		if (normPBC.dot(normPAB) < -tolerance) {
+			return false;
+		}
 		return true;
 	}
 	
